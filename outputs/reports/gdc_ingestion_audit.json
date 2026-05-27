@@ -1,0 +1,21 @@
+{
+  "started_at": "2026-05-27T19:01:13.392994+00:00",
+  "ended_at": "2026-05-27T19:01:17.925697+00:00",
+  "source_mode": "stub",
+  "requested_projects": [
+    "TCGA-BRCA",
+    "TCGA-LUAD",
+    "TCGA-COAD"
+  ],
+  "total_records": 12,
+  "fallback_reason": "GDC query failed for TCGA-BRCA: <urlopen error [Errno 8] nodename nor servname provided, or not known>",
+  "project_audits": [
+    {
+      "project_id": "TCGA-BRCA",
+      "status": "failed",
+      "attempts": 3,
+      "record_count": 0,
+      "error": "GDC query failed for TCGA-BRCA: <urlopen error [Errno 8] nodename nor servname provided, or not known>"
+    }
+  ]
+}

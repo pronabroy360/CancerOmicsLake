@@ -27,6 +27,7 @@ class TcgaConfig(BaseModel):
     experimental_strategies: list[str] | None = None
     workflow_types: list[str] | None = None
     use_stub_on_error: bool = True
+    require_live_gdc: bool = False
 
 
 class GdcApiConfig(BaseModel):
@@ -35,6 +36,7 @@ class GdcApiConfig(BaseModel):
     request_timeout_sec: int = 60
     retry_count: int = 2
     retry_backoff_sec: float = 1.5
+    audit_output_path: str = "outputs/reports/gdc_ingestion_audit.json"
 
 
 class GtexConfig(BaseModel):

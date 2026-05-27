@@ -1,5 +1,12 @@
+import pytest
+
 from src.common.config import load_config
-from src.ingestion.gdc_client import build_files_payload, map_hit_to_record, query_tcga_metadata
+from src.ingestion.gdc_client import (
+    build_files_payload,
+    map_hit_to_record,
+    query_tcga_metadata,
+    query_tcga_metadata_with_audit,
+)
 
 
 def test_tcga_stub_metadata_has_open_access() -> None:
@@ -48,3 +55,20 @@ def test_map_hit_to_record_extracts_nested_fields() -> None:
     assert record.project_id == "TCGA-BRCA"
     assert record.sample_type == "Primary Tumor"
     assert record.workflow_type == "STAR - Counts"
+
+
+def test_query_tcga_metadata_with_audit_force_stub() -> None:
+    config = load_config("configs/project_config.yml")
+    records, source_mode, audit = query_tcga_metadata_with_audit(config, force_stub=True)
+    assert records
+    assert source_mode == "stub"
+    assert audit["source_mode"] == "stub"
+    assert audit["total_records"] == len(records)
+    assert audit["fallback_reason"] == "force_stub=true"
+
+
+def test_require_live_gdc_blocks_stub_fallback() -> None:
+    config = load_config("configs/project_config.yml")
+    config.tcga.require_live_gdc = True
+    with pytest.raises(RuntimeError, match="require_live_gdc=true"):
+        query_tcga_metadata_with_audit(config)

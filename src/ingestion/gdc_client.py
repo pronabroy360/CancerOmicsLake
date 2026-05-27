@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 import json
 import time
 from typing import Any
@@ -28,6 +29,13 @@ class GdcFileRecord:
     access: str
     file_size: int
     md5sum: str
+
+
+class GdcProjectQueryError(RuntimeError):
+    def __init__(self, project_id: str, attempts: int, message: str) -> None:
+        super().__init__(message)
+        self.project_id = project_id
+        self.attempts = attempts
 
 
 def query_tcga_metadata_stub(config: AppConfig) -> list[GdcFileRecord]:
@@ -194,7 +202,7 @@ def _post_json(url: str, payload: dict[str, Any], timeout_sec: int) -> dict[str,
     return parsed
 
 
-def _query_project_files(config: AppConfig, project_id: str) -> list[GdcFileRecord]:
+def _query_project_files(config: AppConfig, project_id: str) -> tuple[list[GdcFileRecord], int]:
     payload = build_files_payload(config, project_id)
     url = f"{config.gdc_api.base_url.rstrip('/')}{config.gdc_api.files_endpoint}"
 
@@ -205,25 +213,102 @@ def _query_project_files(config: AppConfig, project_id: str) -> list[GdcFileReco
             hits = raw.get("data", {}).get("hits", [])
             if not isinstance(hits, list):
                 raise ValueError("GDC response data.hits is not a list.")
-            return [map_hit_to_record(hit, project_id) for hit in hits if isinstance(hit, dict)]
+            return [map_hit_to_record(hit, project_id) for hit in hits if isinstance(hit, dict)], attempt + 1
         except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
             last_error = exc
             if attempt >= config.gdc_api.retry_count:
                 break
             time.sleep(config.gdc_api.retry_backoff_sec * (attempt + 1))
-    raise RuntimeError(f"GDC query failed for {project_id}: {last_error}") from last_error
+    attempts = config.gdc_api.retry_count + 1
+    raise GdcProjectQueryError(
+        project_id=project_id,
+        attempts=attempts,
+        message=f"GDC query failed for {project_id}: {last_error}",
+    ) from last_error
 
 
-def query_tcga_metadata(config: AppConfig, force_stub: bool = False) -> tuple[list[GdcFileRecord], str]:
+def query_tcga_metadata_with_audit(
+    config: AppConfig,
+    force_stub: bool = False,
+) -> tuple[list[GdcFileRecord], str, dict[str, Any]]:
+    started_at = datetime.now(UTC).isoformat()
+    project_audits: list[dict[str, Any]] = []
+
     if force_stub:
-        return query_tcga_metadata_stub(config), "stub"
+        records = query_tcga_metadata_stub(config)
+        ended_at = datetime.now(UTC).isoformat()
+        return records, "stub", {
+            "started_at": started_at,
+            "ended_at": ended_at,
+            "source_mode": "stub",
+            "requested_projects": config.tcga.projects,
+            "total_records": len(records),
+            "fallback_reason": "force_stub=true",
+            "project_audits": [
+                {
+                    "project_id": project_id,
+                    "status": "stub",
+                    "attempts": 0,
+                    "record_count": 0,
+                    "error": "",
+                }
+                for project_id in config.tcga.projects
+            ],
+        }
 
     try:
         records: list[GdcFileRecord] = []
         for project_id in config.tcga.projects:
-            records.extend(_query_project_files(config, project_id))
-        return records, "live"
-    except Exception:
+            project_records, attempts = _query_project_files(config, project_id)
+            records.extend(project_records)
+            project_audits.append(
+                {
+                    "project_id": project_id,
+                    "status": "live",
+                    "attempts": attempts,
+                    "record_count": len(project_records),
+                    "error": "",
+                }
+            )
+        ended_at = datetime.now(UTC).isoformat()
+        return records, "live", {
+            "started_at": started_at,
+            "ended_at": ended_at,
+            "source_mode": "live",
+            "requested_projects": config.tcga.projects,
+            "total_records": len(records),
+            "fallback_reason": "",
+            "project_audits": project_audits,
+        }
+    except GdcProjectQueryError as exc:
+        project_audits.append(
+            {
+                "project_id": exc.project_id,
+                "status": "failed",
+                "attempts": exc.attempts,
+                "record_count": 0,
+                "error": str(exc),
+            }
+        )
+        if config.tcga.require_live_gdc:
+            raise RuntimeError(
+                "Live GDC metadata is required (require_live_gdc=true), but the live query failed."
+            ) from exc
         if config.tcga.use_stub_on_error:
-            return query_tcga_metadata_stub(config), "stub"
+            stub_records = query_tcga_metadata_stub(config)
+            ended_at = datetime.now(UTC).isoformat()
+            return stub_records, "stub", {
+                "started_at": started_at,
+                "ended_at": ended_at,
+                "source_mode": "stub",
+                "requested_projects": config.tcga.projects,
+                "total_records": len(stub_records),
+                "fallback_reason": str(exc),
+                "project_audits": project_audits,
+            }
         raise
+
+
+def query_tcga_metadata(config: AppConfig, force_stub: bool = False) -> tuple[list[GdcFileRecord], str]:
+    records, source_mode, _ = query_tcga_metadata_with_audit(config, force_stub=force_stub)
+    return records, source_mode

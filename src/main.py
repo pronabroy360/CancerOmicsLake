@@ -3,13 +3,14 @@ from __future__ import annotations
 import argparse
 import csv
 from datetime import UTC, datetime
+import json
 from pathlib import Path
 
 from src.common.config import load_config
 from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
 from src.analytics.build_gold_tables import build_gold_cohort_summary
-from src.ingestion.gdc_client import query_tcga_metadata
+from src.ingestion.gdc_client import query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.gtex_downloader import gtex_metadata_stub
 from src.processing.build_expression_table import with_log2_expression
@@ -39,7 +40,7 @@ def run_metadata_mode(config_path: str) -> None:
     ensure_base_dirs()
     cfg = load_config(config_path)
 
-    tcga_records, source_mode = query_tcga_metadata(cfg)
+    tcga_records, source_mode, audit = query_tcga_metadata_with_audit(cfg)
     if source_mode == "stub":
         logger.warning(
             "Using stub TCGA metadata source. Live GDC API query may be unavailable in this environment."
@@ -73,6 +74,11 @@ def run_metadata_mode(config_path: str) -> None:
     manifest_out = Path(f"data/bronze/tcga/metadata/gdc_manifest_{source_mode}.tsv")
     write_manifest(tcga_records, manifest_out)
     logger.info("Wrote GDC manifest: %s", manifest_out)
+
+    audit_out = Path(cfg.gdc_api.audit_output_path)
+    audit_out.parent.mkdir(parents=True, exist_ok=True)
+    audit_out.write_text(json.dumps(audit, indent=2), encoding="utf-8")
+    logger.info("Wrote GDC ingestion audit: %s", audit_out)
 
     gtex_rows = gtex_metadata_stub(cfg)
     gtex_norm = normalize_gtex_rows(gtex_rows)

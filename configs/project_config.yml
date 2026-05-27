@@ -21,6 +21,7 @@ tcga:
   experimental_strategies: null
   workflow_types: null
   use_stub_on_error: true
+  require_live_gdc: false
 
 gtex:
   version: v8
@@ -45,3 +46,4 @@ gdc_api:
   request_timeout_sec: 60
   retry_count: 2
   retry_backoff_sec: 1.5
+  audit_output_path: outputs/reports/gdc_ingestion_audit.json

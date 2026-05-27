@@ -9,6 +9,8 @@ Implemented so far:
 - Project structure and config system
 - GDC metadata ingestion path (live with safe fallback)
 - Bronze metadata and manifest generation
+- GDC ingestion audit reporting (`outputs/reports/gdc_ingestion_audit.json`)
+- Strict live-ingestion support (`tcga.require_live_gdc`)
 - Silver parquet outputs for projects, patients, samples, file manifest, and expression tables
 - Gold cohort summary mart
 - Quality report generation

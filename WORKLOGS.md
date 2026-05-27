@@ -54,6 +54,7 @@ Status values:
 | 20260527T174339Z | 2026-05-27 23:43:39 +06 | 2026-05-27 23:43:39 +06 | passed_with_warnings | m3-silver-expression-bootstrap | 12 metadata rows | 9 artifacts | 0 | 1 | Added `silver_expression_tcga` and `silver_expression_gtex` outputs with stable schemas |
 | 20260527T174843Z | 2026-05-27 23:48:43 +06 | 2026-05-27 23:48:43 +06 | passed_with_warnings | m4-gold-bootstrap | 12 metadata rows | 10 artifacts | 0 | 1 | Added `run-gold` and `gold_cohort_summary` build from silver tables |
 | 20260527T174949Z | 2026-05-27 23:49:49 +06 | 2026-05-27 23:49:49 +06 | passed_with_warnings | m4-gold-bootstrap-v2 | 12 metadata rows | 10 artifacts | 0 | 1 | Sequential silver->gold run confirmed stable `gtex_expr_samples=4` |
+| 20260527T190117Z | 2026-05-28 01:01:17 +06 | 2026-05-28 01:01:17 +06 | passed_with_warnings | m2-strict-live-and-audit | 12 metadata rows | 10 artifacts | 0 | 1 | Added strict live mode and persisted GDC ingestion audit report |
 
 Template status values:
 - `success`
@@ -93,6 +94,8 @@ Download mode:
 | 2026-05-27 | 20260527T174339Z | gene_mapping_rate | passed | 1.0 | 0.98 | 0 | GTEx expression stub mapping remained stable |
 | 2026-05-27 | 20260527T174843Z | expression_values_non_negative | passed | N/A | N/A | 0 | Gold summary build executed after metadata/silver refresh |
 | 2026-05-27 | 20260527T174843Z | gene_mapping_rate | passed | 1.0 | 0.98 | 0 | Quality baseline maintained while adding gold aggregation stage |
+| 2026-05-28 | 20260527T190117Z | expression_values_non_negative | passed | N/A | N/A | 0 | Strict-mode/audit enhancement did not affect quality baseline |
+| 2026-05-28 | 20260527T190117Z | gene_mapping_rate | passed | 1.0 | 0.98 | 0 | Mapping rate stable after ingestion control additions |
 
 ## 6) Decision Log (ADR-lite)
 
@@ -106,6 +109,8 @@ Download mode:
 | 2026-05-27 | DEC-006 | Expression schema stability | Emit stable silver expression tables before full file parsers are ready | Delay expression outputs until full parser stage | Unblocks downstream models/tests with explicit `data_origin` labeling |
 | 2026-05-27 | DEC-007 | Gold bootstrap strategy | Build `gold_cohort_summary` directly from silver tables as first analysis mart | Waiting for full gold model suite | Enables immediate analytics surface and dashboard/API metric source |
 | 2026-05-27 | DEC-008 | Stage execution order | Run `run-silver` then `run-gold` sequentially (not parallel) | Parallel stage execution | Avoids transient parquet read/write race conditions on local runtime |
+| 2026-05-28 | DEC-009 | Live-ingestion control | Add `require_live_gdc` to block fallback when strict live metadata is required | Implicit fallback in all environments | Supports CI/prod fail-fast behavior and explicit compliance posture |
+| 2026-05-28 | DEC-010 | Ingestion observability | Persist GDC ingestion audit JSON with retries, fallback reason, and project status | Log-only visibility | Improves debugging, traceability, and run explainability |
 
 Example Decision IDs:
 - `DEC-001`: Default dataframe engine = Polars
@@ -153,7 +158,9 @@ Impact values:
   - Added `silver_expression_tcga` (schema-only, zero rows) and `silver_expression_gtex` (stub rows) parquet outputs
   - Implemented first gold mart builder and CLI (`run-gold`) producing `gold_cohort_summary.parquet`
   - Updated API cohort summary source to read from gold table with fallback to stub
+  - Added strict live metadata mode (`require_live_gdc`) and GDC ingestion audit output
+  - Extended ingestion tests to cover strict-mode failure and audit content shape
 - Next:
   - Add silver schema contracts and null/duplicate checks per table
   - Build real TCGA/GTEx expression file parsers to replace stub-origin rows
-  - Add optional strict mode to fail fast when live GDC fetch is required
+  - Add CLI toggle/target for strict live mode to simplify CI usage
