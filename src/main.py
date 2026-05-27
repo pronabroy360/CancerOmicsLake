@@ -8,6 +8,7 @@ from pathlib import Path
 from src.common.config import load_config
 from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
+from src.analytics.build_gold_tables import build_gold_cohort_summary
 from src.ingestion.gdc_client import query_tcga_metadata
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.gtex_downloader import gtex_metadata_stub
@@ -99,6 +100,9 @@ def main() -> None:
     parser_silver = subparsers.add_parser("run-silver")
     parser_silver.add_argument("--config", required=True)
 
+    parser_gold = subparsers.add_parser("run-gold")
+    parser_gold.add_argument("--config", required=True)
+
     args = parser.parse_args()
     configure_logging()
 
@@ -125,6 +129,21 @@ def main() -> None:
             summary["expression_gtex_count"],
         )
         print("Silver table build completed.")
+        return
+    if args.command == "run-gold":
+        load_config(args.config)
+        summary = build_gold_cohort_summary()
+        logger = get_logger("canceromicslake")
+        logger.info("Gold cohort summary written to %s", summary["gold_cohort_summary_path"])
+        logger.info(
+            "Gold summary counts: projects=%s patients=%s samples=%s files=%s gtex_expr_samples=%s",
+            summary["tcga_project_count"],
+            summary["tcga_patient_count"],
+            summary["tcga_sample_count"],
+            summary["tcga_file_count"],
+            summary["gtex_expression_sample_count"],
+        )
+        print("Gold table build completed.")
         return
 
 

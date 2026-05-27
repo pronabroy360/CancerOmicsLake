@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from src.analytics.cohort_summary import cohort_summary_stub
+from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene_stub
 from src.analytics.mutation_frequency import mutation_frequency_by_gene_stub
 from src.analytics.tumor_vs_normal import tumor_vs_normal_stub
@@ -74,4 +74,4 @@ def graph_edges() -> dict[str, object]:
 
 @app.get("/quality/latest")
 def quality_latest() -> dict[str, object]:
-    return {"status": "passed_with_warnings", "checks": [], "summary": cohort_summary_stub()}
+    return {"status": "passed_with_warnings", "checks": [], "summary": cohort_summary_from_gold()}

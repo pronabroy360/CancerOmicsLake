@@ -7,6 +7,7 @@ make setup
 make validate-config
 make run-metadata
 make run-silver
+make run-gold
 make test
 ```
 

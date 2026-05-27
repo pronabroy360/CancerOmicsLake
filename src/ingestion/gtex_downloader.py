@@ -5,10 +5,11 @@ from src.common.config import AppConfig
 
 def gtex_metadata_stub(config: AppConfig) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    for tissue in config.gtex.tissues:
+    for idx, tissue in enumerate(config.gtex.tissues, start=1):
+        token = tissue.replace(" ", "").replace("-", "")[:6].upper()
         rows.append(
             {
-                "gtex_sample_id": f"GTEX-{tissue[:3].upper()}-0001",
+                "gtex_sample_id": f"GTEX-{token}-{idx:04d}",
                 "donor_id": "OPEN-ACCESS",
                 "tissue_site": tissue,
                 "tissue_detail": tissue,

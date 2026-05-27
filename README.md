@@ -4,15 +4,16 @@ CancerOmicsLake is a reproducible bioinformatics data engineering project that i
 
 ## Current Status
 
-Milestone 1 is scaffolded:
+Implemented so far:
 
-- Project structure
-- YAML config system
-- Metadata-only ingestion skeleton
-- Quality report skeleton
-- FastAPI and Streamlit stubs
-- dbt project scaffold
-- Tests for core utility logic
+- Project structure and config system
+- GDC metadata ingestion path (live with safe fallback)
+- Bronze metadata and manifest generation
+- Silver parquet outputs for projects, patients, samples, file manifest, and expression tables
+- Gold cohort summary mart
+- Quality report generation
+- FastAPI and Streamlit scaffolds
+- Test suite for config, ingestion, silver, and gold builders
 
 ## Quickstart
 
@@ -20,6 +21,8 @@ Milestone 1 is scaffolded:
 make setup
 make test
 make run-metadata
+make run-silver
+make run-gold
 ```
 
 ## Compliance Notice
@@ -27,4 +30,3 @@ make run-metadata
 - Public mode is `open-access-only` by default.
 - Do not commit raw downloaded data, restricted data, or credentials.
 - This repository is for data engineering and exploratory analytics, not clinical claims.
-

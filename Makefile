@@ -1,7 +1,7 @@
 PYTHON ?= python3
 PIP ?= pip3
 
-.PHONY: setup test run-metadata run-silver run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-silver run-gold run-api run-dashboard validate-config
 
 setup:
 	$(PIP) install -r requirements.txt
@@ -17,6 +17,9 @@ run-metadata:
 
 run-silver:
 	$(PYTHON) -m src.main run-silver --config configs/project_config.yml
+
+run-gold:
+	$(PYTHON) -m src.main run-gold --config configs/project_config.yml
 
 run-api:
 	$(PYTHON) -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
