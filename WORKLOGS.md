@@ -28,7 +28,7 @@ Use this file to record milestone progress, pipeline runs, decisions, risks, and
 | Milestone | Status | Owner | Start Date | Target Date | Acceptance Notes |
 |---|---|---|---|---|---|
 | M1 Project Setup | Done | pronabroy360 + Codex | 2026-05-27 | 2026-05-27 | Scaffold, configs, Makefile, API/dashboard stubs, tests passing |
-| M2 Metadata Ingestion | In Progress | pronabroy360 + Codex | 2026-05-27 | 2026-05-28 | Metadata-only stub and manifest generation working |
+| M2 Metadata Ingestion | In Progress | pronabroy360 + Codex | 2026-05-27 | 2026-05-28 | Live GDC API query path implemented with retries and stub fallback |
 | M3 Expression Processing | Not Started | | | | |
 | M4 Mutation Processing | Not Started | | | | |
 | M5 dbt Warehouse | Not Started | | | | |
@@ -48,6 +48,8 @@ Status values:
 | pipeline_run_id | Start Time | End Time | Status | Config Hash | Input Files | Output Tables | Errors | Warnings | Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | 20260527T170126Z | 2026-05-27 23:01:26 +06 | 2026-05-27 23:01:26 +06 | passed_with_warnings | scaffold-stub | 12 metadata rows | 3 artifacts | 0 | 1 | Metadata-only dry run with stub data and quality JSON output |
+| 20260527T171523Z | 2026-05-27 23:15:23 +06 | 2026-05-27 23:15:23 +06 | passed_with_warnings | m2-gdc-live-with-fallback | 12 metadata rows | 3 artifacts | 0 | 1 | Live GDC query attempted; fallback to stub in restricted network environment |
+| 20260527T171623Z | 2026-05-27 23:16:23 +06 | 2026-05-27 23:16:23 +06 | passed_with_warnings | m2-gdc-live-with-fallback-v2 | 12 metadata rows | 3 artifacts | 0 | 1 | Added explicit fallback warning log and reran metadata pipeline |
 
 Template status values:
 - `success`
@@ -77,6 +79,10 @@ Download mode:
 |---|---|---|---|---|---|---|---|
 | 2026-05-27 | 20260527T170126Z | expression_values_non_negative | passed | N/A | N/A | 0 | Stub expression values all non-negative |
 | 2026-05-27 | 20260527T170126Z | gene_mapping_rate | passed | 1.0 | 0.98 | 0 | Gene normalization mapping complete in stub sample |
+| 2026-05-27 | 20260527T171523Z | expression_values_non_negative | passed | N/A | N/A | 0 | Metadata mode rerun after live GDC client integration |
+| 2026-05-27 | 20260527T171523Z | gene_mapping_rate | passed | 1.0 | 0.98 | 0 | Fallback stub path preserved quality checks |
+| 2026-05-27 | 20260527T171623Z | expression_values_non_negative | passed | N/A | N/A | 0 | Fallback warning log added to improve ingestion transparency |
+| 2026-05-27 | 20260527T171623Z | gene_mapping_rate | passed | 1.0 | 0.98 | 0 | Pipeline behavior consistent after warning update |
 
 ## 6) Decision Log (ADR-lite)
 
@@ -85,6 +91,7 @@ Download mode:
 | 2026-05-27 | DEC-001 | Dataframe stack for MVP | Start with Polars-compatible pipeline stubs and typed config models | Pandas-first | Keeps performance-oriented path while staying simple for MVP |
 | 2026-05-27 | DEC-002 | Environment setup on macOS | Use local `.venv` for project commands | System Python install | Avoids PEP-668 conflicts and keeps dependencies isolated |
 | 2026-05-27 | DEC-003 | Code navigation at scale | Enable `codeindex` and build symbol index early | Manual grep-only navigation | Faster iterative development and safer refactors |
+| 2026-05-27 | DEC-004 | GDC ingestion resilience | Implement live API query with retry/backoff and configurable stub fallback | Hard fail on first network issue | Keeps local/dev workflow moving while preserving path to real metadata |
 
 Example Decision IDs:
 - `DEC-001`: Default dataframe engine = Polars
@@ -125,7 +132,9 @@ Impact values:
   - Added baseline tests and passed: `6 passed`
   - Executed metadata-only dry run and generated quality JSON report
   - Initialized `codeindex` and `symbolindex` for repository mapping
+  - Implemented Milestone 2 live GDC metadata query path with retry/backoff and project/category/access filters
+  - Added ingestion unit coverage for query payload and nested response mapping (`8 passed`)
 - Next:
-  - Replace ingestion stubs with real GDC metadata API integration
-  - Add configurable dataset-size controls to ingestion stage
+  - Add request audit logs and retry failure logs to metadata ingestion outputs
   - Add first real silver parquet writer
+  - Add optional strict mode to fail fast when live GDC fetch is required

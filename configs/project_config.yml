@@ -17,6 +17,10 @@ tcga:
     type: open
   metadata_only: true
   max_files_per_project: 200
+  data_types: null
+  experimental_strategies: null
+  workflow_types: null
+  use_stub_on_error: true
 
 gtex:
   version: v8
@@ -35,3 +39,9 @@ quality:
   gene_mapping_rate_threshold: 0.98
   fail_on_controlled_access: true
 
+gdc_api:
+  base_url: https://api.gdc.cancer.gov
+  files_endpoint: /files
+  request_timeout_sec: 60
+  retry_count: 2
+  retry_backoff_sec: 1.5

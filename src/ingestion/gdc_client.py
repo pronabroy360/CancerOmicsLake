@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+import time
+from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from src.common.config import AppConfig
 
@@ -26,7 +31,6 @@ class GdcFileRecord:
 
 
 def query_tcga_metadata_stub(config: AppConfig) -> list[GdcFileRecord]:
-    """Metadata-only scaffold. Replace with real GDC API queries in M2."""
     records: list[GdcFileRecord] = []
     for project in config.tcga.projects:
         for idx, category in enumerate(config.tcga.data_categories, start=1):
@@ -51,3 +55,175 @@ def query_tcga_metadata_stub(config: AppConfig) -> list[GdcFileRecord]:
                 )
             )
     return records
+
+
+def build_files_payload(config: AppConfig, project_id: str) -> dict[str, Any]:
+    filters_content: list[dict[str, Any]] = [
+        {
+            "op": "in",
+            "content": {"field": "cases.project.project_id", "value": [project_id]},
+        },
+        {
+            "op": "in",
+            "content": {"field": "files.access", "value": [config.tcga.access.type]},
+        },
+        {
+            "op": "in",
+            "content": {"field": "files.data_category", "value": config.tcga.data_categories},
+        },
+    ]
+
+    if config.tcga.data_types:
+        filters_content.append(
+            {"op": "in", "content": {"field": "files.data_type", "value": config.tcga.data_types}}
+        )
+    if config.tcga.experimental_strategies:
+        filters_content.append(
+            {
+                "op": "in",
+                "content": {
+                    "field": "files.experimental_strategy",
+                    "value": config.tcga.experimental_strategies,
+                },
+            }
+        )
+    if config.tcga.workflow_types:
+        filters_content.append(
+            {
+                "op": "in",
+                "content": {"field": "files.analysis.workflow_type", "value": config.tcga.workflow_types},
+            }
+        )
+
+    fields = ",".join(
+        [
+            "file_id",
+            "file_name",
+            "data_category",
+            "data_type",
+            "experimental_strategy",
+            "analysis.workflow_type",
+            "access",
+            "file_size",
+            "md5sum",
+            "cases.case_id",
+            "cases.submitter_id",
+            "cases.project.project_id",
+            "cases.project.primary_site",
+            "cases.project.disease_type",
+            "cases.samples.sample_id",
+            "cases.samples.sample_type",
+        ]
+    )
+    return {
+        "filters": {"op": "and", "content": filters_content},
+        "format": "JSON",
+        "fields": fields,
+        "size": str(config.tcga.max_files_per_project),
+    }
+
+
+def _coerce_to_text(value: Any, default: str = "Unknown") -> str:
+    if value is None:
+        return default
+    if isinstance(value, list):
+        if not value:
+            return default
+        return str(value[0])
+    return str(value)
+
+
+def _extract_first_case(hit: dict[str, Any]) -> dict[str, Any]:
+    cases = hit.get("cases")
+    if isinstance(cases, list) and cases:
+        first = cases[0]
+        if isinstance(first, dict):
+            return first
+    return {}
+
+
+def _extract_first_sample(case: dict[str, Any]) -> dict[str, Any]:
+    samples = case.get("samples")
+    if isinstance(samples, list) and samples:
+        first = samples[0]
+        if isinstance(first, dict):
+            return first
+    return {}
+
+
+def map_hit_to_record(hit: dict[str, Any], default_project_id: str) -> GdcFileRecord:
+    case = _extract_first_case(hit)
+    sample = _extract_first_sample(case)
+    project = case.get("project", {}) if isinstance(case.get("project"), dict) else {}
+    analysis = hit.get("analysis", {}) if isinstance(hit.get("analysis"), dict) else {}
+
+    file_id = _coerce_to_text(hit.get("file_id") or hit.get("id"), default="")
+    return GdcFileRecord(
+        project_id=_coerce_to_text(project.get("project_id"), default=default_project_id),
+        case_id=_coerce_to_text(case.get("case_id")),
+        submitter_id=_coerce_to_text(case.get("submitter_id")),
+        sample_id=_coerce_to_text(sample.get("sample_id")),
+        sample_type=_coerce_to_text(sample.get("sample_type")),
+        primary_site=_coerce_to_text(project.get("primary_site")),
+        disease_type=_coerce_to_text(project.get("disease_type")),
+        file_id=file_id,
+        file_name=_coerce_to_text(hit.get("file_name")),
+        data_category=_coerce_to_text(hit.get("data_category")),
+        data_type=_coerce_to_text(hit.get("data_type")),
+        experimental_strategy=_coerce_to_text(hit.get("experimental_strategy")),
+        workflow_type=_coerce_to_text(analysis.get("workflow_type")),
+        access=_coerce_to_text(hit.get("access"), default="open"),
+        file_size=int(hit.get("file_size") or 0),
+        md5sum=_coerce_to_text(hit.get("md5sum"), default=""),
+    )
+
+
+def _post_json(url: str, payload: dict[str, Any], timeout_sec: int) -> dict[str, Any]:
+    encoded = json.dumps(payload).encode("utf-8")
+    request = Request(
+        url=url,
+        data=encoded,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urlopen(request, timeout=timeout_sec) as response:
+        body = response.read().decode("utf-8")
+    parsed = json.loads(body)
+    if not isinstance(parsed, dict):
+        raise ValueError("GDC response is not a JSON object.")
+    return parsed
+
+
+def _query_project_files(config: AppConfig, project_id: str) -> list[GdcFileRecord]:
+    payload = build_files_payload(config, project_id)
+    url = f"{config.gdc_api.base_url.rstrip('/')}{config.gdc_api.files_endpoint}"
+
+    last_error: Exception | None = None
+    for attempt in range(config.gdc_api.retry_count + 1):
+        try:
+            raw = _post_json(url, payload, timeout_sec=config.gdc_api.request_timeout_sec)
+            hits = raw.get("data", {}).get("hits", [])
+            if not isinstance(hits, list):
+                raise ValueError("GDC response data.hits is not a list.")
+            return [map_hit_to_record(hit, project_id) for hit in hits if isinstance(hit, dict)]
+        except (HTTPError, URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+            last_error = exc
+            if attempt >= config.gdc_api.retry_count:
+                break
+            time.sleep(config.gdc_api.retry_backoff_sec * (attempt + 1))
+    raise RuntimeError(f"GDC query failed for {project_id}: {last_error}") from last_error
+
+
+def query_tcga_metadata(config: AppConfig, force_stub: bool = False) -> tuple[list[GdcFileRecord], str]:
+    if force_stub:
+        return query_tcga_metadata_stub(config), "stub"
+
+    try:
+        records: list[GdcFileRecord] = []
+        for project_id in config.tcga.projects:
+            records.extend(_query_project_files(config, project_id))
+        return records, "live"
+    except Exception:
+        if config.tcga.use_stub_on_error:
+            return query_tcga_metadata_stub(config), "stub"
+        raise

@@ -23,6 +23,18 @@ class TcgaConfig(BaseModel):
     access: AccessConfig = Field(default_factory=AccessConfig)
     metadata_only: bool = True
     max_files_per_project: int = 200
+    data_types: list[str] | None = None
+    experimental_strategies: list[str] | None = None
+    workflow_types: list[str] | None = None
+    use_stub_on_error: bool = True
+
+
+class GdcApiConfig(BaseModel):
+    base_url: str = "https://api.gdc.cancer.gov"
+    files_endpoint: str = "/files"
+    request_timeout_sec: int = 60
+    retry_count: int = 2
+    retry_backoff_sec: float = 1.5
 
 
 class GtexConfig(BaseModel):
@@ -47,6 +59,7 @@ class AppConfig(BaseModel):
     gtex: GtexConfig
     storage: StorageConfig
     quality: QualityConfig
+    gdc_api: GdcApiConfig = Field(default_factory=GdcApiConfig)
 
 
 def load_raw_yaml(path: str | Path) -> dict[str, Any]:

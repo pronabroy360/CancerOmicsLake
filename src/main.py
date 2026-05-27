@@ -8,7 +8,7 @@ from pathlib import Path
 from src.common.config import load_config
 from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
-from src.ingestion.gdc_client import query_tcga_metadata_stub
+from src.ingestion.gdc_client import query_tcga_metadata
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.gtex_downloader import gtex_metadata_stub
 from src.processing.build_expression_table import with_log2_expression
@@ -37,7 +37,11 @@ def run_metadata_mode(config_path: str) -> None:
     ensure_base_dirs()
     cfg = load_config(config_path)
 
-    tcga_records = query_tcga_metadata_stub(cfg)
+    tcga_records, source_mode = query_tcga_metadata(cfg)
+    if source_mode == "stub":
+        logger.warning(
+            "Using stub TCGA metadata source. Live GDC API query may be unavailable in this environment."
+        )
     tcga_rows = [
         {
             "project_id": r.project_id,
@@ -60,13 +64,13 @@ def run_metadata_mode(config_path: str) -> None:
         for r in tcga_records
     ]
 
-    metadata_out = Path("data/bronze/tcga/metadata/tcga_metadata_stub.csv")
+    metadata_out = Path(f"data/bronze/tcga/metadata/tcga_metadata_{source_mode}.csv")
     write_tcga_metadata_csv(tcga_rows, metadata_out)
-    logger.info("Wrote TCGA metadata stub rows: %s", len(tcga_rows))
+    logger.info("Wrote TCGA metadata rows: %s (source=%s)", len(tcga_rows), source_mode)
 
-    manifest_out = Path("data/bronze/tcga/metadata/gdc_manifest_stub.tsv")
+    manifest_out = Path(f"data/bronze/tcga/metadata/gdc_manifest_{source_mode}.tsv")
     write_manifest(tcga_records, manifest_out)
-    logger.info("Wrote GDC manifest stub: %s", manifest_out)
+    logger.info("Wrote GDC manifest: %s", manifest_out)
 
     gtex_rows = gtex_metadata_stub(cfg)
     gtex_norm = normalize_gtex_rows(gtex_rows)
