@@ -1,0 +1,3 @@
+# Professor Outreach Summary
+
+CancerOmicsLake is a research-oriented data engineering platform that harmonizes open-access TCGA and GTEx resources into a reproducible lakehouse and graph-ready analytics system. The project emphasizes scalable ingestion, metadata traceability, gene identifier normalization, quality validation, and transparent exploratory visualization for cancer informatics workflows. This demonstrates the infrastructure layer that biomedical informatics labs need before downstream modeling, and it is designed to be extendable to additional cohorts, modalities, and graph analytics.

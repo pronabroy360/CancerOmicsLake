@@ -1,0 +1,23 @@
+{
+  "pipeline_run_id": "20260527T170126Z",
+  "generated_at": "2026-05-27T17:01:26.125212+00:00",
+  "status": "passed",
+  "checks": [
+    {
+      "check_name": "expression_values_non_negative",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
+      "check_name": "gene_mapping_rate",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "mapping_rate",
+      "metric_value": 1.0,
+      "threshold": 0.98
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+name: "canceromicslake_dbt"
+version: "1.0.0"
+config-version: 2
+
+profile: "canceromicslake"
+
+model-paths: ["models"]
+test-paths: ["tests"]
+
+models:
+  canceromicslake_dbt:
+    bronze:
+      +materialized: view
+    silver:
+      +materialized: table
+    gold:
+      +materialized: table

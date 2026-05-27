@@ -1,0 +1,10 @@
+version: v8
+source: gtex_portal
+tissues:
+  - Breast - Mammary Tissue
+  - Lung
+  - Colon - Transverse
+  - Colon - Sigmoid
+expression_unit: TPM
+download:
+  mode: metadata_only

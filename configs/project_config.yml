@@ -1,0 +1,37 @@
+project:
+  name: CancerOmicsLake
+  version: "0.1"
+  mode: open_access
+
+tcga:
+  projects:
+    - TCGA-BRCA
+    - TCGA-LUAD
+    - TCGA-COAD
+  data_categories:
+    - Transcriptome Profiling
+    - Simple Nucleotide Variation
+    - Clinical
+    - Biospecimen
+  access:
+    type: open
+  metadata_only: true
+  max_files_per_project: 200
+
+gtex:
+  version: v8
+  tissues:
+    - Breast - Mammary Tissue
+    - Lung
+    - Colon - Transverse
+    - Colon - Sigmoid
+
+storage:
+  format: parquet
+  database: duckdb
+  duckdb_path: outputs/canceromicslake.duckdb
+
+quality:
+  gene_mapping_rate_threshold: 0.98
+  fail_on_controlled_access: true
+

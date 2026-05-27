@@ -1,0 +1,8 @@
+graph:
+  top_n_overexpressed_edges_per_cancer: 100
+  top_n_mutation_edges_per_cancer: 100
+  export_formats:
+    - neo4j_csv
+    - graphify_csv
+    - graphml_optional
+  schema_version: "1.0"

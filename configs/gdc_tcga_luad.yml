@@ -1,0 +1,10 @@
+project_id: TCGA-LUAD
+filters:
+  access: open
+  data_categories:
+    - Transcriptome Profiling
+    - Simple Nucleotide Variation
+    - Clinical
+    - Biospecimen
+download:
+  mode: metadata_only

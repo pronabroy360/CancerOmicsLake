@@ -1,0 +1,10 @@
+duckdb>=1.0.0
+fastapi>=0.111.0
+polars>=1.0.0
+prefect>=2.19.0
+pydantic>=2.7.0
+pyyaml>=6.0.1
+streamlit>=1.35.0
+uvicorn>=0.30.0
+pytest>=8.2.0
+
