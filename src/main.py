@@ -12,6 +12,7 @@ from src.ingestion.gdc_client import query_tcga_metadata
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.gtex_downloader import gtex_metadata_stub
 from src.processing.build_expression_table import with_log2_expression
+from src.processing.build_silver_tables import build_silver_tables_from_bronze
 from src.processing.normalize_gtex_expression import normalize_gtex_rows
 from src.quality.checks import (
     build_quality_payload,
@@ -95,6 +96,9 @@ def main() -> None:
     parser_metadata = subparsers.add_parser("run-metadata")
     parser_metadata.add_argument("--config", required=True)
 
+    parser_silver = subparsers.add_parser("run-silver")
+    parser_silver.add_argument("--config", required=True)
+
     args = parser.parse_args()
     configure_logging()
 
@@ -105,6 +109,20 @@ def main() -> None:
     if args.command == "run-metadata":
         run_metadata_mode(args.config)
         print("Metadata-only pipeline run completed.")
+        return
+    if args.command == "run-silver":
+        load_config(args.config)
+        summary = build_silver_tables_from_bronze()
+        logger = get_logger("canceromicslake")
+        logger.info("Silver tables built from %s", summary["source_metadata_file"])
+        logger.info(
+            "Silver counts: projects=%s patients=%s samples=%s files=%s",
+            summary["projects_count"],
+            summary["patients_count"],
+            summary["samples_count"],
+            summary["file_manifest_count"],
+        )
+        print("Silver table build completed.")
         return
 
 
