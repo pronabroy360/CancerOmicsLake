@@ -111,16 +111,18 @@ def main() -> None:
         print("Metadata-only pipeline run completed.")
         return
     if args.command == "run-silver":
-        load_config(args.config)
-        summary = build_silver_tables_from_bronze()
+        cfg = load_config(args.config)
+        summary = build_silver_tables_from_bronze(config=cfg)
         logger = get_logger("canceromicslake")
         logger.info("Silver tables built from %s", summary["source_metadata_file"])
         logger.info(
-            "Silver counts: projects=%s patients=%s samples=%s files=%s",
+            "Silver counts: projects=%s patients=%s samples=%s files=%s tcga_expr=%s gtex_expr=%s",
             summary["projects_count"],
             summary["patients_count"],
             summary["samples_count"],
             summary["file_manifest_count"],
+            summary["expression_tcga_count"],
+            summary["expression_gtex_count"],
         )
         print("Silver table build completed.")
         return

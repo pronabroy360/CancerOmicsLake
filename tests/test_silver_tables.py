@@ -2,6 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
+from src.common.config import load_config
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
 
 
@@ -33,15 +34,23 @@ def test_build_silver_tables_from_bronze(tmp_path: Path) -> None:
     )
     df.write_csv(metadata_path)
 
-    summary = build_silver_tables_from_bronze(bronze_metadata_dir=bronze_dir, silver_dir=silver_dir)
+    config = load_config("configs/project_config.yml")
+    summary = build_silver_tables_from_bronze(
+        config=config,
+        bronze_metadata_dir=bronze_dir,
+        silver_dir=silver_dir,
+    )
 
     assert summary["projects_count"] == 1
     assert summary["patients_count"] == 1
     assert summary["samples_count"] == 1
     assert summary["file_manifest_count"] == 2
+    assert summary["expression_tcga_count"] == 0
+    assert summary["expression_gtex_count"] == len(config.gtex.tissues)
 
     assert (silver_dir / "silver_projects.parquet").exists()
     assert (silver_dir / "silver_patients.parquet").exists()
     assert (silver_dir / "silver_samples.parquet").exists()
     assert (silver_dir / "silver_file_manifest.parquet").exists()
-
+    assert (silver_dir / "silver_expression_tcga.parquet").exists()
+    assert (silver_dir / "silver_expression_gtex.parquet").exists()

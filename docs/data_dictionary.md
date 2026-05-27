@@ -14,3 +14,7 @@ Current implemented silver outputs:
   - `project_id`, `case_id`, `sample_id`, `sample_type`
 - `silver_file_manifest.parquet`
   - `project_id`, `case_id`, `sample_id`, `file_id`, `file_name`, `data_category`, `data_type`, `experimental_strategy`, `workflow_type`, `access`, `file_size`, `md5sum`, `ingested_at`
+- `silver_expression_tcga.parquet`
+  - `project_id`, `case_id`, `sample_id`, `sample_type`, `gene_id`, `gene_symbol`, `expression_value`, `expression_unit`, `log2_expression`, `pipeline_workflow`, `data_origin`, `ingested_at`
+- `silver_expression_gtex.parquet`
+  - `gtex_sample_id`, `tissue_site`, `tissue_detail`, `gene_id`, `gene_symbol`, `expression_value`, `expression_unit`, `log2_expression`, `source_version`, `data_origin`, `ingested_at`
