@@ -2,6 +2,7 @@ import pytest
 
 from src.common.config import load_config
 from src.ingestion.gdc_client import (
+    LiveGdcRequiredError,
     build_files_payload,
     map_hit_to_record,
     query_tcga_metadata,
@@ -67,8 +68,12 @@ def test_query_tcga_metadata_with_audit_force_stub() -> None:
     assert audit["fallback_reason"] == "force_stub=true"
 
 
-def test_require_live_gdc_blocks_stub_fallback() -> None:
+def test_require_live_gdc_blocks_stub_fallback_when_live_query_fails() -> None:
     config = load_config("configs/project_config.yml")
     config.tcga.require_live_gdc = True
-    with pytest.raises(RuntimeError, match="require_live_gdc=true"):
+    config.gdc_api.base_url = "http://127.0.0.1:9"
+    config.gdc_api.retry_count = 0
+    config.gdc_api.request_timeout_sec = 1
+    with pytest.raises(LiveGdcRequiredError, match="require_live_gdc=true") as exc_info:
         query_tcga_metadata_with_audit(config)
+    assert exc_info.value.audit["source_mode"] == "failed_live_required"
