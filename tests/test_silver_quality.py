@@ -28,6 +28,13 @@ def test_run_silver_quality_checks_detects_failures(tmp_path: Path) -> None:
         {
             "project_id": ["TCGA-BRCA"],
             "case_id": ["c1"],
+            "submitter_id": ["sub-1"],
+        }
+    ).write_parquet(silver / "silver_patients.parquet")
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA"],
+            "case_id": ["c1"],
             "sample_id": ["s1"],
             "file_id": ["f1"],
             "file_name": ["x.tsv"],
@@ -37,7 +44,7 @@ def test_run_silver_quality_checks_detects_failures(tmp_path: Path) -> None:
             "workflow_type": ["STAR"],
             "access": ["controlled"],
             "file_size": [10],
-            "md5sum": ["abc"],
+            "md5sum": [""],
             "ingested_at": ["x"],
         }
     ).write_parquet(silver / "silver_file_manifest.parquet")
@@ -95,7 +102,9 @@ def test_run_silver_quality_checks_detects_failures(tmp_path: Path) -> None:
     status_by_name = {r.check_name: r.status for r in results}
     assert status_by_name["silver_projects_null_project_id"] == "failed"
     assert status_by_name["silver_samples_duplicate_sample_id"] == "failed"
+    assert status_by_name["silver_samples_patient_fk_integrity"] == "failed"
     assert status_by_name["silver_manifest_access_open_only"] == "failed"
+    assert status_by_name["silver_manifest_md5_present"] == "failed"
     assert status_by_name["silver_expression_gtex_null_gene_id"] == "failed"
     assert status_by_name["silver_expression_gtex_non_negative"] == "failed"
     assert status_by_name["silver_expression_tcga_null_gene_id"] == "failed"

@@ -179,11 +179,25 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
     duplicate_sample_ids = (
         samples.group_by("sample_id").len().filter(pl.col("len") > 1).height if "sample_id" in samples.columns else 0
     )
+    patients = _read_or_empty(
+        root / "silver_patients.parquet",
+        {"project_id": pl.Utf8, "case_id": pl.Utf8, "submitter_id": pl.Utf8},
+    )
+    missing_patient_fk = (
+        samples.join(
+            patients.select(["project_id", "case_id"]).unique(),
+            on=["project_id", "case_id"],
+            how="anti",
+        ).height
+        if {"project_id", "case_id"}.issubset(set(samples.columns))
+        else 0
+    )
     access_violations = (
         manifest.filter(pl.col("access").cast(pl.Utf8, strict=False) != "open").height
         if "access" in manifest.columns
         else 0
     )
+    missing_manifest_md5 = _count_null_or_blank(manifest, "md5sum")
     null_gene_ids = _count_null_or_blank(expr_gtex, "gene_id")
     negative_expr = (
         expr_gtex.filter(pl.col("expression_value").cast(pl.Float64, strict=False) < 0).height
@@ -212,9 +226,19 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
             failed_rows=int(duplicate_sample_ids),
         ),
         CheckResult(
+            check_name="silver_samples_patient_fk_integrity",
+            status="passed" if missing_patient_fk == 0 else "failed",
+            failed_rows=int(missing_patient_fk),
+        ),
+        CheckResult(
             check_name="silver_manifest_access_open_only",
             status="passed" if access_violations == 0 else "failed",
             failed_rows=int(access_violations),
+        ),
+        CheckResult(
+            check_name="silver_manifest_md5_present",
+            status="passed" if missing_manifest_md5 == 0 else "failed",
+            failed_rows=int(missing_manifest_md5),
         ),
         CheckResult(
             check_name="silver_expression_gtex_null_gene_id",

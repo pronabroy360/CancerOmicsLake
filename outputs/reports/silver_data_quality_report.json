@@ -1,6 +1,6 @@
 {
-  "pipeline_run_id": "20260528T085040Z",
-  "generated_at": "2026-05-28T08:50:40.688766+00:00",
+  "pipeline_run_id": "20260528T085406Z",
+  "generated_at": "2026-05-28T08:54:06.687170+00:00",
   "status": "passed",
   "checks": [
     {
@@ -20,7 +20,23 @@
       "threshold": null
     },
     {
+      "check_name": "silver_samples_patient_fk_integrity",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
       "check_name": "silver_manifest_access_open_only",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
+      "check_name": "silver_manifest_md5_present",
       "status": "passed",
       "failed_rows": 0,
       "metric_name": "",

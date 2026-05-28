@@ -185,6 +185,7 @@ Impact values:
   - Added graph table tests and fallback behavior checks for API graph endpoints (`22 passed`)
   - Added `run-graph-export` stage to produce Neo4j and Graphify CSV bundles from gold graph tables
   - Added graph export unit coverage and generated first local exports under `outputs/graph_exports/` (`23 passed`)
+  - Added silver quality checks for sample-to-patient FK integrity and manifest MD5 presence, increasing silver checks from 10 to 12
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks with file-checksum verification and sample-to-patient mapping integrity
