@@ -191,6 +191,8 @@ Impact values:
   - Added tumor-vs-normal integration and service tests (`26 passed`)
   - Replaced `/expression/gene/{gene_symbol}` stub path with silver-backed TCGA + GTEx summary query logic
   - Added expression summary tests for silver-backed reads and fallback behavior (`28 passed`)
+  - Replaced metadata API stubs (`/metadata/projects`, `/metadata/samples`) with silver-backed query logic
+  - Added metadata analytics tests for project/sample rollups and missing-file fallback (`31 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks with file-checksum verification against download manifests

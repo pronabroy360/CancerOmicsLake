@@ -4,6 +4,8 @@ from fastapi import FastAPI
 
 from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene
+from src.analytics.metadata import metadata_projects as metadata_projects_data
+from src.analytics.metadata import metadata_samples as metadata_samples_data
 from src.analytics.mutation_frequency import mutation_frequency_by_cancer, mutation_frequency_by_gene
 from src.analytics.tumor_vs_normal import tumor_vs_normal_by_gene
 from src.graph.build_edges import load_graph_edges
@@ -19,12 +21,12 @@ def health() -> dict[str, str]:
 
 @app.get("/metadata/projects")
 def metadata_projects() -> dict[str, list[str]]:
-    return {"projects": ["TCGA-BRCA", "TCGA-LUAD", "TCGA-COAD"]}
+    return metadata_projects_data()
 
 
 @app.get("/metadata/samples")
 def metadata_samples(project_id: str) -> dict[str, object]:
-    return {"project_id": project_id, "sample_count": 4}
+    return metadata_samples_data(project_id)
 
 
 @app.get("/genes/search")
