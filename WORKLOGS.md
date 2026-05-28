@@ -207,9 +207,10 @@ Impact values:
   - Added `run-download-tcga` CLI/Make target and integrated download stage into orchestration flow execution
   - Added downloader unit tests for metadata-only skip, successful expression/mutation placement, and checksum mismatch handling (`49 passed`)
   - Reduced CLI side effects by lazy-loading Prefect flow imports so non-flow commands run without Prefect initialization warnings
+  - Added silver-quality reconciliation checks for downloaded TCGA file presence and manifest MD5 match (gated by download-report applicability)
+  - Added targeted quality test coverage for missing-file and checksum-mismatch detection paths (`50 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
-  - Expand quality checks with cross-table file-checksum reconciliation against download reports/manifests
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion
   - Add Neo4j import script templates and graph query examples tied to exported CSV schema

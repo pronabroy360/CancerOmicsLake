@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+import json
 from pathlib import Path
 
 import polars as pl
@@ -93,7 +94,81 @@ def _count_invalid_int(df: pl.DataFrame, col: str) -> int:
     )
 
 
-def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[CheckResult]:
+def _infer_data_subdir(data_category: str) -> str:
+    category = data_category.lower()
+    if "transcriptome profiling" in category:
+        return "expression"
+    if "simple nucleotide variation" in category:
+        return "mutations"
+    if "clinical" in category:
+        return "clinical"
+    if "biospecimen" in category:
+        return "biospecimen"
+    return "other"
+
+
+def _md5_file(path: Path) -> str:
+    import hashlib
+
+    hasher = hashlib.md5()
+    with path.open("rb") as f:
+        while True:
+            chunk = f.read(8192)
+            if not chunk:
+                break
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _download_integrity_counts(
+    manifest: pl.DataFrame,
+    bronze_tcga_root: Path,
+    download_report_path: Path,
+) -> tuple[int, int, bool]:
+    # Return (missing_file_count, checksum_mismatch_count, applicable)
+    if not download_report_path.exists():
+        return 0, 0, False
+
+    payload = json.loads(download_report_path.read_text(encoding="utf-8"))
+    status = str(payload.get("status", ""))
+    if status == "skipped_metadata_only":
+        return 0, 0, False
+
+    required_cols = {"project_id", "file_name", "data_category", "access", "md5sum"}
+    if manifest.is_empty() or not required_cols.issubset(set(manifest.columns)):
+        return 0, 0, False
+
+    missing = 0
+    checksum_mismatch = 0
+    rows = manifest.iter_rows(named=True)
+    for row in rows:
+        if str(row.get("access", "")).lower() != "open":
+            continue
+        project_id = str(row.get("project_id", "")).strip()
+        file_name = str(row.get("file_name", "")).strip()
+        data_category = str(row.get("data_category", ""))
+        md5sum = str(row.get("md5sum", "")).strip()
+        if not project_id or not file_name:
+            continue
+
+        data_subdir = _infer_data_subdir(data_category)
+        path = bronze_tcga_root / project_id / data_subdir / file_name
+        if not path.exists():
+            missing += 1
+            continue
+        if md5sum:
+            observed = _md5_file(path)
+            if observed != md5sum:
+                checksum_mismatch += 1
+
+    return missing, checksum_mismatch, True
+
+
+def run_silver_quality_checks(
+    silver_dir: str | Path = "data/silver",
+    bronze_tcga_root: str | Path = "data/bronze/tcga",
+    download_report_path: str | Path = "outputs/reports/tcga_download_report.json",
+) -> list[CheckResult]:
     root = Path(silver_dir)
 
     projects = _read_or_empty(
@@ -213,6 +288,11 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
     null_mut_gene = _count_null_or_blank(mutations, "gene_symbol")
     invalid_mut_start = _count_invalid_int(mutations, "start_position")
     invalid_mut_end = _count_invalid_int(mutations, "end_position")
+    missing_downloaded_files, checksum_mismatches, download_check_applicable = _download_integrity_counts(
+        manifest=manifest,
+        bronze_tcga_root=Path(bronze_tcga_root),
+        download_report_path=Path(download_report_path),
+    )
 
     return [
         CheckResult(
@@ -274,5 +354,15 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
             check_name="silver_mutations_end_position_valid_integer",
             status="passed" if invalid_mut_end == 0 else "failed",
             failed_rows=int(invalid_mut_end),
+        ),
+        CheckResult(
+            check_name="bronze_tcga_download_file_presence",
+            status="passed" if (not download_check_applicable or missing_downloaded_files == 0) else "failed",
+            failed_rows=int(missing_downloaded_files),
+        ),
+        CheckResult(
+            check_name="bronze_tcga_download_checksum_match",
+            status="passed" if (not download_check_applicable or checksum_mismatches == 0) else "failed",
+            failed_rows=int(checksum_mismatches),
         ),
     ]
