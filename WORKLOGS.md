@@ -55,6 +55,7 @@ Status values:
 | 20260527T174843Z | 2026-05-27 23:48:43 +06 | 2026-05-27 23:48:43 +06 | passed_with_warnings | m4-gold-bootstrap | 12 metadata rows | 10 artifacts | 0 | 1 | Added `run-gold` and `gold_cohort_summary` build from silver tables |
 | 20260527T174949Z | 2026-05-27 23:49:49 +06 | 2026-05-27 23:49:49 +06 | passed_with_warnings | m4-gold-bootstrap-v2 | 12 metadata rows | 10 artifacts | 0 | 1 | Sequential silver->gold run confirmed stable `gtex_expr_samples=4` |
 | 20260527T190117Z | 2026-05-28 01:01:17 +06 | 2026-05-28 01:01:17 +06 | passed_with_warnings | m2-strict-live-and-audit | 12 metadata rows | 10 artifacts | 0 | 1 | Added strict live mode and persisted GDC ingestion audit report |
+| 20260528T065035Z | 2026-05-28 12:50:35 +06 | 2026-05-28 12:50:35 +06 | failed | m2-strict-cli | 0 metadata rows | 0 artifacts | 1 | 0 | `run-metadata-strict` correctly failed fast and wrote strict-failure ingestion audit |
 
 Template status values:
 - `success`
@@ -111,6 +112,8 @@ Download mode:
 | 2026-05-27 | DEC-008 | Stage execution order | Run `run-silver` then `run-gold` sequentially (not parallel) | Parallel stage execution | Avoids transient parquet read/write race conditions on local runtime |
 | 2026-05-28 | DEC-009 | Live-ingestion control | Add `require_live_gdc` to block fallback when strict live metadata is required | Implicit fallback in all environments | Supports CI/prod fail-fast behavior and explicit compliance posture |
 | 2026-05-28 | DEC-010 | Ingestion observability | Persist GDC ingestion audit JSON with retries, fallback reason, and project status | Log-only visibility | Improves debugging, traceability, and run explainability |
+| 2026-05-28 | DEC-011 | Strict runtime ergonomics | Add CLI flag and Make target for strict live metadata mode | Editing config for each run | Makes CI/dev fail-fast invocation explicit and repeatable |
+| 2026-05-28 | DEC-012 | Strict-failure traceability | Persist ingestion audit JSON even when strict live mode fails | Failure without persisted audit | Preserves diagnostics for CI and operations triage |
 
 Example Decision IDs:
 - `DEC-001`: Default dataframe engine = Polars
@@ -160,7 +163,8 @@ Impact values:
   - Updated API cohort summary source to read from gold table with fallback to stub
   - Added strict live metadata mode (`require_live_gdc`) and GDC ingestion audit output
   - Extended ingestion tests to cover strict-mode failure and audit content shape
+  - Added `run-metadata --require-live-gdc` and `make run-metadata-strict` for operational fail-fast runs
 - Next:
   - Add silver schema contracts and null/duplicate checks per table
   - Build real TCGA/GTEx expression file parsers to replace stub-origin rows
-  - Add CLI toggle/target for strict live mode to simplify CI usage
+  - Add lightweight CI workflow for `make test` and strict metadata smoke path

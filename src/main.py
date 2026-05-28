@@ -10,7 +10,7 @@ from src.common.config import load_config
 from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
 from src.analytics.build_gold_tables import build_gold_cohort_summary
-from src.ingestion.gdc_client import query_tcga_metadata_with_audit
+from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.gtex_downloader import gtex_metadata_stub
 from src.processing.build_expression_table import with_log2_expression
@@ -35,12 +35,21 @@ def write_tcga_metadata_csv(rows: list[dict[str, str]], output_path: Path) -> No
         writer.writerows(rows)
 
 
-def run_metadata_mode(config_path: str) -> None:
+def run_metadata_mode(config_path: str, require_live_gdc: bool = False) -> None:
     logger = get_logger("canceromicslake")
     ensure_base_dirs()
     cfg = load_config(config_path)
+    if require_live_gdc:
+        cfg.tcga.require_live_gdc = True
 
-    tcga_records, source_mode, audit = query_tcga_metadata_with_audit(cfg)
+    try:
+        tcga_records, source_mode, audit = query_tcga_metadata_with_audit(cfg)
+    except LiveGdcRequiredError as exc:
+        audit_out = Path(cfg.gdc_api.audit_output_path)
+        audit_out.parent.mkdir(parents=True, exist_ok=True)
+        audit_out.write_text(json.dumps(exc.audit, indent=2), encoding="utf-8")
+        logger.error("Live GDC required run failed. Audit written: %s", audit_out)
+        raise
     if source_mode == "stub":
         logger.warning(
             "Using stub TCGA metadata source. Live GDC API query may be unavailable in this environment."
@@ -102,6 +111,7 @@ def main() -> None:
 
     parser_metadata = subparsers.add_parser("run-metadata")
     parser_metadata.add_argument("--config", required=True)
+    parser_metadata.add_argument("--require-live-gdc", action="store_true")
 
     parser_silver = subparsers.add_parser("run-silver")
     parser_silver.add_argument("--config", required=True)
@@ -117,7 +127,7 @@ def main() -> None:
         print("Config validation passed.")
         return
     if args.command == "run-metadata":
-        run_metadata_mode(args.config)
+        run_metadata_mode(args.config, require_live_gdc=args.require_live_gdc)
         print("Metadata-only pipeline run completed.")
         return
     if args.command == "run-silver":

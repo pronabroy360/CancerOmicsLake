@@ -1,9 +1,11 @@
-PYTHON ?= python3
-PIP ?= pip3
+VENV ?= .venv
+PYTHON ?= $(VENV)/bin/python
+PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-silver run-gold run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-silver run-gold run-api run-dashboard validate-config
 
 setup:
+	python3 -m venv $(VENV)
 	$(PIP) install -r requirements.txt
 
 test:
@@ -14,6 +16,9 @@ validate-config:
 
 run-metadata:
 	$(PYTHON) -m src.main run-metadata --config configs/project_config.yml
+
+run-metadata-strict:
+	$(PYTHON) -m src.main run-metadata --config configs/project_config.yml --require-live-gdc
 
 run-silver:
 	$(PYTHON) -m src.main run-silver --config configs/project_config.yml

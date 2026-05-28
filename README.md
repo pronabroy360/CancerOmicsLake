@@ -23,6 +23,7 @@ Implemented so far:
 make setup
 make test
 make run-metadata
+make run-metadata-strict
 make run-silver
 make run-gold
 ```

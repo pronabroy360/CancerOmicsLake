@@ -38,6 +38,12 @@ class GdcProjectQueryError(RuntimeError):
         self.attempts = attempts
 
 
+class LiveGdcRequiredError(RuntimeError):
+    def __init__(self, message: str, audit: dict[str, Any]) -> None:
+        super().__init__(message)
+        self.audit = audit
+
+
 def query_tcga_metadata_stub(config: AppConfig) -> list[GdcFileRecord]:
     records: list[GdcFileRecord] = []
     for project in config.tcga.projects:
@@ -291,8 +297,19 @@ def query_tcga_metadata_with_audit(
             }
         )
         if config.tcga.require_live_gdc:
-            raise RuntimeError(
-                "Live GDC metadata is required (require_live_gdc=true), but the live query failed."
+            ended_at = datetime.now(UTC).isoformat()
+            audit = {
+                "started_at": started_at,
+                "ended_at": ended_at,
+                "source_mode": "failed_live_required",
+                "requested_projects": config.tcga.projects,
+                "total_records": 0,
+                "fallback_reason": str(exc),
+                "project_audits": project_audits,
+            }
+            raise LiveGdcRequiredError(
+                "Live GDC metadata is required (require_live_gdc=true), but the live query failed.",
+                audit=audit,
             ) from exc
         if config.tcga.use_stub_on_error:
             stub_records = query_tcga_metadata_stub(config)
