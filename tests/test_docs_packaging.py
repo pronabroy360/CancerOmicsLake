@@ -22,6 +22,7 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "open-access-only" in readme
     assert "make run-demo-check" in readme
     assert "make run-ingestion-traceability" in readme
+    assert "Manual Ingestion" in readme
 
 
 def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
@@ -35,6 +36,7 @@ def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
     assert "ingestion_traceability_report.json" in reproducibility
     assert "scheduled" in reproducibility
     assert "make run-graph-export" in reproducibility
+    assert "manual_ingestion.yml" in reproducibility
 
 
 def test_sample_queries_cover_core_marts() -> None:

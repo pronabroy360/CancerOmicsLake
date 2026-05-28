@@ -290,3 +290,10 @@ Impact values:
 - Added `--force-download` support to orchestration flow and wired medium/aggressive flow/demo targets to avoid silent metadata-only skip behavior.
 - Added `--data-subdirs` support to orchestration flow and scoped medium/aggressive flow/demo targets to `expression,mutations` for stronger run stability.
 - Updated README and reproducibility docs for the aggressive completion path.
+
+## 2026-05-28 - Manual Workflow Dispatch Automation
+
+- Added `.github/workflows/manual_ingestion.yml` for one-click manual ingestion runs in GitHub Actions.
+- Added profile input (`medium`/`aggressive`) with optional strict no-stub and strict metadata toggles.
+- Configured manual workflow to run tests, metadata, selected demo profile, optional strict verifier, and artifact uploads.
+- Added workflow contract test coverage and docs updates for the manual dispatch path.

@@ -1,0 +1,98 @@
+name: CancerOmicsLake Manual Ingestion
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Ingestion profile to run"
+        required: true
+        default: "aggressive"
+        type: choice
+        options:
+          - medium
+          - aggressive
+      strict_no_stub:
+        description: "Run strict no-stub demo check after the selected profile"
+        required: true
+        default: false
+        type: boolean
+      run_metadata_strict:
+        description: "Require live GDC metadata (fail if live query is unavailable)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  manual-ingestion:
+    runs-on: ubuntu-latest
+    env:
+      RUN_MODE: manual
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Setup Environment
+        run: make setup
+
+      - name: Unit Tests
+        run: make test
+
+      - name: Metadata Pipeline
+        if: inputs.run_metadata_strict == false
+        run: make run-metadata
+
+      - name: Metadata Pipeline (Strict Live)
+        if: inputs.run_metadata_strict == true
+        run: make run-metadata-strict
+
+      - name: Run Selected Ingestion Profile
+        run: |
+          set -euo pipefail
+          case "${{ inputs.profile }}" in
+            aggressive)
+              make run-demo-aggressive
+              ;;
+            medium)
+              make run-demo
+              ;;
+            *)
+              echo "Unsupported profile: ${{ inputs.profile }}"
+              exit 1
+              ;;
+          esac
+
+      - name: Strict No-Stub Demo Check
+        if: inputs.strict_no_stub == true
+        run: make run-demo-check-strict
+
+      - name: Upload Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-reports-${{ inputs.profile }}
+          path: outputs/reports/*.json
+          if-no-files-found: warn
+
+      - name: Upload Graph Exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-graph-exports-${{ inputs.profile }}
+          path: |
+            outputs/graph_exports/neo4j/nodes.csv
+            outputs/graph_exports/neo4j/edges.csv
+            outputs/graph_exports/neo4j/import_bulk.cypher
+            outputs/graph_exports/neo4j/bulk/**
+            outputs/graph_exports/graphify/nodes.csv
+            outputs/graph_exports/graphify/edges.csv
+          if-no-files-found: warn

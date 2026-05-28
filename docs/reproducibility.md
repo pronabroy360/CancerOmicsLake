@@ -79,10 +79,28 @@ make run-demo-check-strict
 
 - CI runs on push and pull request.
 - Daily scheduled automation runs from `.github/workflows/ci.yml`.
+- Manual high-throughput runs are available through `.github/workflows/manual_ingestion.yml`.
 - Python `3.11` is the source-of-truth runtime for dbt in CI.
 - Local Python `3.14` remains acceptable for non-dbt pipeline commands.
 - CI executes `make test`, metadata/silver/gold/quality stages, `dbt run`, `dbt test`, `make run-graph-export`, and `make run-demo-check`.
 - CI uploads operational artifacts so run state is reviewable without committing generated outputs.
+
+## Manual GitHub Ingestion Workflow
+
+Workflow: `CancerOmicsLake Manual Ingestion`
+
+Inputs:
+
+- `profile`: `medium` or `aggressive`
+- `strict_no_stub`: run strict no-stub verifier after the selected profile
+- `run_metadata_strict`: require live GDC metadata query
+
+Behavior:
+
+- runs tests and metadata stage first
+- executes `make run-demo` (medium) or `make run-demo-aggressive` (aggressive)
+- optionally executes `make run-demo-check-strict`
+- uploads reports and graph exports as artifacts
 
 ## Run Metadata
 

@@ -118,6 +118,7 @@ make run-demo-check-strict
 - GitHub Actions runs on push/pull request and once daily through the scheduled workflow.
 - CI uploads run reports, ingestion audit output, download summaries, pipeline metadata, and graph export bundles as artifacts.
 - CI now runs `make run-graph-export` and `make run-demo-check` as a reviewer-readiness gate.
+- Manual ingestion workflow is available in GitHub Actions (`CancerOmicsLake Manual Ingestion`) with profile selection (`medium`/`aggressive`) and optional strict no-stub validation.
 
 ## Example Questions
 
