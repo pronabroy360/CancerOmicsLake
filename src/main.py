@@ -10,6 +10,8 @@ from src.common.config import load_config
 from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
 from src.analytics.build_gold_tables import build_gold_cohort_summary
+from src.graph.build_edges import build_graph_edges_table
+from src.graph.build_nodes import build_graph_nodes_table
 from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.gtex_downloader import gtex_metadata_stub
@@ -165,6 +167,8 @@ def main() -> None:
     if args.command == "run-gold":
         load_config(args.config)
         summary = build_gold_cohort_summary()
+        node_summary = build_graph_nodes_table()
+        edge_summary = build_graph_edges_table()
         logger = get_logger("canceromicslake")
         logger.info("Gold cohort summary written to %s", summary["gold_cohort_summary_path"])
         logger.info(
@@ -177,6 +181,7 @@ def main() -> None:
             summary["mutation_record_count"],
             summary["mutation_gene_rows"],
         )
+        logger.info("Graph tables: nodes=%s (%s) edges=%s (%s)", node_summary["count"], node_summary["path"], edge_summary["count"], edge_summary["path"])
         print("Gold table build completed.")
         return
     if args.command == "run-quality":

@@ -6,8 +6,8 @@ from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene_stub
 from src.analytics.mutation_frequency import mutation_frequency_by_cancer, mutation_frequency_by_gene
 from src.analytics.tumor_vs_normal import tumor_vs_normal_stub
-from src.graph.build_edges import build_graph_edges_stub
-from src.graph.build_nodes import build_graph_nodes_stub
+from src.graph.build_edges import load_graph_edges
+from src.graph.build_nodes import load_graph_nodes
 
 app = FastAPI(title="CancerOmicsLake API", version="0.1.0")
 
@@ -64,12 +64,12 @@ def mutations_cancer(project_id: str) -> dict[str, object]:
 
 @app.get("/graph/nodes")
 def graph_nodes() -> dict[str, object]:
-    return {"nodes": build_graph_nodes_stub()}
+    return {"nodes": load_graph_nodes()}
 
 
 @app.get("/graph/edges")
 def graph_edges() -> dict[str, object]:
-    return {"edges": build_graph_edges_stub()}
+    return {"edges": load_graph_edges()}
 
 
 @app.get("/quality/latest")

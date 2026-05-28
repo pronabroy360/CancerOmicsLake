@@ -181,9 +181,11 @@ Impact values:
   - Extended gold build to generate `gold_mutation_frequency_by_gene.parquet` and `gold_mutation_frequency_by_cancer.parquet`
   - Updated mutation API endpoints to read from gold marts with safe stub fallback when gold files are missing
   - Added mutation-focused test coverage for loader, gold marts, API service helpers, and silver contract checks (`20 passed`)
+  - Replaced stub-only graph responses with real graph table builders from silver/gold (`gold_graph_nodes.parquet`, `gold_graph_edges.parquet`) executed during `run-gold`
+  - Added graph table tests and fallback behavior checks for API graph endpoints (`22 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks with file-checksum verification and sample-to-patient mapping integrity
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion
-  - Implement graph node/edge builders from gold mutation/expression marts (remove stub-only graph exports)
+  - Add graph export commands for Neo4j/Graphify CSV bundles from `gold_graph_nodes`/`gold_graph_edges`
