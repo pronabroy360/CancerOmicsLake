@@ -212,6 +212,12 @@ Impact values:
   - Added workflow/column-aware TCGA expression unit inference (`TPM`/`FPKM`/`COUNT`) in expression loader path
   - Added silver quality unit-support contracts for TCGA and GTEx expression tables, increasing silver checks to 16
   - Added regression tests for count-unit inference and invalid-unit detection (`51 passed`)
+  - Added safe live-smoke TCGA downloader controls: `--max-downloads` and `--data-subdirs` (`run-download-tcga-force-smoke`)
+  - Executed strict live metadata fetch and capped live file smoke download (`3/3` successful) with open-access BRCA expression files
+  - Extended TCGA expression parser to support real GDC single-sample STAR/miRNA formats by deriving sample metadata from manifest `file_name`
+  - Fixed silver-build path isolation so tests don’t accidentally read global bronze expression folders
+  - Added partial-download-aware integrity semantics: file presence/checksum checks become `warning` (not hard failure) under capped smoke mode
+  - Added test coverage for downloader limits/subdir filters, real-format parser behavior, and partial-mode quality warnings (`54 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks

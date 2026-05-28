@@ -170,3 +170,91 @@ def test_download_tcga_files_fails_on_checksum_mismatch(tmp_path: Path, monkeypa
     assert summary["failed_count"] == 1
     assert summary["checksum_mismatch_count"] == 1
     assert not (tmp_path / "bronze" / "tcga" / "TCGA-LUAD" / "expression" / "bad.tsv").exists()
+
+
+def test_download_tcga_files_respects_max_downloads_and_subdir_filters(tmp_path: Path, monkeypatch) -> None:
+    cfg = load_config("configs/project_config.yml")
+    cfg.tcga.metadata_only = False
+    cfg.gdc_api.retry_count = 0
+    metadata = tmp_path / "tcga_metadata_live.csv"
+
+    payload = b"ok"
+    md5 = "444bcb3a3fcf8389296c49467f27e1d6"
+    _write_metadata_csv(
+        metadata,
+        [
+            {
+                "project_id": "TCGA-BRCA",
+                "case_id": "case-1",
+                "submitter_id": "sub-1",
+                "sample_id": "sample-1",
+                "sample_type": "Primary Tumor",
+                "primary_site": "Breast",
+                "disease_type": "Adeno",
+                "file_id": "expr-1",
+                "file_name": "expr1.tsv",
+                "data_category": "Transcriptome Profiling",
+                "data_type": "Gene Expression Quantification",
+                "experimental_strategy": "RNA-Seq",
+                "workflow_type": "STAR",
+                "access": "open",
+                "file_size": str(len(payload)),
+                "md5sum": md5,
+            },
+            {
+                "project_id": "TCGA-BRCA",
+                "case_id": "case-1",
+                "submitter_id": "sub-1",
+                "sample_id": "sample-1",
+                "sample_type": "Primary Tumor",
+                "primary_site": "Breast",
+                "disease_type": "Adeno",
+                "file_id": "expr-2",
+                "file_name": "expr2.tsv",
+                "data_category": "Transcriptome Profiling",
+                "data_type": "Gene Expression Quantification",
+                "experimental_strategy": "RNA-Seq",
+                "workflow_type": "STAR",
+                "access": "open",
+                "file_size": str(len(payload)),
+                "md5sum": md5,
+            },
+            {
+                "project_id": "TCGA-BRCA",
+                "case_id": "case-1",
+                "submitter_id": "sub-1",
+                "sample_id": "sample-1",
+                "sample_type": "Primary Tumor",
+                "primary_site": "Breast",
+                "disease_type": "Adeno",
+                "file_id": "clin-1",
+                "file_name": "clin.tsv",
+                "data_category": "Clinical",
+                "data_type": "Clinical Supplement",
+                "experimental_strategy": "RNA-Seq",
+                "workflow_type": "N/A",
+                "access": "open",
+                "file_size": str(len(payload)),
+                "md5sum": md5,
+            },
+        ],
+    )
+
+    def fake_fetch(url: str, destination: Path, timeout_sec: int) -> None:  # noqa: ARG001
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(payload)
+
+    monkeypatch.setattr(tcga_downloader, "_fetch_to_path", fake_fetch)
+    summary = tcga_downloader.download_tcga_files(
+        config=cfg,
+        metadata_csv_path=metadata,
+        bronze_tcga_root=tmp_path / "bronze" / "tcga",
+        report_path=tmp_path / "report.json",
+        retry_log_path=tmp_path / "retry.json",
+        max_downloads=1,
+        allowed_data_subdirs={"expression"},
+    )
+    assert summary["total_candidates"] == 2
+    assert summary["attempted_downloads"] == 1
+    assert summary["downloaded_count"] == 1
+    assert not (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "clinical" / "clin.tsv").exists()

@@ -30,6 +30,9 @@ run-silver:
 run-download-tcga:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml
 
+run-download-tcga-force-smoke:
+	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --max-downloads 3 --data-subdirs expression,mutations
+
 run-gold:
 	$(PYTHON) -m src.main run-gold --config configs/project_config.yml
 

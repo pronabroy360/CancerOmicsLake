@@ -234,3 +234,64 @@ def test_run_silver_quality_checks_download_integrity_detects_missing_and_md5_mi
     assert by_name["bronze_tcga_download_file_presence"].failed_rows == 1
     assert by_name["bronze_tcga_download_checksum_match"].status == "failed"
     assert by_name["bronze_tcga_download_checksum_match"].failed_rows == 1
+
+
+def test_run_silver_quality_checks_download_integrity_warns_in_partial_mode(tmp_path: Path) -> None:
+    silver = tmp_path / "silver"
+    bronze_tcga = tmp_path / "bronze" / "tcga"
+    outputs = tmp_path / "outputs" / "reports"
+    silver.mkdir(parents=True, exist_ok=True)
+    bronze_tcga.mkdir(parents=True, exist_ok=True)
+    outputs.mkdir(parents=True, exist_ok=True)
+
+    pl.DataFrame(
+        {"project_id": ["TCGA-BRCA"], "primary_site": ["Breast"], "disease_type": ["Adeno"]}
+    ).write_parquet(silver / "silver_projects.parquet")
+    pl.DataFrame(
+        {"project_id": ["TCGA-BRCA"], "case_id": ["c1"], "submitter_id": ["sub-1"]}
+    ).write_parquet(silver / "silver_patients.parquet")
+    pl.DataFrame(
+        {"project_id": ["TCGA-BRCA"], "case_id": ["c1"], "sample_id": ["s1"], "sample_type": ["Primary Tumor"]}
+    ).write_parquet(silver / "silver_samples.parquet")
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA"],
+            "case_id": ["c1"],
+            "sample_id": ["s1"],
+            "file_id": ["f1"],
+            "file_name": ["missing.tsv"],
+            "data_category": ["Transcriptome Profiling"],
+            "data_type": ["Gene Expression Quantification"],
+            "experimental_strategy": ["RNA-Seq"],
+            "workflow_type": ["STAR"],
+            "access": ["open"],
+            "file_size": [10],
+            "md5sum": ["abc"],
+            "ingested_at": ["x"],
+        }
+    ).write_parquet(silver / "silver_file_manifest.parquet")
+    pl.DataFrame(schema={"gtex_sample_id": pl.Utf8, "tissue_site": pl.Utf8, "tissue_detail": pl.Utf8, "gene_id": pl.Utf8, "gene_symbol": pl.Utf8, "expression_value": pl.Float64, "expression_unit": pl.Utf8, "log2_expression": pl.Float64, "source_version": pl.Utf8, "data_origin": pl.Utf8, "ingested_at": pl.Utf8}).write_parquet(silver / "silver_expression_gtex.parquet")
+    pl.DataFrame(schema={"project_id": pl.Utf8, "case_id": pl.Utf8, "sample_id": pl.Utf8, "sample_type": pl.Utf8, "gene_id": pl.Utf8, "gene_symbol": pl.Utf8, "expression_value": pl.Float64, "expression_unit": pl.Utf8, "log2_expression": pl.Float64, "pipeline_workflow": pl.Utf8, "data_origin": pl.Utf8, "ingested_at": pl.Utf8}).write_parquet(silver / "silver_expression_tcga.parquet")
+    pl.DataFrame(schema={"project_id": pl.Utf8, "case_id": pl.Utf8, "sample_id": pl.Utf8, "gene_id": pl.Utf8, "gene_symbol": pl.Utf8, "variant_classification": pl.Utf8, "variant_type": pl.Utf8, "chromosome": pl.Utf8, "start_position": pl.Int64, "end_position": pl.Int64, "reference_allele": pl.Utf8, "tumor_seq_allele": pl.Utf8, "data_origin": pl.Utf8, "ingested_at": pl.Utf8}).write_parquet(silver / "silver_mutations.parquet")
+
+    report = outputs / "tcga_download_report.json"
+    report.write_text(
+        json.dumps(
+            {
+                "pipeline_run_id": "x",
+                "status": "completed_with_failures",
+                "total_candidates": 100,
+                "attempted_downloads": 3,
+                "max_downloads": 3,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    results = run_silver_quality_checks(
+        silver_dir=silver,
+        bronze_tcga_root=bronze_tcga,
+        download_report_path=report,
+    )
+    by_name = {r.check_name: r for r in results}
+    assert by_name["bronze_tcga_download_file_presence"].status == "warning"

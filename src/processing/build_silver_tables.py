@@ -28,10 +28,13 @@ def build_silver_tables_from_bronze(
     config: AppConfig | None = None,
     bronze_metadata_dir: str | Path = "data/bronze/tcga/metadata",
     silver_dir: str | Path = "data/silver",
+    tcga_expression_dir: str | Path | None = None,
+    gtex_expression_dir: str | Path = "data/bronze/gtex/expression",
 ) -> dict[str, object]:
     source_path = _latest_tcga_metadata_csv(bronze_metadata_dir)
     silver_root = Path(silver_dir)
     ingest_time = datetime.now(UTC).isoformat()
+    tcga_expr_root = Path(tcga_expression_dir) if tcga_expression_dir is not None else Path(bronze_metadata_dir).parent
 
     raw = pl.read_csv(source_path)
     if raw.is_empty():
@@ -79,8 +82,17 @@ def build_silver_tables_from_bronze(
         ]
     ).with_columns(pl.lit(ingest_time).alias("ingested_at"))
 
-    expression_tcga = load_tcga_expression_table(config=config, ingest_time=ingest_time, metadata_df=raw)
-    expression_gtex = load_gtex_expression_table(config=config, ingest_time=ingest_time)
+    expression_tcga = load_tcga_expression_table(
+        config=config,
+        ingest_time=ingest_time,
+        metadata_df=raw,
+        tcga_expression_dir=tcga_expr_root,
+    )
+    expression_gtex = load_gtex_expression_table(
+        config=config,
+        ingest_time=ingest_time,
+        gtex_expression_dir=gtex_expression_dir,
+    )
     mutations_tcga = load_tcga_mutation_table(config=config, ingest_time=ingest_time, metadata_df=raw)
 
     out_projects = _write_parquet(projects, silver_root / "silver_projects.parquet")

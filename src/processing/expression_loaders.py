@@ -16,7 +16,13 @@ def _to_log2(value: float) -> float:
 
 def _safe_read_table(path: Path) -> pl.DataFrame:
     if path.suffix.lower() in {".tsv", ".txt"}:
-        return pl.read_csv(path, separator="\t")
+        return pl.read_csv(
+            path,
+            separator="\t",
+            comment_prefix="#",
+            truncate_ragged_lines=True,
+            ignore_errors=True,
+        )
     return pl.read_csv(path)
 
 
@@ -92,25 +98,65 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
         return _empty_tcga_expression_df().head(0)
 
     sample_col = _resolve_column(raw, ["sample_id", "sample", "sampleid"])
-    gene_id_col = _resolve_column(raw, ["gene_id", "gene", "ensembl_gene_id"])
-    gene_symbol_col = _resolve_column(raw, ["gene_symbol", "symbol", "hgnc_symbol"])
-    expr_col = _resolve_column(raw, ["expression_value", "tpm", "fpkm", "value", "count"])
+    gene_id_col = _resolve_column(raw, ["gene_id", "gene", "ensembl_gene_id", "miRNA_ID", "mirna_id"])
+    gene_symbol_col = _resolve_column(raw, ["gene_symbol", "symbol", "hgnc_symbol", "gene_name"])
+    expr_col = _resolve_column(
+        raw,
+        [
+            "expression_value",
+            "tpm_unstranded",
+            "tpm",
+            "fpkm_unstranded",
+            "fpkm_uq_unstranded",
+            "fpkm",
+            "reads_per_million_miRNA_mapped",
+            "read_count",
+            "count",
+            "unstranded",
+            "value",
+        ],
+    )
 
-    if sample_col is None or gene_id_col is None or expr_col is None:
+    if gene_id_col is None or expr_col is None:
         return _empty_tcga_expression_df().head(0)
 
-    base = raw.select(
-        [
-            pl.col(sample_col).cast(pl.Utf8).alias("sample_id"),
-            pl.col(gene_id_col).cast(pl.Utf8).alias("gene_id_raw"),
-            (
-                pl.col(gene_symbol_col).cast(pl.Utf8)
-                if gene_symbol_col is not None
-                else pl.lit("Unknown", dtype=pl.Utf8)
-            ).alias("gene_symbol"),
-            pl.col(expr_col).cast(pl.Float64, strict=False).fill_null(0.0).alias("expression_value"),
-        ]
-    )
+    if sample_col is not None:
+        base = raw.select(
+            [
+                pl.col(sample_col).cast(pl.Utf8).alias("sample_id"),
+                pl.col(gene_id_col).cast(pl.Utf8).alias("gene_id_raw"),
+                (
+                    pl.col(gene_symbol_col).cast(pl.Utf8)
+                    if gene_symbol_col is not None
+                    else pl.col(gene_id_col).cast(pl.Utf8)
+                ).alias("gene_symbol"),
+                pl.col(expr_col).cast(pl.Float64, strict=False).fill_null(0.0).alias("expression_value"),
+            ]
+        )
+    else:
+        file_name = path.name
+        metadata_for_file = (
+            metadata_df.filter(pl.col("file_name").cast(pl.Utf8) == file_name).head(1)
+            if "file_name" in metadata_df.columns
+            else pl.DataFrame()
+        )
+        sample_id_for_file = (
+            str(metadata_for_file["sample_id"][0])
+            if not metadata_for_file.is_empty() and "sample_id" in metadata_for_file.columns
+            else "Unknown"
+        )
+        base = raw.select(
+            [
+                pl.lit(sample_id_for_file).alias("sample_id"),
+                pl.col(gene_id_col).cast(pl.Utf8).alias("gene_id_raw"),
+                (
+                    pl.col(gene_symbol_col).cast(pl.Utf8)
+                    if gene_symbol_col is not None
+                    else pl.col(gene_id_col).cast(pl.Utf8)
+                ).alias("gene_symbol"),
+                pl.col(expr_col).cast(pl.Float64, strict=False).fill_null(0.0).alias("expression_value"),
+            ]
+        )
 
     if "sample_id" in metadata_df.columns:
         meta = metadata_df.select(
@@ -133,6 +179,7 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
             ]
         )
 
+    base = base.filter(pl.col("gene_id_raw").is_not_null() & (pl.col("gene_id_raw").cast(pl.Utf8) != ""))
     gene_id_series = _normalize_gene_id_series(base.get_column("gene_id_raw")).alias("gene_id")
     base = base.with_columns(gene_id_series)
     expr_unit = _infer_tcga_expression_unit(

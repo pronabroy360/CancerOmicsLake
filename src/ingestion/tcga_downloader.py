@@ -87,6 +87,8 @@ def download_tcga_files(
     report_path: str | Path = "outputs/reports/tcga_download_report.json",
     retry_log_path: str | Path = "outputs/reports/tcga_download_retry_log.json",
     force_download: bool = False,
+    max_downloads: int | None = None,
+    allowed_data_subdirs: set[str] | None = None,
 ) -> dict[str, Any]:
     run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     if config.tcga.metadata_only and not force_download:
@@ -123,6 +125,11 @@ def download_tcga_files(
         and bool(row.get("file_id"))
         and bool(row.get("file_name"))
     ]
+    if allowed_data_subdirs:
+        normalized_allowed = {x.strip().lower() for x in allowed_data_subdirs if x.strip()}
+        candidate_rows = [
+            row for row in candidate_rows if _infer_data_subdir(row.get("data_category", "")) in normalized_allowed
+        ]
 
     downloaded_count = 0
     skipped_existing_count = 0
@@ -134,6 +141,8 @@ def download_tcga_files(
 
     root = Path(bronze_tcga_root)
     for row in candidate_rows:
+        if max_downloads is not None and attempted_downloads >= max_downloads:
+            break
         project_id = row["project_id"]
         file_id = row["file_id"]
         file_name = row["file_name"]
@@ -205,6 +214,8 @@ def download_tcga_files(
         "status": status,
         "source_metadata_file": str(source_path),
         "total_candidates": len(candidate_rows),
+        "max_downloads": max_downloads,
+        "allowed_data_subdirs": sorted(list(allowed_data_subdirs)) if allowed_data_subdirs else [],
         "attempted_downloads": attempted_downloads,
         "downloaded_count": downloaded_count,
         "skipped_existing_count": skipped_existing_count,

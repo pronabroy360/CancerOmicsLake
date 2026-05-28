@@ -139,19 +139,24 @@ def _download_integrity_counts(
     manifest: pl.DataFrame,
     bronze_tcga_root: Path,
     download_report_path: Path,
-) -> tuple[int, int, bool]:
-    # Return (missing_file_count, checksum_mismatch_count, applicable)
+) -> tuple[int, int, bool, bool]:
+    # Return (missing_file_count, checksum_mismatch_count, applicable, partial_mode)
     if not download_report_path.exists():
-        return 0, 0, False
+        return 0, 0, False, False
 
     payload = json.loads(download_report_path.read_text(encoding="utf-8"))
     status = str(payload.get("status", ""))
     if status == "skipped_metadata_only":
-        return 0, 0, False
+        return 0, 0, False, False
 
     required_cols = {"project_id", "file_name", "data_category", "access", "md5sum"}
     if manifest.is_empty() or not required_cols.issubset(set(manifest.columns)):
-        return 0, 0, False
+        return 0, 0, False, False
+
+    max_downloads = payload.get("max_downloads")
+    total_candidates = int(payload.get("total_candidates", 0) or 0)
+    attempted_downloads = int(payload.get("attempted_downloads", 0) or 0)
+    partial_mode = bool(max_downloads is not None and attempted_downloads < total_candidates)
 
     missing = 0
     checksum_mismatch = 0
@@ -176,7 +181,7 @@ def _download_integrity_counts(
             if observed != md5sum:
                 checksum_mismatch += 1
 
-    return missing, checksum_mismatch, True
+    return missing, checksum_mismatch, True, partial_mode
 
 
 def run_silver_quality_checks(
@@ -305,7 +310,7 @@ def run_silver_quality_checks(
     invalid_mut_end = _count_invalid_int(mutations, "end_position")
     invalid_tcga_units = _count_invalid_expression_unit(expr_tcga, "expression_unit", {"TPM", "FPKM", "COUNT"})
     invalid_gtex_units = _count_invalid_expression_unit(expr_gtex, "expression_unit", {"TPM"})
-    missing_downloaded_files, checksum_mismatches, download_check_applicable = _download_integrity_counts(
+    missing_downloaded_files, checksum_mismatches, download_check_applicable, download_partial_mode = _download_integrity_counts(
         manifest=manifest,
         bronze_tcga_root=Path(bronze_tcga_root),
         download_report_path=Path(download_report_path),
@@ -384,12 +389,20 @@ def run_silver_quality_checks(
         ),
         CheckResult(
             check_name="bronze_tcga_download_file_presence",
-            status="passed" if (not download_check_applicable or missing_downloaded_files == 0) else "failed",
+            status=(
+                "passed"
+                if (not download_check_applicable or missing_downloaded_files == 0)
+                else ("warning" if download_partial_mode else "failed")
+            ),
             failed_rows=int(missing_downloaded_files),
         ),
         CheckResult(
             check_name="bronze_tcga_download_checksum_match",
-            status="passed" if (not download_check_applicable or checksum_mismatches == 0) else "failed",
+            status=(
+                "passed"
+                if (not download_check_applicable or checksum_mismatches == 0)
+                else ("warning" if download_partial_mode else "failed")
+            ),
             failed_rows=int(checksum_mismatches),
         ),
     ]

@@ -132,6 +132,8 @@ def main() -> None:
     parser_download = subparsers.add_parser("run-download-tcga")
     parser_download.add_argument("--config", required=True)
     parser_download.add_argument("--force-download", action="store_true")
+    parser_download.add_argument("--max-downloads", type=int, default=None)
+    parser_download.add_argument("--data-subdirs", default=None, help="comma-separated: expression,mutations,clinical,biospecimen,other")
 
     parser_gold = subparsers.add_parser("run-gold")
     parser_gold.add_argument("--config", required=True)
@@ -180,12 +182,21 @@ def main() -> None:
         return
     if args.command == "run-download-tcga":
         cfg = load_config(args.config)
-        summary = download_tcga_files(cfg, force_download=args.force_download)
+        subdirs = None
+        if args.data_subdirs:
+            subdirs = {x.strip().lower() for x in args.data_subdirs.split(",") if x.strip()}
+        summary = download_tcga_files(
+            cfg,
+            force_download=args.force_download,
+            max_downloads=args.max_downloads,
+            allowed_data_subdirs=subdirs,
+        )
         logger = get_logger("canceromicslake")
         logger.info(
-            "TCGA download status=%s candidates=%s downloaded=%s skipped=%s failed=%s",
+            "TCGA download status=%s candidates=%s attempted=%s downloaded=%s skipped=%s failed=%s",
             summary["status"],
             summary["total_candidates"],
+            summary["attempted_downloads"],
             summary["downloaded_count"],
             summary["skipped_existing_count"],
             summary["failed_count"],
