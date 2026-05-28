@@ -193,6 +193,9 @@ Impact values:
   - Added expression summary tests for silver-backed reads and fallback behavior (`28 passed`)
   - Replaced metadata API stubs (`/metadata/projects`, `/metadata/samples`) with silver-backed query logic
   - Added metadata analytics tests for project/sample rollups and missing-file fallback (`31 passed`)
+  - Implemented dbt scaffolding with bronze staging views, silver cleaned models, gold marts, and dbt schema tests for mutation/tumor-vs-normal/graph outputs
+  - Added `make run-dbt` and `make test-dbt` targets plus `dbt/profiles.yml` for local DuckDB execution
+  - Added dbt dependencies (`dbt-core`, `dbt-duckdb`) to `requirements.txt` (note: local Python 3.14 environment cannot execute dbt runtime; CI Python 3.11 remains the target runtime)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks with file-checksum verification against download manifests

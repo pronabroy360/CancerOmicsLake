@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: gold_cohort_summary
+    columns:
+      - name: tcga_project_count
+        tests:
+          - not_null
+      - name: tcga_sample_count
+        tests:
+          - not_null
+
+  - name: gold_mutation_frequency_by_gene
+    columns:
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: cancer_type
+        tests:
+          - not_null
+      - name: mutation_frequency
+        tests:
+          - not_null
+
+  - name: gold_mutation_frequency_by_cancer
+    columns:
+      - name: cancer_type
+        tests:
+          - not_null
+          - unique
+
+  - name: gold_tumor_vs_normal_expression
+    columns:
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: cancer_type
+        tests:
+          - not_null
+      - name: sample_count_tumor
+        tests:
+          - not_null
+      - name: sample_count_normal
+        tests:
+          - not_null
+
+  - name: gold_graph_nodes
+    columns:
+      - name: node_id
+        tests:
+          - not_null
+      - name: node_label
+        tests:
+          - not_null
+
+  - name: gold_graph_edges
+    columns:
+      - name: edge_id
+        tests:
+          - not_null
+      - name: source_node_id
+        tests:
+          - not_null
+      - name: target_node_id
+        tests:
+          - not_null
+      - name: edge_type
+        tests:
+          - not_null

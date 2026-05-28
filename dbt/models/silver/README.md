@@ -1,14 +1,13 @@
 # Silver Models
 
-Silver models produce cleaned and standardized entities and facts:
+Silver models produce cleaned and standardized entities and facts from staging:
 
+- `silver_projects`
 - `silver_patients`
 - `silver_samples`
-- `silver_projects`
-- `silver_genes`
+- `silver_file_manifest`
 - `silver_expression_tcga`
 - `silver_expression_gtex`
 - `silver_mutations`
-- `silver_clinical`
-- `silver_file_manifest`
-- `silver_data_quality_events`
+
+Core contracts live in `dbt/models/silver/schema.yml`.

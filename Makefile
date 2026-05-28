@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-silver run-gold run-quality run-graph-export run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-silver run-gold run-quality run-graph-export run-dbt test-dbt run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -35,6 +35,12 @@ run-quality:
 
 run-graph-export:
 	$(PYTHON) -m src.main run-graph-export --config configs/project_config.yml
+
+run-dbt:
+	$(VENV)/bin/dbt run --project-dir dbt --profiles-dir dbt
+
+test-dbt:
+	$(VENV)/bin/dbt test --project-dir dbt --profiles-dir dbt
 
 run-api:
 	$(PYTHON) -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000

@@ -15,3 +15,6 @@ models:
       +materialized: table
     gold:
       +materialized: table
+
+vars:
+  silver_dir: "data/silver"

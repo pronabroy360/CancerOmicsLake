@@ -1,0 +1,7 @@
+canceromicslake:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../outputs/canceromicslake.duckdb
+      threads: 4

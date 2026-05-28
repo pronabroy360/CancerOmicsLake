@@ -1,0 +1,80 @@
+version: 2
+
+models:
+  - name: silver_projects
+    columns:
+      - name: project_id
+        tests:
+          - not_null
+          - unique
+
+  - name: silver_patients
+    columns:
+      - name: case_id
+        tests:
+          - not_null
+          - unique
+      - name: project_id
+        tests:
+          - not_null
+
+  - name: silver_samples
+    columns:
+      - name: sample_id
+        tests:
+          - not_null
+          - unique
+      - name: project_id
+        tests:
+          - not_null
+
+  - name: silver_file_manifest
+    columns:
+      - name: file_id
+        tests:
+          - not_null
+          - unique
+      - name: access
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["open"]
+
+  - name: silver_expression_tcga
+    columns:
+      - name: sample_id
+        tests:
+          - not_null
+      - name: gene_id
+        tests:
+          - not_null
+      - name: expression_value
+        tests:
+          - not_null
+
+  - name: silver_expression_gtex
+    columns:
+      - name: gtex_sample_id
+        tests:
+          - not_null
+      - name: gene_id
+        tests:
+          - not_null
+      - name: expression_value
+        tests:
+          - not_null
+
+  - name: silver_mutations
+    columns:
+      - name: sample_id
+        tests:
+          - not_null
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: start_position
+        tests:
+          - not_null
+      - name: end_position
+        tests:
+          - not_null
