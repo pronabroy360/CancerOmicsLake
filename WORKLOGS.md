@@ -173,9 +173,11 @@ Impact values:
   - Added `run-metadata --require-live-gdc` and `make run-metadata-strict` for operational fail-fast runs
   - Added `run-quality` and silver contract checks with JSON report output
   - Implemented file-based TCGA and GTEx expression loaders with schema-safe fallback
+  - Added manifest-aware TCGA expression discovery (expression files are now selected via metadata `data_category` + `data_type` + `file_name`, with safe fallback scan behavior)
+  - Added regression test coverage for manifest-vs-non-expression file filtering in TCGA expression ingestion (`17 passed`)
   - Expanded quality checks to include TCGA expression null/non-negative checks
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks for mutation and future TCGA expression tables when parsers land
-  - Add manifest-driven TCGA expression file discovery and parser normalization presets per workflow
+  - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion

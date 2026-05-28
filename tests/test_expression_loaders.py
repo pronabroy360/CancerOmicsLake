@@ -68,3 +68,50 @@ def test_load_gtex_expression_table_prefers_file_and_falls_back_to_stub(tmp_path
     df_stub = load_gtex_expression_table(config=config, ingest_time=ingest_time, gtex_expression_dir=missing_dir)
     assert df_stub.height == len(config.gtex.tissues)
     assert set(df_stub["data_origin"].to_list()) == {"stub"}
+
+
+def test_load_tcga_expression_table_prefers_manifest_expression_files(tmp_path: Path) -> None:
+    config = load_config("configs/project_config.yml")
+    ingest_time = "2026-05-28T00:00:00Z"
+
+    tcga_root = tmp_path / "tcga"
+    expr_dir = tcga_root / "TCGA-BRCA" / "expression"
+    expr_dir.mkdir(parents=True, exist_ok=True)
+
+    expression_file = expr_dir / "expr_1.tsv"
+    expression_file.write_text(
+        "sample_id\tgene_id\tgene_symbol\texpression_value\n"
+        "TCGA-BRCA-SAMPLE-0001\tENSG00000141510.17\tTP53\t5.0\n",
+        encoding="utf-8",
+    )
+    clinical_like_file = expr_dir / "clinical_like.tsv"
+    clinical_like_file.write_text(
+        "sample_id\tgene_id\tgene_symbol\texpression_value\n"
+        "TCGA-BRCA-SAMPLE-0002\tENSG00000146648.18\tEGFR\t9.0\n",
+        encoding="utf-8",
+    )
+
+    metadata_df = pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA", "TCGA-BRCA"],
+            "case_id": ["TCGA-BRCA-CASE-0001", "TCGA-BRCA-CASE-0002"],
+            "sample_id": ["TCGA-BRCA-SAMPLE-0001", "TCGA-BRCA-SAMPLE-0002"],
+            "sample_type": ["Primary Tumor", "Primary Tumor"],
+            "workflow_type": ["STAR - Counts", "STAR - Counts"],
+            "file_name": ["expr_1.tsv", "clinical_like.tsv"],
+            "data_category": ["Transcriptome Profiling", "Clinical"],
+            "data_type": ["Gene Expression Quantification", "Clinical Supplement"],
+            "access": ["open", "open"],
+        }
+    )
+
+    df = load_tcga_expression_table(
+        config=config,
+        ingest_time=ingest_time,
+        metadata_df=metadata_df,
+        tcga_expression_dir=tcga_root,
+    )
+    assert df.height == 1
+    row = df.row(0, named=True)
+    assert row["sample_id"] == "TCGA-BRCA-SAMPLE-0001"
+    assert row["gene_symbol"] == "TP53"

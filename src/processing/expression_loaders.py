@@ -139,6 +139,55 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
     )
 
 
+def _metadata_has(df: pl.DataFrame, columns: list[str]) -> bool:
+    return all(col in df.columns for col in columns)
+
+
+def _resolve_tcga_expression_files_from_manifest(root: Path, metadata_df: pl.DataFrame) -> list[Path]:
+    required = ["file_name", "data_category", "data_type"]
+    if not _metadata_has(metadata_df, required):
+        return []
+
+    manifest = metadata_df.select(
+        [
+            pl.col("project_id") if "project_id" in metadata_df.columns else pl.lit(None).alias("project_id"),
+            pl.col("file_name").cast(pl.Utf8),
+            pl.col("data_category").cast(pl.Utf8),
+            pl.col("data_type").cast(pl.Utf8),
+            pl.col("access").cast(pl.Utf8) if "access" in metadata_df.columns else pl.lit("open").alias("access"),
+        ]
+    ).unique(subset=["project_id", "file_name", "data_category", "data_type", "access"])
+
+    expression_manifest = manifest.filter(
+        pl.col("data_category").str.to_lowercase().str.contains("transcriptome profiling")
+        & (
+            pl.col("data_type").str.to_lowercase().str.contains("gene expression")
+            | pl.col("data_type").str.to_lowercase().str.contains("isoform expression")
+        )
+        & (pl.col("access").str.to_lowercase() == "open")
+    )
+
+    if expression_manifest.is_empty():
+        return []
+
+    files: list[Path] = []
+    for row in expression_manifest.iter_rows(named=True):
+        file_name = str(row["file_name"])
+        project_id = row.get("project_id")
+        candidate_paths: list[Path] = []
+        if project_id:
+            candidate_paths.append(root / str(project_id) / "expression" / file_name)
+            candidate_paths.append(root / str(project_id) / file_name)
+        candidate_paths.append(root / "expression" / file_name)
+
+        resolved = next((p for p in candidate_paths if p.exists()), None)
+        if resolved is not None:
+            files.append(resolved)
+
+    unique_files = sorted(set(files))
+    return unique_files
+
+
 def load_tcga_expression_table(
     config: AppConfig | None,
     ingest_time: str,
@@ -153,7 +202,10 @@ def load_tcga_expression_table(
     if not root.exists():
         return empty
 
-    files = sorted(root.glob("**/expression/*.*"))
+    files = _resolve_tcga_expression_files_from_manifest(root=root, metadata_df=metadata_df)
+    if not files:
+        files = sorted(root.glob("**/expression/*.*"))
+
     frames: list[pl.DataFrame] = []
     for file_path in files:
         if file_path.suffix.lower() not in {".csv", ".tsv", ".txt"}:
@@ -282,4 +334,3 @@ def load_gtex_expression_table(
 
     combined = pl.concat(frames, how="vertical")
     return combined.with_columns(pl.lit(ingest_time).alias("ingested_at"))
-
