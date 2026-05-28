@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 
+from src.common.cap_profiles import resolve_cap_profile
 from src.common.config import load_config
 from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
@@ -147,6 +148,7 @@ def main() -> None:
     parser_download.add_argument("--expression-cap-per-project", type=int, default=None)
     parser_download.add_argument("--mutation-cap-per-project", type=int, default=None)
     parser_download.add_argument("--use-medium-cap-profile", action="store_true")
+    parser_download.add_argument("--use-aggressive-cap-profile", action="store_true")
 
     parser_gold = subparsers.add_parser("run-gold")
     parser_gold.add_argument("--config", required=True)
@@ -169,7 +171,10 @@ def main() -> None:
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
     parser_flow.add_argument("--require-live-gdc", action="store_true")
+    parser_flow.add_argument("--force-download", action="store_true")
+    parser_flow.add_argument("--data-subdirs", default=None, help="comma-separated: expression,mutations,clinical,biospecimen,other")
     parser_flow.add_argument("--use-medium-cap-profile", action="store_true")
+    parser_flow.add_argument("--use-aggressive-cap-profile", action="store_true")
     parser_flow.add_argument("--expression-cap-per-project", type=int, default=None)
     parser_flow.add_argument("--mutation-cap-per-project", type=int, default=None)
 
@@ -215,8 +220,9 @@ def main() -> None:
         cap_expression = args.expression_cap_per_project
         cap_mutation = args.mutation_cap_per_project
         if args.use_medium_cap_profile:
-            cap_expression = 25
-            cap_mutation = 10
+            cap_expression, cap_mutation = resolve_cap_profile("medium")
+        if args.use_aggressive_cap_profile:
+            cap_expression, cap_mutation = resolve_cap_profile("aggressive")
         caps = None
         if cap_expression is not None or cap_mutation is not None:
             caps = {
@@ -326,14 +332,20 @@ def main() -> None:
 
         cap_expression = args.expression_cap_per_project
         cap_mutation = args.mutation_cap_per_project
+        subdirs = None
+        if args.data_subdirs:
+            subdirs = {x.strip().lower() for x in args.data_subdirs.split(",") if x.strip()}
         if args.use_medium_cap_profile:
-            cap_expression = 25
-            cap_mutation = 10
+            cap_expression, cap_mutation = resolve_cap_profile("medium")
+        if args.use_aggressive_cap_profile:
+            cap_expression, cap_mutation = resolve_cap_profile("aggressive")
 
         result = run_pipeline_with_fallback(
             config_path=args.config,
             require_live_gdc=args.require_live_gdc,
             run_mode=run_mode,
+            force_download=args.force_download,
+            allowed_data_subdirs=subdirs,
             expression_cap_per_project=cap_expression,
             mutation_cap_per_project=cap_mutation,
         )

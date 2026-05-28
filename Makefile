@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-medium run-silver run-gold run-quality run-graph-export run-ingestion-traceability run-demo run-demo-check run-demo-check-strict run-flow run-flow-medium run-dbt test-dbt run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-medium run-download-tcga-aggressive run-silver run-gold run-quality run-graph-export run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -33,6 +33,9 @@ run-download-tcga:
 run-download-tcga-medium:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations
 
+run-download-tcga-aggressive:
+	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations
+
 run-download-tcga-force-smoke:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --max-downloads 3 --data-subdirs expression,mutations
 
@@ -49,7 +52,12 @@ run-ingestion-traceability:
 	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml
 
 run-demo:
-	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --use-medium-cap-profile
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations
+	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml
+	$(PYTHON) -m src.main run-demo-check --config configs/project_config.yml
+
+run-demo-aggressive:
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations
 	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml
 	$(PYTHON) -m src.main run-demo-check --config configs/project_config.yml
 
@@ -63,7 +71,10 @@ run-flow:
 	$(PYTHON) -m src.main run-flow --config configs/project_config.yml
 
 run-flow-medium:
-	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --use-medium-cap-profile
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations
+
+run-flow-aggressive:
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations
 
 run-dbt:
 	$(VENV)/bin/dbt run --project-dir dbt --profiles-dir dbt

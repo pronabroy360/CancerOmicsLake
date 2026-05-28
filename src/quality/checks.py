@@ -202,10 +202,18 @@ def _download_integrity_counts(
     attempted_downloads = int(payload.get("attempted_downloads", 0) or 0)
     cap_applied = bool(payload.get("cap_applied", False))
     partial_mode = bool(
+        status == "completed_with_failures"
+        or
         (max_downloads is not None and attempted_downloads < total_candidates)
         or cap_applied
         or selected_candidates < total_candidates
     )
+    allowed_data_subdirs_raw = payload.get("allowed_data_subdirs", [])
+    allowed_data_subdirs = {
+        str(x).strip().lower()
+        for x in allowed_data_subdirs_raw
+        if isinstance(x, str) and str(x).strip()
+    }
 
     missing = 0
     checksum_mismatch = 0
@@ -221,6 +229,8 @@ def _download_integrity_counts(
             continue
 
         data_subdir = _infer_data_subdir(data_category)
+        if allowed_data_subdirs and data_subdir not in allowed_data_subdirs:
+            continue
         path = bronze_tcga_root / project_id / data_subdir / file_name
         if not path.exists():
             missing += 1

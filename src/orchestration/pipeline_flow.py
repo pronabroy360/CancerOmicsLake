@@ -166,6 +166,8 @@ def _execute_pipeline(
     require_live_gdc: bool = False,
     output_metadata_path: str = "outputs/reports/pipeline_run_metadata.json",
     run_mode: str = "manual",
+    force_download: bool = False,
+    allowed_data_subdirs: set[str] | None = None,
     expression_cap_per_project: int | None = None,
     mutation_cap_per_project: int | None = None,
 ) -> dict[str, Any]:
@@ -195,6 +197,8 @@ def _execute_pipeline(
         _metadata_impl(config_path=config_path, require_live_gdc=require_live_gdc, run_mode=run_mode)
         download_summary = download_tcga_files(
             config=cfg,
+            force_download=force_download,
+            allowed_data_subdirs=allowed_data_subdirs,
             project_modality_caps=caps,
             run_mode=run_mode,
         )
@@ -230,6 +234,8 @@ def _execute_pipeline(
             "output_table_count": output_table_count,
             "error_count": error_count,
             "warning_count": warning_count,
+            "force_download": force_download,
+            "allowed_data_subdirs": sorted(list(allowed_data_subdirs)) if allowed_data_subdirs else [],
             "expression_cap_per_project": expression_cap_per_project,
             "mutation_cap_per_project": mutation_cap_per_project,
         }
@@ -263,6 +269,8 @@ def canceromicslake_pipeline(
     require_live_gdc: bool = False,
     output_metadata_path: str = "outputs/reports/pipeline_run_metadata.json",
     run_mode: str = "manual",
+    force_download: bool = False,
+    allowed_data_subdirs: set[str] | None = None,
     expression_cap_per_project: int | None = None,
     mutation_cap_per_project: int | None = None,
 ) -> dict[str, Any]:
@@ -271,6 +279,8 @@ def canceromicslake_pipeline(
         require_live_gdc=require_live_gdc,
         output_metadata_path=output_metadata_path,
         run_mode=run_mode,
+        force_download=force_download,
+        allowed_data_subdirs=allowed_data_subdirs,
         expression_cap_per_project=expression_cap_per_project,
         mutation_cap_per_project=mutation_cap_per_project,
     )
@@ -281,6 +291,8 @@ def run_pipeline_with_fallback(
     require_live_gdc: bool = False,
     output_metadata_path: str = "outputs/reports/pipeline_run_metadata.json",
     run_mode: str = "manual",
+    force_download: bool = False,
+    allowed_data_subdirs: set[str] | None = None,
     expression_cap_per_project: int | None = None,
     mutation_cap_per_project: int | None = None,
 ) -> dict[str, Any]:
@@ -290,6 +302,8 @@ def run_pipeline_with_fallback(
             require_live_gdc=require_live_gdc,
             output_metadata_path=output_metadata_path,
             run_mode=run_mode,
+            force_download=force_download,
+            allowed_data_subdirs=allowed_data_subdirs,
             expression_cap_per_project=expression_cap_per_project,
             mutation_cap_per_project=mutation_cap_per_project,
         )
@@ -301,6 +315,8 @@ def run_pipeline_with_fallback(
             require_live_gdc=require_live_gdc,
             output_metadata_path=output_metadata_path,
             run_mode=run_mode,
+            force_download=force_download,
+            allowed_data_subdirs=allowed_data_subdirs,
             expression_cap_per_project=expression_cap_per_project,
             mutation_cap_per_project=mutation_cap_per_project,
         )

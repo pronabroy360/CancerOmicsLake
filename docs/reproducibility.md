@@ -35,6 +35,26 @@ Default cap:
 
 Selection is deterministic so repeated runs choose the same files unless source metadata changes. Reports include requested cap, candidate count, selected count, downloaded count, skipped-existing count, and failed count.
 
+## Aggressive Capped Live Profile
+
+Use this when we want to complete ingestion quickly over a few days:
+
+```bash
+make run-download-tcga-aggressive
+make run-flow-aggressive
+make run-demo-aggressive
+```
+
+Aggressive cap:
+
+- TCGA projects: `TCGA-BRCA`, `TCGA-LUAD`, `TCGA-COAD`
+- Expression files: `100/project`
+- Mutation files: `40/project`
+- Access mode: open-access only
+
+Aggressive flow and demo targets force downloads (`--force-download`) so runs do not silently skip file pulling when `tcga.metadata_only: true`.
+Aggressive flow and demo targets also scope downloads to `expression,mutations` via `--data-subdirs` so clinical/biospecimen categories do not create avoidable failures during rapid completion.
+
 ## Reviewer Demo Check
 
 Use the demo verifier after a pipeline run:

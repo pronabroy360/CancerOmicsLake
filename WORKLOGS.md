@@ -278,3 +278,15 @@ Impact values:
 - Added warning semantics for local-download-vs-silver parsing gaps and stub/demo-origin rows.
 - Integrated traceability command into `make run-demo` and CI pipeline execution.
 - Added unit coverage for traceability report generation and doc/CI contract assertions.
+
+## 2026-05-28 - Aggressive Ingestion Profile
+
+- Added explicit aggressive cap profile (`expression=100`, `mutations=40` per project) in `src/common/cap_profiles.py`.
+- Added CLI support for `--use-aggressive-cap-profile` on both `run-download-tcga` and `run-flow`.
+- Added dedicated manual fast-track targets:
+  - `make run-download-tcga-aggressive`
+  - `make run-flow-aggressive`
+  - `make run-demo-aggressive`
+- Added `--force-download` support to orchestration flow and wired medium/aggressive flow/demo targets to avoid silent metadata-only skip behavior.
+- Added `--data-subdirs` support to orchestration flow and scoped medium/aggressive flow/demo targets to `expression,mutations` for stronger run stability.
+- Updated README and reproducibility docs for the aggressive completion path.

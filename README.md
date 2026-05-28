@@ -58,10 +58,12 @@ make run-metadata
 make run-metadata-strict
 make run-metadata-strict-smoke
 make run-download-tcga-medium
+make run-download-tcga-aggressive
 make run-silver
 make run-gold
 make run-quality
 make run-flow-medium
+make run-flow-aggressive
 make run-demo-check
 make run-ingestion-traceability
 ```
@@ -78,6 +80,7 @@ Reviewer demo path:
 
 ```bash
 make run-demo
+make run-demo-aggressive
 make run-demo-check-strict
 ```
 
@@ -94,6 +97,19 @@ make run-demo-check-strict
   - `make run-flow-medium` for end-to-end flow
 - Intended for repeatable daily automation and local demonstration, not full-cohort completeness.
 - Expected storage depends on GDC file availability, but this profile is deliberately bounded to avoid accidental large downloads.
+
+## Aggressive Cap Profile
+
+- Aggressive cap profile:
+  - `expression: 100 files/project`
+  - `mutations: 40 files/project`
+- Applies to `TCGA-BRCA`, `TCGA-LUAD`, and `TCGA-COAD`.
+- Use:
+  - `make run-download-tcga-aggressive` for download-only stage
+  - `make run-flow-aggressive` for end-to-end flow
+  - `make run-demo-aggressive` for pipeline + traceability + demo checks
+- This profile is intended for fast manual completion and uses `--force-download`.
+- Flow/demo targets focus download scope on `expression,mutations` for higher success rates.
 
 ## Runtime Notes
 
