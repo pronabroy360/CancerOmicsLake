@@ -272,7 +272,18 @@ def run_silver_quality_checks(
 
     null_project_ids = _count_null_or_blank(projects, "project_id")
     duplicate_sample_ids = (
-        samples.group_by("sample_id").len().filter(pl.col("len") > 1).height if "sample_id" in samples.columns else 0
+        samples
+        .filter(
+            pl.col("sample_id").cast(pl.Utf8, strict=False).is_not_null()
+            & (pl.col("sample_id").cast(pl.Utf8, strict=False).str.strip_chars() != "")
+            & (pl.col("sample_id").cast(pl.Utf8, strict=False).str.to_lowercase() != "unknown")
+        )
+        .group_by("sample_id")
+        .len()
+        .filter(pl.col("len") > 1)
+        .height
+        if "sample_id" in samples.columns
+        else 0
     )
     patients = _read_or_empty(
         root / "silver_patients.parquet",

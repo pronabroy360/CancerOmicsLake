@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gzip
 from pathlib import Path
 
 import polars as pl
@@ -10,9 +11,21 @@ from src.processing.normalize_gene_ids import normalize_gene_id
 
 
 def _safe_read_table(path: Path) -> pl.DataFrame:
-    if path.suffix.lower() in {".maf", ".tsv", ".txt"}:
-        return pl.read_csv(path, separator="\t", infer_schema_length=10000)
-    return pl.read_csv(path, infer_schema_length=10000)
+    suffixes = {s.lower() for s in path.suffixes}
+    is_tabular = bool({".maf", ".tsv", ".txt"} & suffixes)
+    separator = "\t" if is_tabular else ","
+
+    read_kwargs = {
+        "separator": separator,
+        "infer_schema_length": 10000,
+        "comment_prefix": "#",
+        "truncate_ragged_lines": True,
+        "ignore_errors": True,
+    }
+    if ".gz" in suffixes:
+        with gzip.open(path, mode="rt", encoding="utf-8", errors="ignore") as fh:
+            return pl.read_csv(fh, **read_kwargs)
+    return pl.read_csv(path, **read_kwargs)
 
 
 def _empty_mutation_df() -> pl.DataFrame:
@@ -200,7 +213,8 @@ def load_tcga_mutation_table(
 
     frames: list[pl.DataFrame] = []
     for file_path in files:
-        if file_path.suffix.lower() not in {".maf", ".tsv", ".txt", ".csv"}:
+        suffixes = {s.lower() for s in file_path.suffixes}
+        if not suffixes.intersection({".maf", ".tsv", ".txt", ".csv"}):
             continue
         parsed = _parse_mutation_file(file_path, metadata_df)
         if not parsed.is_empty():

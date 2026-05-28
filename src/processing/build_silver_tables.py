@@ -93,7 +93,12 @@ def build_silver_tables_from_bronze(
         ingest_time=ingest_time,
         gtex_expression_dir=gtex_expression_dir,
     )
-    mutations_tcga = load_tcga_mutation_table(config=config, ingest_time=ingest_time, metadata_df=raw)
+    mutations_tcga = load_tcga_mutation_table(
+        config=config,
+        ingest_time=ingest_time,
+        metadata_df=raw,
+        tcga_root_dir=tcga_expr_root,
+    )
 
     out_projects = _write_parquet(projects, silver_root / "silver_projects.parquet")
     out_patients = _write_parquet(patients, silver_root / "silver_patients.parquet")

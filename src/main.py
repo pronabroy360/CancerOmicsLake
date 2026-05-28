@@ -246,6 +246,12 @@ def main() -> None:
             neo4j_summary["edges_count"],
         )
         logger.info(
+            "Neo4j bulk files: node_files=%s edge_files=%s import_script=%s",
+            neo4j_summary.get("bulk_node_file_count", 0),
+            neo4j_summary.get("bulk_edge_file_count", 0),
+            neo4j_summary.get("import_cypher", ""),
+        )
+        logger.info(
             "Graphify export: nodes=%s edges=%s dir=outputs/graph_exports/graphify",
             graphify_summary["nodes_count"],
             graphify_summary["edges_count"],

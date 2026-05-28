@@ -1,4 +1,5 @@
 from pathlib import Path
+import gzip
 
 import polars as pl
 
@@ -51,3 +52,44 @@ def test_load_tcga_mutation_table_prefers_manifest_files(tmp_path: Path) -> None
     assert row["gene_symbol"] == "TP53"
     assert row["variant_classification"] == "Missense_Mutation"
     assert row["start_position"] == 7673803
+
+
+def test_load_tcga_mutation_table_reads_gz_maf_with_comments(tmp_path: Path) -> None:
+    config = load_config("configs/project_config.yml")
+    ingest_time = "2026-05-28T00:00:00Z"
+
+    tcga_root = tmp_path / "tcga"
+    mut_dir = tcga_root / "TCGA-BRCA" / "mutations"
+    mut_dir.mkdir(parents=True, exist_ok=True)
+
+    maf_gz = mut_dir / "brca.maf.gz"
+    with gzip.open(maf_gz, mode="wt", encoding="utf-8") as fh:
+        fh.write("#version gdc-1.0.0\n")
+        fh.write(
+            "Hugo_Symbol\tTumor_Sample_Barcode\tVariant_Classification\tVariant_Type\tChromosome\tStart_Position\tEnd_Position\tReference_Allele\tTumor_Seq_Allele2\n"
+        )
+        fh.write("PIK3CA\tTCGA-BRCA-SAMPLE-0001\tMissense_Mutation\tSNP\t3\t179218294\t179218294\tA\tG\n")
+
+    metadata_df = pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA"],
+            "case_id": ["BRCA-CASE-1"],
+            "sample_id": ["TCGA-BRCA-SAMPLE-0001"],
+            "file_name": ["brca.maf.gz"],
+            "data_category": ["Simple Nucleotide Variation"],
+            "data_type": ["Masked Somatic Mutation"],
+            "access": ["open"],
+        }
+    )
+
+    df = load_tcga_mutation_table(
+        config=config,
+        ingest_time=ingest_time,
+        metadata_df=metadata_df,
+        tcga_root_dir=tcga_root,
+    )
+    assert df.height == 1
+    row = df.row(0, named=True)
+    assert row["project_id"] == "TCGA-BRCA"
+    assert row["gene_symbol"] == "PIK3CA"
+    assert row["start_position"] == 179218294
