@@ -189,6 +189,8 @@ Impact values:
   - Implemented gold `gold_tumor_vs_normal_expression.parquet` generation from silver TCGA tumor + mapped GTEx normal tissues (BRCA/LUAD/COAD mapping)
   - Updated `/expression/tumor-vs-normal/{gene_symbol}` API path to read gold tumor-vs-normal table with stub fallback
   - Added tumor-vs-normal integration and service tests (`26 passed`)
+  - Replaced `/expression/gene/{gene_symbol}` stub path with silver-backed TCGA + GTEx summary query logic
+  - Added expression summary tests for silver-backed reads and fallback behavior (`28 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks with file-checksum verification against download manifests
