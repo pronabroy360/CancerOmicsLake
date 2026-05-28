@@ -36,12 +36,18 @@ def write_tcga_metadata_csv(rows: list[dict[str, str]], output_path: Path) -> No
         writer.writerows(rows)
 
 
-def run_metadata_mode(config_path: str, require_live_gdc: bool = False) -> None:
+def run_metadata_mode(
+    config_path: str,
+    require_live_gdc: bool = False,
+    gdc_base_url_override: str | None = None,
+) -> None:
     logger = get_logger("canceromicslake")
     ensure_base_dirs()
     cfg = load_config(config_path)
     if require_live_gdc:
         cfg.tcga.require_live_gdc = True
+    if gdc_base_url_override:
+        cfg.gdc_api.base_url = gdc_base_url_override
 
     try:
         tcga_records, source_mode, audit = query_tcga_metadata_with_audit(cfg)
@@ -113,6 +119,7 @@ def main() -> None:
     parser_metadata = subparsers.add_parser("run-metadata")
     parser_metadata.add_argument("--config", required=True)
     parser_metadata.add_argument("--require-live-gdc", action="store_true")
+    parser_metadata.add_argument("--gdc-base-url", default=None)
 
     parser_silver = subparsers.add_parser("run-silver")
     parser_silver.add_argument("--config", required=True)
@@ -131,7 +138,11 @@ def main() -> None:
         print("Config validation passed.")
         return
     if args.command == "run-metadata":
-        run_metadata_mode(args.config, require_live_gdc=args.require_live_gdc)
+        run_metadata_mode(
+            args.config,
+            require_live_gdc=args.require_live_gdc,
+            gdc_base_url_override=args.gdc_base_url,
+        )
         print("Metadata-only pipeline run completed.")
         return
     if args.command == "run-silver":

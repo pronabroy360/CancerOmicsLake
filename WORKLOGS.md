@@ -58,6 +58,7 @@ Status values:
 | 20260528T065035Z | 2026-05-28 12:50:35 +06 | 2026-05-28 12:50:35 +06 | failed | m2-strict-cli | 0 metadata rows | 0 artifacts | 1 | 0 | `run-metadata-strict` correctly failed fast and wrote strict-failure ingestion audit |
 | 20260528T070225Z | 2026-05-28 13:02:25 +06 | 2026-05-28 13:02:25 +06 | success | m3-silver-quality-contracts | 12 metadata rows | 11 artifacts | 0 | 0 | Added silver table quality runner and generated `silver_data_quality_report.json` |
 | 20260528T075406Z | 2026-05-28 13:54:06 +06 | 2026-05-28 13:54:06 +06 | success | m3-expression-loaders-file-based | 12 metadata rows | 11 artifacts | 0 | 0 | Added file-based TCGA/GTEx expression loaders and expanded quality checks to TCGA expression |
+| 20260528T083656Z | 2026-05-28 14:36:56 +06 | 2026-05-28 14:36:56 +06 | success | m0-ci-automation | 0 metadata rows | 1 audit artifact | 0 | 0 | Added strict metadata smoke target and CI workflow pipeline with report artifact upload |
 
 Template status values:
 - `success`
@@ -118,6 +119,8 @@ Download mode:
 | 2026-05-28 | DEC-012 | Strict-failure traceability | Persist ingestion audit JSON even when strict live mode fails | Failure without persisted audit | Preserves diagnostics for CI and operations triage |
 | 2026-05-28 | DEC-013 | Silver contract checks | Add explicit quality checks for null IDs, duplicates, access level, and expression constraints on silver outputs | Implicit trust in transforms | Improves data reliability and catches regressions before gold modeling |
 | 2026-05-28 | DEC-014 | Expression ingestion strategy | Support file-based expression ingestion first, with safe stub fallback | Stub-only expression staging | Enables transition to real cohort processing without breaking current pipeline |
+| 2026-05-28 | DEC-015 | CI strict smoke determinism | Add strict smoke command with explicit `--gdc-base-url` override to force controlled failure path | Strict smoke dependent on ambient network state | Ensures CI verifies fail-fast + audit behavior deterministically |
+| 2026-05-28 | DEC-016 | CI responsibility expansion | Add GitHub Actions workflow for tests + pipeline smoke + report artifacts | Manual local validation only | Moves project toward reproducible reviewer-friendly engineering practice |
 
 Example Decision IDs:
 - `DEC-001`: Default dataframe engine = Polars
@@ -171,7 +174,8 @@ Impact values:
   - Added `run-quality` and silver contract checks with JSON report output
   - Implemented file-based TCGA and GTEx expression loaders with schema-safe fallback
   - Expanded quality checks to include TCGA expression null/non-negative checks
+  - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
-  - Add lightweight CI workflow for `make test` and strict metadata smoke path
   - Expand quality checks for mutation and future TCGA expression tables when parsers land
   - Add manifest-driven TCGA expression file discovery and parser normalization presets per workflow
+  - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion

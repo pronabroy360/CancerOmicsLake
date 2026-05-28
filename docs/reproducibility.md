@@ -7,6 +7,7 @@ make setup
 make validate-config
 make run-metadata
 make run-metadata-strict
+make run-metadata-strict-smoke
 make run-silver
 make run-gold
 make run-quality
@@ -23,3 +24,4 @@ make test
 - Real expression ingestion paths:
   - TCGA files: `data/bronze/tcga/**/expression/*.tsv|*.csv|*.txt`
   - GTEx files: `data/bronze/gtex/expression/*.tsv|*.csv|*.txt`
+- CI workflow: `.github/workflows/ci.yml` runs tests, metadata/silver/gold/quality stages, and strict metadata smoke checks.

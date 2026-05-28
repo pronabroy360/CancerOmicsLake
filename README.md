@@ -25,6 +25,7 @@ make setup
 make test
 make run-metadata
 make run-metadata-strict
+make run-metadata-strict-smoke
 make run-silver
 make run-gold
 make run-quality

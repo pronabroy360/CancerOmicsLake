@@ -1,0 +1,53 @@
+name: CancerOmicsLake CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Setup Environment
+        run: make setup
+
+      - name: Unit Tests
+        run: make test
+
+      - name: Metadata Pipeline
+        run: make run-metadata
+
+      - name: Strict Metadata Smoke
+        run: make run-metadata-strict-smoke
+
+      - name: Silver Build
+        run: make run-silver
+
+      - name: Gold Build
+        run: make run-gold
+
+      - name: Silver Quality
+        run: make run-quality
+
+      - name: Upload Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: outputs/reports/*.json
+          if-no-files-found: warn
