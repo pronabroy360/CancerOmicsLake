@@ -100,6 +100,25 @@ def build_gold_cohort_summary(
             "ingested_at": pl.Utf8,
         },
     )
+    mutations = _read_or_empty(
+        silver_root / "silver_mutations.parquet",
+        {
+            "project_id": pl.Utf8,
+            "case_id": pl.Utf8,
+            "sample_id": pl.Utf8,
+            "gene_id": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "variant_classification": pl.Utf8,
+            "variant_type": pl.Utf8,
+            "chromosome": pl.Utf8,
+            "start_position": pl.Int64,
+            "end_position": pl.Int64,
+            "reference_allele": pl.Utf8,
+            "tumor_seq_allele": pl.Utf8,
+            "data_origin": pl.Utf8,
+            "ingested_at": pl.Utf8,
+        },
+    )
 
     summary = pl.DataFrame(
         [
@@ -122,17 +141,117 @@ def build_gold_cohort_summary(
                 "tcga_expression_row_count": expr_tcga.height,
                 "gtex_expression_row_count": expr_gtex.height,
                 "gene_count": 0,
-                "mutation_record_count": 0,
+                "mutation_record_count": mutations.height,
                 "generated_at": datetime.now(UTC).isoformat(),
             }
         ]
     )
 
+    if mutations.is_empty():
+        mutation_by_gene = pl.DataFrame(
+            schema={
+                "gene_symbol": pl.Utf8,
+                "cancer_type": pl.Utf8,
+                "mutated_sample_count": pl.Int64,
+                "total_profiled_sample_count": pl.Int64,
+                "mutation_frequency": pl.Float64,
+                "top_variant_classification": pl.Utf8,
+            }
+        )
+        mutation_by_cancer = pl.DataFrame(
+            schema={
+                "cancer_type": pl.Utf8,
+                "total_profiled_sample_count": pl.Int64,
+                "mutated_sample_count": pl.Int64,
+                "mutation_event_count": pl.Int64,
+                "mutation_event_rate": pl.Float64,
+            }
+        )
+    else:
+        mutation_events = mutations.filter(
+            pl.col("project_id").is_not_null() & pl.col("sample_id").is_not_null() & pl.col("gene_symbol").is_not_null()
+        )
+        sample_counts = samples.group_by("project_id").agg(
+            pl.col("sample_id").n_unique().alias("total_profiled_sample_count")
+        )
+        mutated_counts = mutation_events.group_by(["project_id", "gene_symbol"]).agg(
+            pl.col("sample_id").n_unique().alias("mutated_sample_count")
+        )
+        variant_top = (
+            mutation_events.group_by(["project_id", "gene_symbol", "variant_classification"])
+            .len()
+            .sort(["project_id", "gene_symbol", "len"], descending=[False, False, True])
+            .group_by(["project_id", "gene_symbol"])
+            .agg(pl.first("variant_classification").alias("top_variant_classification"))
+        )
+        mutation_by_gene = (
+            mutated_counts.join(variant_top, on=["project_id", "gene_symbol"], how="left")
+            .join(sample_counts, on="project_id", how="left")
+            .with_columns(
+                [
+                    pl.col("project_id").alias("cancer_type"),
+                    (
+                        pl.col("mutated_sample_count")
+                        / pl.when(pl.col("total_profiled_sample_count") > 0)
+                        .then(pl.col("total_profiled_sample_count"))
+                        .otherwise(None)
+                    ).cast(pl.Float64).alias("mutation_frequency"),
+                ]
+            )
+            .select(
+                [
+                    pl.col("gene_symbol"),
+                    pl.col("cancer_type"),
+                    pl.col("mutated_sample_count"),
+                    pl.col("total_profiled_sample_count").fill_null(0).cast(pl.Int64),
+                    pl.col("mutation_frequency").fill_null(0.0),
+                    pl.col("top_variant_classification").fill_null("Unknown"),
+                ]
+            )
+        )
+
+        mutation_by_cancer = (
+            mutation_events.group_by("project_id")
+            .agg(
+                [
+                    pl.col("sample_id").n_unique().alias("mutated_sample_count"),
+                    pl.len().alias("mutation_event_count"),
+                ]
+            )
+            .join(sample_counts, on="project_id", how="left")
+            .with_columns(
+                [
+                    pl.col("project_id").alias("cancer_type"),
+                    (
+                        pl.col("mutation_event_count")
+                        / pl.when(pl.col("total_profiled_sample_count") > 0)
+                        .then(pl.col("total_profiled_sample_count"))
+                        .otherwise(None)
+                    ).cast(pl.Float64).alias("mutation_event_rate"),
+                ]
+            )
+            .select(
+                [
+                    pl.col("cancer_type"),
+                    pl.col("total_profiled_sample_count").fill_null(0).cast(pl.Int64),
+                    pl.col("mutated_sample_count").fill_null(0).cast(pl.Int64),
+                    pl.col("mutation_event_count").fill_null(0).cast(pl.Int64),
+                    pl.col("mutation_event_rate").fill_null(0.0),
+                ]
+            )
+        )
+
     output_path = gold_root / "gold_cohort_summary.parquet"
+    output_mut_by_gene = gold_root / "gold_mutation_frequency_by_gene.parquet"
+    output_mut_by_cancer = gold_root / "gold_mutation_frequency_by_cancer.parquet"
     summary.write_parquet(output_path)
+    mutation_by_gene.write_parquet(output_mut_by_gene)
+    mutation_by_cancer.write_parquet(output_mut_by_cancer)
 
     return {
         "gold_cohort_summary_path": str(output_path),
+        "gold_mutation_frequency_by_gene_path": str(output_mut_by_gene),
+        "gold_mutation_frequency_by_cancer_path": str(output_mut_by_cancer),
         "tcga_project_count": int(summary["tcga_project_count"][0]),
         "tcga_patient_count": int(summary["tcga_patient_count"][0]),
         "tcga_sample_count": int(summary["tcga_sample_count"][0]),
@@ -140,4 +259,7 @@ def build_gold_cohort_summary(
         "gtex_expression_sample_count": int(summary["gtex_expression_sample_count"][0]),
         "tcga_expression_row_count": int(summary["tcga_expression_row_count"][0]),
         "gtex_expression_row_count": int(summary["gtex_expression_row_count"][0]),
+        "mutation_record_count": int(summary["mutation_record_count"][0]),
+        "mutation_gene_rows": int(mutation_by_gene.height),
+        "mutation_cancer_rows": int(mutation_by_cancer.height),
     }

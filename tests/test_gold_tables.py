@@ -81,6 +81,24 @@ def test_build_gold_cohort_summary_from_silver(tmp_path: Path) -> None:
             "ingested_at": pl.Utf8,
         }
     ).write_parquet(silver_dir / "silver_expression_tcga.parquet")
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA", "TCGA-LUAD"],
+            "case_id": ["case-1", "case-2"],
+            "sample_id": ["sample-1", "sample-2"],
+            "gene_id": ["ENSG1", "ENSG2"],
+            "gene_symbol": ["TP53", "EGFR"],
+            "variant_classification": ["Missense_Mutation", "Nonsense_Mutation"],
+            "variant_type": ["SNP", "SNP"],
+            "chromosome": ["17", "7"],
+            "start_position": [7673803, 55242465],
+            "end_position": [7673803, 55242465],
+            "reference_allele": ["C", "G"],
+            "tumor_seq_allele": ["T", "A"],
+            "data_origin": ["stub", "stub"],
+            "ingested_at": ["x", "x"],
+        }
+    ).write_parquet(silver_dir / "silver_mutations.parquet")
 
     summary = build_gold_cohort_summary(silver_dir=silver_dir, gold_dir=gold_dir)
     assert summary["tcga_project_count"] == 2
@@ -88,7 +106,10 @@ def test_build_gold_cohort_summary_from_silver(tmp_path: Path) -> None:
     assert summary["tcga_sample_count"] == 2
     assert summary["tcga_file_count"] == 2
     assert summary["gtex_expression_sample_count"] == 2
+    assert summary["mutation_record_count"] == 2
     assert (gold_dir / "gold_cohort_summary.parquet").exists()
+    assert (gold_dir / "gold_mutation_frequency_by_gene.parquet").exists()
+    assert (gold_dir / "gold_mutation_frequency_by_cancer.parquet").exists()
 
 
 def test_cohort_summary_from_gold_or_fallback(tmp_path: Path) -> None:

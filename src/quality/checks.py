@@ -85,6 +85,14 @@ def _count_null_or_blank(df: pl.DataFrame, col: str) -> int:
     )
 
 
+def _count_invalid_int(df: pl.DataFrame, col: str) -> int:
+    if col not in df.columns:
+        return 0
+    return (
+        df.select(pl.col(col).cast(pl.Int64, strict=False).is_null().sum().cast(pl.Int64).alias("cnt")).item(0, 0) or 0
+    )
+
+
 def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[CheckResult]:
     root = Path(silver_dir)
 
@@ -147,6 +155,25 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
             "ingested_at": pl.Utf8,
         },
     )
+    mutations = _read_or_empty(
+        root / "silver_mutations.parquet",
+        {
+            "project_id": pl.Utf8,
+            "case_id": pl.Utf8,
+            "sample_id": pl.Utf8,
+            "gene_id": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "variant_classification": pl.Utf8,
+            "variant_type": pl.Utf8,
+            "chromosome": pl.Utf8,
+            "start_position": pl.Int64,
+            "end_position": pl.Int64,
+            "reference_allele": pl.Utf8,
+            "tumor_seq_allele": pl.Utf8,
+            "data_origin": pl.Utf8,
+            "ingested_at": pl.Utf8,
+        },
+    )
 
     null_project_ids = _count_null_or_blank(projects, "project_id")
     duplicate_sample_ids = (
@@ -169,6 +196,9 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
         if "expression_value" in expr_tcga.columns
         else 0
     )
+    null_mut_gene = _count_null_or_blank(mutations, "gene_symbol")
+    invalid_mut_start = _count_invalid_int(mutations, "start_position")
+    invalid_mut_end = _count_invalid_int(mutations, "end_position")
 
     return [
         CheckResult(
@@ -205,5 +235,20 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
             check_name="silver_expression_tcga_non_negative",
             status="passed" if negative_expr_tcga == 0 else "failed",
             failed_rows=int(negative_expr_tcga),
+        ),
+        CheckResult(
+            check_name="silver_mutations_null_gene_symbol",
+            status="passed" if null_mut_gene == 0 else "failed",
+            failed_rows=int(null_mut_gene),
+        ),
+        CheckResult(
+            check_name="silver_mutations_start_position_valid_integer",
+            status="passed" if invalid_mut_start == 0 else "failed",
+            failed_rows=int(invalid_mut_start),
+        ),
+        CheckResult(
+            check_name="silver_mutations_end_position_valid_integer",
+            status="passed" if invalid_mut_end == 0 else "failed",
+            failed_rows=int(invalid_mut_end),
         ),
     ]

@@ -72,6 +72,24 @@ def test_run_silver_quality_checks_detects_failures(tmp_path: Path) -> None:
             "ingested_at": ["x", "x"],
         }
     ).write_parquet(silver / "silver_expression_tcga.parquet")
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA", "TCGA-BRCA"],
+            "case_id": ["c1", "c1"],
+            "sample_id": ["s1", "s1"],
+            "gene_id": ["ENSG1", "ENSG2"],
+            "gene_symbol": ["", "TP53"],
+            "variant_classification": ["Missense_Mutation", "Nonsense_Mutation"],
+            "variant_type": ["SNP", "SNP"],
+            "chromosome": ["17", "17"],
+            "start_position": ["bad", "7673803"],
+            "end_position": ["7673803", "bad"],
+            "reference_allele": ["C", "G"],
+            "tumor_seq_allele": ["T", "A"],
+            "data_origin": ["stub", "stub"],
+            "ingested_at": ["x", "x"],
+        }
+    ).write_parquet(silver / "silver_mutations.parquet")
 
     results = run_silver_quality_checks(silver)
     status_by_name = {r.check_name: r.status for r in results}
@@ -82,3 +100,6 @@ def test_run_silver_quality_checks_detects_failures(tmp_path: Path) -> None:
     assert status_by_name["silver_expression_gtex_non_negative"] == "failed"
     assert status_by_name["silver_expression_tcga_null_gene_id"] == "failed"
     assert status_by_name["silver_expression_tcga_non_negative"] == "failed"
+    assert status_by_name["silver_mutations_null_gene_symbol"] == "failed"
+    assert status_by_name["silver_mutations_start_position_valid_integer"] == "failed"
+    assert status_by_name["silver_mutations_end_position_valid_integer"] == "failed"

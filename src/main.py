@@ -151,13 +151,14 @@ def main() -> None:
         logger = get_logger("canceromicslake")
         logger.info("Silver tables built from %s", summary["source_metadata_file"])
         logger.info(
-            "Silver counts: projects=%s patients=%s samples=%s files=%s tcga_expr=%s gtex_expr=%s",
+            "Silver counts: projects=%s patients=%s samples=%s files=%s tcga_expr=%s gtex_expr=%s mutations=%s",
             summary["projects_count"],
             summary["patients_count"],
             summary["samples_count"],
             summary["file_manifest_count"],
             summary["expression_tcga_count"],
             summary["expression_gtex_count"],
+            summary["mutations_count"],
         )
         print("Silver table build completed.")
         return
@@ -167,12 +168,14 @@ def main() -> None:
         logger = get_logger("canceromicslake")
         logger.info("Gold cohort summary written to %s", summary["gold_cohort_summary_path"])
         logger.info(
-            "Gold summary counts: projects=%s patients=%s samples=%s files=%s gtex_expr_samples=%s",
+            "Gold summary counts: projects=%s patients=%s samples=%s files=%s gtex_expr_samples=%s mutation_records=%s mutation_gene_rows=%s",
             summary["tcga_project_count"],
             summary["tcga_patient_count"],
             summary["tcga_sample_count"],
             summary["tcga_file_count"],
             summary["gtex_expression_sample_count"],
+            summary["mutation_record_count"],
+            summary["mutation_gene_rows"],
         )
         print("Gold table build completed.")
         return

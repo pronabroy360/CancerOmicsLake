@@ -6,6 +6,7 @@ from pathlib import Path
 import polars as pl
 
 from src.common.config import AppConfig
+from src.processing.build_mutation_table import load_tcga_mutation_table
 from src.processing.expression_loaders import load_gtex_expression_table, load_tcga_expression_table
 
 
@@ -80,6 +81,7 @@ def build_silver_tables_from_bronze(
 
     expression_tcga = load_tcga_expression_table(config=config, ingest_time=ingest_time, metadata_df=raw)
     expression_gtex = load_gtex_expression_table(config=config, ingest_time=ingest_time)
+    mutations_tcga = load_tcga_mutation_table(config=config, ingest_time=ingest_time, metadata_df=raw)
 
     out_projects = _write_parquet(projects, silver_root / "silver_projects.parquet")
     out_patients = _write_parquet(patients, silver_root / "silver_patients.parquet")
@@ -87,6 +89,7 @@ def build_silver_tables_from_bronze(
     out_manifest = _write_parquet(file_manifest, silver_root / "silver_file_manifest.parquet")
     out_expr_tcga = _write_parquet(expression_tcga, silver_root / "silver_expression_tcga.parquet")
     out_expr_gtex = _write_parquet(expression_gtex, silver_root / "silver_expression_gtex.parquet")
+    out_mutations = _write_parquet(mutations_tcga, silver_root / "silver_mutations.parquet")
 
     return {
         "source_metadata_file": str(source_path),
@@ -96,10 +99,12 @@ def build_silver_tables_from_bronze(
         "silver_file_manifest_path": str(out_manifest),
         "silver_expression_tcga_path": str(out_expr_tcga),
         "silver_expression_gtex_path": str(out_expr_gtex),
+        "silver_mutations_path": str(out_mutations),
         "projects_count": projects.height,
         "patients_count": patients.height,
         "samples_count": samples.height,
         "file_manifest_count": file_manifest.height,
         "expression_tcga_count": expression_tcga.height,
         "expression_gtex_count": expression_gtex.height,
+        "mutations_count": mutations_tcga.height,
     }

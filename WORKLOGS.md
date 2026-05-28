@@ -176,8 +176,14 @@ Impact values:
   - Added manifest-aware TCGA expression discovery (expression files are now selected via metadata `data_category` + `data_type` + `file_name`, with safe fallback scan behavior)
   - Added regression test coverage for manifest-vs-non-expression file filtering in TCGA expression ingestion (`17 passed`)
   - Expanded quality checks to include TCGA expression null/non-negative checks
+  - Implemented manifest-aware TCGA mutation loader (MAF/TSV) and integrated `silver_mutations.parquet` into the silver build
+  - Added mutation quality contracts (`null_gene_symbol`, `start_position` integer validity, `end_position` integer validity), increasing silver checks to 10
+  - Extended gold build to generate `gold_mutation_frequency_by_gene.parquet` and `gold_mutation_frequency_by_cancer.parquet`
+  - Updated mutation API endpoints to read from gold marts with safe stub fallback when gold files are missing
+  - Added mutation-focused test coverage for loader, gold marts, API service helpers, and silver contract checks (`20 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
-  - Expand quality checks for mutation and future TCGA expression tables when parsers land
+  - Expand quality checks with file-checksum verification and sample-to-patient mapping integrity
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion
+  - Implement graph node/edge builders from gold mutation/expression marts (remove stub-only graph exports)
