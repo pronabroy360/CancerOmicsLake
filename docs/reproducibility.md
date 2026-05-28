@@ -71,6 +71,7 @@ Pipeline/report artifacts are written under `outputs/reports/`:
 - `gdc_ingestion_audit.json`
 - `tcga_download_report.json`
 - `tcga_download_retry_log.json`
+- `ingestion_traceability_report.json`
 - `silver_data_quality_report.json`
 - `data_quality_report.json`
 - `pipeline_run_metadata.json`

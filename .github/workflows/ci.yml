@@ -60,6 +60,9 @@ jobs:
       - name: Reviewer Demo Check
         run: make run-demo-check
 
+      - name: Ingestion Traceability Report
+        run: make run-ingestion-traceability
+
       - name: Upload Reports
         if: always()
         uses: actions/upload-artifact@v4

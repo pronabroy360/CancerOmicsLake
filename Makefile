@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-medium run-silver run-gold run-quality run-graph-export run-demo run-demo-check run-demo-check-strict run-flow run-flow-medium run-dbt test-dbt run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-medium run-silver run-gold run-quality run-graph-export run-ingestion-traceability run-demo run-demo-check run-demo-check-strict run-flow run-flow-medium run-dbt test-dbt run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -45,8 +45,12 @@ run-quality:
 run-graph-export:
 	$(PYTHON) -m src.main run-graph-export --config configs/project_config.yml
 
+run-ingestion-traceability:
+	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml
+
 run-demo:
 	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --use-medium-cap-profile
+	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml
 	$(PYTHON) -m src.main run-demo-check --config configs/project_config.yml
 
 run-demo-check:

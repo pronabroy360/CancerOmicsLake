@@ -270,3 +270,11 @@ Impact values:
 - Added graph export artifact upload bundle (`neo4j` + `graphify` outputs and Neo4j bulk import script/files).
 - Added CI workflow contract test to prevent accidental removal of the demo gate and schedule/dbt checks.
 - Synced README and reproducibility docs with the enforced CI demo-gate behavior.
+
+## 2026-05-28 - Ingestion Traceability Reporting
+
+- Added `run-ingestion-traceability` CLI command and `make run-ingestion-traceability` target.
+- Implemented `outputs/reports/ingestion_traceability_report.json` to map candidate/selected/downloaded/skipped/failed file counts to silver parsed row/file coverage by project and modality.
+- Added warning semantics for local-download-vs-silver parsing gaps and stub/demo-origin rows.
+- Integrated traceability command into `make run-demo` and CI pipeline execution.
+- Added unit coverage for traceability report generation and doc/CI contract assertions.

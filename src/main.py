@@ -21,6 +21,10 @@ from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.tcga_downloader import download_tcga_files
 from src.ingestion.gtex_downloader import gtex_metadata_stub
 from src.operations.demo_check import run_demo_check, write_demo_check_report
+from src.operations.ingestion_traceability import (
+    build_ingestion_traceability_report,
+    write_ingestion_traceability_report,
+)
 from src.processing.build_expression_table import with_log2_expression
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
 from src.processing.normalize_gtex_expression import normalize_gtex_rows
@@ -152,6 +156,10 @@ def main() -> None:
 
     parser_graph_export = subparsers.add_parser("run-graph-export")
     parser_graph_export.add_argument("--config", required=True)
+
+    parser_traceability = subparsers.add_parser("run-ingestion-traceability")
+    parser_traceability.add_argument("--config", required=True)
+    parser_traceability.add_argument("--output", default="outputs/reports/ingestion_traceability_report.json")
 
     parser_demo_check = subparsers.add_parser("run-demo-check")
     parser_demo_check.add_argument("--config", required=True)
@@ -292,6 +300,15 @@ def main() -> None:
             graphify_summary["edges_count"],
         )
         print("Graph export completed.")
+        return
+    if args.command == "run-ingestion-traceability":
+        load_config(args.config)
+        payload = build_ingestion_traceability_report()
+        output = write_ingestion_traceability_report(payload, args.output)
+        logger = get_logger("canceromicslake")
+        logger.info("Ingestion traceability report written to %s", output)
+        logger.info("Ingestion traceability status=%s warnings=%s", payload["status"], len(payload.get("warnings", [])))
+        print("Ingestion traceability report generated.")
         return
     if args.command == "run-demo-check":
         load_config(args.config)

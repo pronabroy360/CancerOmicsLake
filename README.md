@@ -63,6 +63,7 @@ make run-gold
 make run-quality
 make run-flow-medium
 make run-demo-check
+make run-ingestion-traceability
 ```
 
 Optional application surfaces:
@@ -110,6 +111,16 @@ make run-demo-check-strict
 - What percentage of source files and table rows passed quality checks?
 
 See `docs/sample_queries.md` and `outputs/sample_queries/` for reviewer-friendly SQL examples.
+
+## Ingestion Traceability
+
+Generate a download-to-silver traceability report:
+
+```bash
+make run-ingestion-traceability
+```
+
+This writes `outputs/reports/ingestion_traceability_report.json` with per-project/per-modality candidate/selected/downloaded/skipped/failed counts and silver parsed row/file coverage.
 
 ## Compliance Notice
 
