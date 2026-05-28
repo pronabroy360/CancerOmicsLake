@@ -23,6 +23,7 @@ Use the medium profile when you want a bounded real-data run:
 ```bash
 make run-download-tcga-medium
 make run-flow-medium
+make run-demo
 ```
 
 Default cap:
@@ -33,6 +34,26 @@ Default cap:
 - Access mode: open-access only
 
 Selection is deterministic so repeated runs choose the same files unless source metadata changes. Reports include requested cap, candidate count, selected count, downloaded count, skipped-existing count, and failed count.
+
+## Reviewer Demo Check
+
+Use the demo verifier after a pipeline run:
+
+```bash
+make run-demo-check
+make run-demo-check-strict
+```
+
+`make run-demo-check` validates:
+
+- required silver and gold parquet tables are readable and non-empty
+- mutation marts are available
+- latest quality report has a passing or warning-only status
+- Graphify and Neo4j exports exist and contain rows
+- FastAPI `/health` responds
+- dashboard data loaders can read overview, cohort, mutation, graph, and quality data
+
+`make run-demo-check-strict` additionally rejects stub/demo-origin rows and requires the latest GDC audit source mode to be `live`.
 
 ## CI And Scheduled Runs
 

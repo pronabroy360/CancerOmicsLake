@@ -5,6 +5,7 @@ These SQL examples are safe to publish because they query local marts and aggreg
 ```bash
 make run-flow-medium
 make run-graph-export
+make run-demo-check
 ```
 
 For DuckDB, either query dbt models or read parquet files directly from `data/gold/`.

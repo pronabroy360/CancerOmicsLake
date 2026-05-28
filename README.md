@@ -62,6 +62,7 @@ make run-silver
 make run-gold
 make run-quality
 make run-flow-medium
+make run-demo-check
 ```
 
 Optional application surfaces:
@@ -71,6 +72,15 @@ make run-api
 make run-dashboard
 make run-graph-export
 ```
+
+Reviewer demo path:
+
+```bash
+make run-demo
+make run-demo-check-strict
+```
+
+`make run-demo` executes the capped pipeline and verifies that silver/gold marts, quality reports, graph exports, API health, and dashboard data contracts are ready for demonstration. `make run-demo-check-strict` additionally rejects stub/demo-origin rows and requires live GDC audit provenance.
 
 ## Medium Cap Profile
 

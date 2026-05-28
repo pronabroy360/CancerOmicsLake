@@ -12,6 +12,8 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     readme = read_text("README.md")
 
     assert "make run-flow-medium" in readme
+    assert "make run-demo" in readme
+    assert "make run-demo-check-strict" in readme
     assert "make run-dashboard" in readme
     assert "daily" in readme.lower()
     assert "Graphify and Neo4j" in readme
@@ -22,6 +24,7 @@ def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
     reproducibility = read_text("docs/reproducibility.md")
 
     assert "make run-download-tcga-medium" in reproducibility
+    assert "make run-demo-check" in reproducibility
     assert "Python `3.11`" in reproducibility
     assert "pipeline_run_history.json" in reproducibility
     assert "scheduled" in reproducibility

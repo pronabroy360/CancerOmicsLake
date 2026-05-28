@@ -255,3 +255,11 @@ Impact values:
 - Expanded reproducibility documentation for medium capped runs, scheduled CI, dbt runtime expectations, and run artifact history.
 - Expanded data dictionary coverage for implemented silver/gold, mutation, expression, and graph marts.
 - Added documentation packaging tests so CI protects reviewer-facing project quality.
+
+## 2026-05-28 - Reviewer Demo Verification Gate
+
+- Added `run-demo-check` CLI command and `make run-demo-check`/`make run-demo-check-strict` targets.
+- Added `make run-demo` as a one-command capped pipeline plus demo-contract verification path.
+- Implemented demo verification for silver/gold parquet readiness, quality report status, Graphify/Neo4j exports, API health, and dashboard data contracts.
+- Added strict no-stub mode to reject stub/demo-origin rows and require live GDC audit provenance.
+- Updated README/reproducibility/query docs so reviewers have a clear demo path.

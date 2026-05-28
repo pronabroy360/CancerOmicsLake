@@ -20,6 +20,7 @@ from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_w
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.tcga_downloader import download_tcga_files
 from src.ingestion.gtex_downloader import gtex_metadata_stub
+from src.operations.demo_check import run_demo_check, write_demo_check_report
 from src.processing.build_expression_table import with_log2_expression
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
 from src.processing.normalize_gtex_expression import normalize_gtex_rows
@@ -151,6 +152,11 @@ def main() -> None:
 
     parser_graph_export = subparsers.add_parser("run-graph-export")
     parser_graph_export.add_argument("--config", required=True)
+
+    parser_demo_check = subparsers.add_parser("run-demo-check")
+    parser_demo_check.add_argument("--config", required=True)
+    parser_demo_check.add_argument("--strict-no-stub", action="store_true")
+    parser_demo_check.add_argument("--output", default="outputs/reports/demo_check_report.json")
 
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
@@ -286,6 +292,17 @@ def main() -> None:
             graphify_summary["edges_count"],
         )
         print("Graph export completed.")
+        return
+    if args.command == "run-demo-check":
+        load_config(args.config)
+        payload = run_demo_check(strict_no_stub=args.strict_no_stub)
+        output = write_demo_check_report(payload, args.output)
+        logger = get_logger("canceromicslake")
+        logger.info("Demo check report written to %s", output)
+        logger.info("Demo check status=%s checks=%s failed=%s", payload["status"], payload["check_count"], payload["failed_count"])
+        if payload["status"] != "passed":
+            raise RuntimeError(f"Demo check failed. See {output}")
+        print("Reviewer demo check completed.")
         return
     if args.command == "run-flow":
         from src.orchestration.pipeline_flow import run_pipeline_with_fallback
