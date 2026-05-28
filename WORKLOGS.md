@@ -239,6 +239,10 @@ Impact values:
   - Updated orchestration metadata to include run-mode and cap settings in pipeline run metadata
   - Added daily scheduled CI trigger and dbt run/test gates in GitHub Actions
   - Added new test coverage for cap logic, reporting utilities, and live-mode quality sanity (`65 passed`)
+  - Added workflow-aware TCGA expression parsing presets for STAR/HTSeq/FPKM-style files and improved expression unit inference for `tpm_*`/`fpkm_*` columns
+  - Added filtering of STAR/HTSeq summary rows (for example `__no_feature`, `N_unmapped`) before silver expression write
+  - Added TCGA workflow-vs-unit compatibility quality check to flag suspicious workflow/unit combinations
+  - Expanded loader and quality tests for summary-row filtering and workflow-unit compatibility (`67 passed`)
 - Next:
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion

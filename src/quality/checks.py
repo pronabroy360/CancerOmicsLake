@@ -112,6 +112,31 @@ def _count_invalid_expression_unit(df: pl.DataFrame, col: str, allowed: set[str]
     )
 
 
+def _count_tcga_workflow_unit_mismatch(df: pl.DataFrame) -> int:
+    required = {"pipeline_workflow", "expression_unit"}
+    if df.is_empty() or not required.issubset(set(df.columns)):
+        return 0
+    return (
+        df.with_columns(
+            [
+                pl.col("pipeline_workflow").cast(pl.Utf8, strict=False).fill_null("").str.to_lowercase().alias("wf"),
+                pl.col("expression_unit").cast(pl.Utf8, strict=False).fill_null("").str.to_uppercase().alias("unit"),
+            ]
+        )
+        .filter(
+            (
+                pl.col("wf").str.contains("htseq - counts") | pl.col("wf").str.contains("htseq_counts")
+            )
+            & (pl.col("unit") != "COUNT")
+            | (
+                pl.col("wf").str.contains("fpkm")
+                & ~pl.col("unit").is_in(["FPKM"])
+            )
+        )
+        .height
+    )
+
+
 def _missing_columns(df: pl.DataFrame, required: list[str]) -> int:
     return len([c for c in required if c not in df.columns])
 
@@ -372,6 +397,7 @@ def run_silver_quality_checks(
     invalid_mut_start = _count_invalid_int(mutations, "start_position")
     invalid_mut_end = _count_invalid_int(mutations, "end_position")
     invalid_tcga_units = _count_invalid_expression_unit(expr_tcga, "expression_unit", {"TPM", "FPKM", "COUNT"})
+    tcga_workflow_unit_mismatch = _count_tcga_workflow_unit_mismatch(expr_tcga)
     invalid_gtex_units = _count_invalid_expression_unit(expr_gtex, "expression_unit", {"TPM"})
     missing_downloaded_files, checksum_mismatches, download_check_applicable, download_partial_mode = _download_integrity_counts(
         manifest=manifest,
@@ -508,6 +534,11 @@ def run_silver_quality_checks(
             check_name="silver_expression_tcga_unit_supported",
             status="passed" if invalid_tcga_units == 0 else "failed",
             failed_rows=int(invalid_tcga_units),
+        ),
+        CheckResult(
+            check_name="silver_expression_tcga_workflow_unit_compatibility",
+            status="passed" if tcga_workflow_unit_mismatch == 0 else "warning",
+            failed_rows=int(tcga_workflow_unit_mismatch),
         ),
         CheckResult(
             check_name="silver_expression_gtex_unit_supported",

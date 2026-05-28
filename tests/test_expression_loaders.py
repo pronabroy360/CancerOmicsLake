@@ -195,4 +195,45 @@ def test_load_tcga_expression_table_supports_gdc_single_sample_gene_counts(tmp_p
     assert row["sample_id"] == "TCGA-BRCA-SAMPLE-0001"
     assert row["gene_symbol"] == "TP53"
     assert row["expression_value"] == 5.5
-    assert row["expression_unit"] == "COUNT"
+    assert row["expression_unit"] == "TPM"
+
+
+def test_load_tcga_expression_table_filters_star_summary_rows(tmp_path: Path) -> None:
+    config = load_config("configs/project_config.yml")
+    ingest_time = "2026-05-28T00:00:00Z"
+
+    tcga_root = tmp_path / "tcga"
+    expr_dir = tcga_root / "TCGA-LUAD" / "expression"
+    expr_dir.mkdir(parents=True, exist_ok=True)
+    expr_file = expr_dir / "sample.star.tsv"
+    expr_file.write_text(
+        "gene_id\tgene_name\tunstranded\ttpm_unstranded\n"
+        "__no_feature\t__no_feature\t3\t0.0\n"
+        "ENSG00000141510.17\tTP53\t12\t5.5\n",
+        encoding="utf-8",
+    )
+
+    metadata_df = pl.DataFrame(
+        {
+            "project_id": ["TCGA-LUAD"],
+            "case_id": ["TCGA-LUAD-CASE-0001"],
+            "sample_id": ["TCGA-LUAD-SAMPLE-0001"],
+            "sample_type": ["Primary Tumor"],
+            "workflow_type": ["STAR - Counts"],
+            "file_name": ["sample.star.tsv"],
+            "data_category": ["Transcriptome Profiling"],
+            "data_type": ["Gene Expression Quantification"],
+            "access": ["open"],
+        }
+    )
+
+    df = load_tcga_expression_table(
+        config=config,
+        ingest_time=ingest_time,
+        metadata_df=metadata_df,
+        tcga_expression_dir=tcga_root,
+    )
+    assert df.height == 1
+    row = df.row(0, named=True)
+    assert row["gene_id"] == "ENSG00000141510"
+    assert row["gene_symbol"] == "TP53"

@@ -341,6 +341,58 @@ def test_run_silver_quality_checks_ignores_unknown_sample_id_duplicates(tmp_path
     assert by_name["silver_samples_duplicate_sample_id"].status == "passed"
 
 
+def test_run_silver_quality_checks_warns_on_tcga_workflow_unit_mismatch(tmp_path: Path) -> None:
+    silver = tmp_path / "silver"
+    silver.mkdir(parents=True, exist_ok=True)
+    pl.DataFrame({"project_id": ["TCGA-BRCA"], "primary_site": ["Breast"], "disease_type": ["Adeno"]}).write_parquet(
+        silver / "silver_projects.parquet"
+    )
+    pl.DataFrame({"project_id": ["TCGA-BRCA"], "case_id": ["c1"], "submitter_id": ["sub-1"]}).write_parquet(
+        silver / "silver_patients.parquet"
+    )
+    pl.DataFrame({"project_id": ["TCGA-BRCA"], "case_id": ["c1"], "sample_id": ["s1"], "sample_type": ["Primary Tumor"]}).write_parquet(
+        silver / "silver_samples.parquet"
+    )
+    pl.DataFrame(
+        schema={
+            "project_id": pl.Utf8,
+            "case_id": pl.Utf8,
+            "sample_id": pl.Utf8,
+            "file_id": pl.Utf8,
+            "file_name": pl.Utf8,
+            "data_category": pl.Utf8,
+            "data_type": pl.Utf8,
+            "experimental_strategy": pl.Utf8,
+            "workflow_type": pl.Utf8,
+            "access": pl.Utf8,
+            "file_size": pl.Int64,
+            "md5sum": pl.Utf8,
+            "ingested_at": pl.Utf8,
+        }
+    ).write_parquet(silver / "silver_file_manifest.parquet")
+    pl.DataFrame(schema={"gtex_sample_id": pl.Utf8, "tissue_site": pl.Utf8, "tissue_detail": pl.Utf8, "gene_id": pl.Utf8, "gene_symbol": pl.Utf8, "expression_value": pl.Float64, "expression_unit": pl.Utf8, "log2_expression": pl.Float64, "source_version": pl.Utf8, "data_origin": pl.Utf8, "ingested_at": pl.Utf8}).write_parquet(silver / "silver_expression_gtex.parquet")
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA"],
+            "case_id": ["c1"],
+            "sample_id": ["s1"],
+            "sample_type": ["Primary Tumor"],
+            "gene_id": ["ENSG00000141510"],
+            "gene_symbol": ["TP53"],
+            "expression_value": [2.0],
+            "expression_unit": ["TPM"],
+            "log2_expression": [1.58],
+            "pipeline_workflow": ["HTSeq - Counts"],
+            "data_origin": ["x"],
+            "ingested_at": ["x"],
+        }
+    ).write_parquet(silver / "silver_expression_tcga.parquet")
+    pl.DataFrame(schema={"project_id": pl.Utf8, "case_id": pl.Utf8, "sample_id": pl.Utf8, "gene_id": pl.Utf8, "gene_symbol": pl.Utf8, "variant_classification": pl.Utf8, "variant_type": pl.Utf8, "chromosome": pl.Utf8, "start_position": pl.Int64, "end_position": pl.Int64, "reference_allele": pl.Utf8, "tumor_seq_allele": pl.Utf8, "data_origin": pl.Utf8, "ingested_at": pl.Utf8}).write_parquet(silver / "silver_mutations.parquet")
+    results = run_silver_quality_checks(silver_dir=silver)
+    by_name = {r.check_name: r for r in results}
+    assert by_name["silver_expression_tcga_workflow_unit_compatibility"].status == "warning"
+
+
 def test_run_silver_quality_checks_live_mode_non_zero_sanity(tmp_path: Path) -> None:
     silver = tmp_path / "silver"
     bronze_tcga = tmp_path / "bronze" / "tcga"

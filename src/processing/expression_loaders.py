@@ -81,21 +81,62 @@ def _normalize_gene_id_series(series: pl.Series) -> pl.Series:
 def _infer_tcga_expression_unit(expr_col_name: str, workflow_type: str) -> str:
     col = expr_col_name.lower().strip()
     workflow = workflow_type.lower().strip()
-    if col == "tpm":
+    if col == "tpm" or col.startswith("tpm_"):
         return "TPM"
-    if col == "fpkm":
+    if col == "fpkm" or col.startswith("fpkm_"):
         return "FPKM"
-    if col == "count":
+    if col == "count" or col.endswith("_count") or "count" == col or col == "unstranded":
         return "COUNT"
     if "count" in workflow:
         return "COUNT"
     return "TPM"
 
 
+def _choose_tcga_expression_column(
+    raw: pl.DataFrame,
+    workflow_type: str,
+    default_expr_col: str | None,
+) -> tuple[str | None, str | None]:
+    workflow = workflow_type.lower().strip()
+    available = {c.lower(): c for c in raw.columns}
+
+    def pick(candidates: list[str]) -> str | None:
+        for c in candidates:
+            if c.lower() in available:
+                return available[c.lower()]
+        return None
+
+    if "star - counts" in workflow or "star_counts" in workflow or "augmented_star_gene_counts" in workflow:
+        col = pick(["tpm_unstranded", "fpkm_unstranded", "fpkm_uq_unstranded", "unstranded", "read_count", "count"])
+        if col is not None:
+            return col, None
+    if "htseq - counts" in workflow or "htseq_counts" in workflow:
+        col = pick(["count", "read_count", "unstranded"])
+        if col is not None:
+            return col, "COUNT"
+    if "fpkm" in workflow:
+        col = pick(["fpkm_uq_unstranded", "fpkm_unstranded", "fpkm"])
+        if col is not None:
+            return col, "FPKM"
+
+    return default_expr_col, None
+
+
 def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
     raw = _safe_read_table(path)
     if raw.is_empty():
         return _empty_tcga_expression_df().head(0)
+
+    metadata_for_file = (
+        metadata_df.filter(pl.col("file_name").cast(pl.Utf8) == path.name).head(1)
+        if "file_name" in metadata_df.columns
+        else pl.DataFrame()
+    )
+    workflow_hint = (
+        str(metadata_for_file["workflow_type"][0])
+        if (not metadata_for_file.is_empty() and "workflow_type" in metadata_for_file.columns)
+        else ""
+    )
 
     sample_col = _resolve_column(raw, ["sample_id", "sample", "sampleid"])
     gene_id_col = _resolve_column(raw, ["gene_id", "gene", "ensembl_gene_id", "miRNA_ID", "mirna_id"])
@@ -116,6 +157,7 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
             "value",
         ],
     )
+    expr_col, forced_unit = _choose_tcga_expression_column(raw=raw, workflow_type=workflow_hint, default_expr_col=expr_col)
 
     if gene_id_col is None or expr_col is None:
         return _empty_tcga_expression_df().head(0)
@@ -134,12 +176,6 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
             ]
         )
     else:
-        file_name = path.name
-        metadata_for_file = (
-            metadata_df.filter(pl.col("file_name").cast(pl.Utf8) == file_name).head(1)
-            if "file_name" in metadata_df.columns
-            else pl.DataFrame()
-        )
         sample_id_for_file = (
             str(metadata_for_file["sample_id"][0])
             if not metadata_for_file.is_empty() and "sample_id" in metadata_for_file.columns
@@ -180,9 +216,15 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
         )
 
     base = base.filter(pl.col("gene_id_raw").is_not_null() & (pl.col("gene_id_raw").cast(pl.Utf8) != ""))
+    base = base.filter(
+        ~pl.col("gene_id_raw").cast(pl.Utf8).str.starts_with("__")
+        & ~pl.col("gene_id_raw").cast(pl.Utf8).str.to_lowercase().is_in(
+            ["n_unmapped", "n_multimapping", "n_nofeature", "n_ambiguous"]
+        )
+    )
     gene_id_series = _normalize_gene_id_series(base.get_column("gene_id_raw")).alias("gene_id")
     base = base.with_columns(gene_id_series)
-    expr_unit = _infer_tcga_expression_unit(
+    expr_unit = forced_unit or _infer_tcga_expression_unit(
         expr_col_name=expr_col,
         workflow_type=str(base.get_column("workflow_type")[0] if base.height > 0 else ""),
     )
