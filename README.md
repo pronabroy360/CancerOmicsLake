@@ -13,13 +13,41 @@ Implemented so far:
 - Strict live-ingestion support (`tcga.require_live_gdc`)
 - File-based TCGA/GTEx expression loaders with fallback behavior
 - Silver parquet outputs for projects, patients, samples, file manifest, and expression tables
-- Gold cohort summary mart
+- Mutation MAF parsing and mutation-frequency gold marts
+- Gold cohort, expression, tumor-vs-normal, mutation, and graph marts
 - Quality report generation
-- FastAPI and Streamlit scaffolds
-- Test suite for config, ingestion, silver, and gold builders
+- Graphify and Neo4j CSV graph exports
+- FastAPI endpoints and Streamlit dashboard pages backed by local marts
+- Test suite for config, ingestion, parsing, silver/gold builders, graph exports, API, dashboard data, reporting, and quality checks
 - Daily CI schedule + dbt run/test gate on Python 3.11
 - Medium-cap real ingestion profile (`expression<=25`, `mutations<=10` per project)
 - Pipeline run-mode tagging (`manual`/`push`/`scheduled`) and run history tracking
+
+## Architecture
+
+```text
+Public TCGA/GTEx sources
+        |
+        v
+YAML config + ingestion clients
+        |
+        v
+Bronze metadata/files -> Silver normalized parquet -> Gold analytics marts
+        |                         |                    |
+        |                         v                    v
+        |                    Quality reports       DuckDB/dbt models
+        |                                              |
+        v                                              v
+Graphify/Neo4j exports                          FastAPI + Streamlit
+```
+
+Detailed docs:
+
+- `docs/architecture.md`
+- `docs/data_dictionary.md`
+- `docs/graph_schema.md`
+- `docs/reproducibility.md`
+- `docs/sample_queries.md`
 
 ## Quickstart
 
@@ -36,6 +64,14 @@ make run-quality
 make run-flow-medium
 ```
 
+Optional application surfaces:
+
+```bash
+make run-api
+make run-dashboard
+make run-graph-export
+```
+
 ## Medium Cap Profile
 
 - Default medium cap in this sprint:
@@ -45,11 +81,24 @@ make run-flow-medium
 - Use:
   - `make run-download-tcga-medium` for download-only stage
   - `make run-flow-medium` for end-to-end flow
+- Intended for repeatable daily automation and local demonstration, not full-cohort completeness.
+- Expected storage depends on GDC file availability, but this profile is deliberately bounded to avoid accidental large downloads.
 
 ## Runtime Notes
 
 - dbt execution source-of-truth is CI Python `3.11`.
 - Local Python `3.14` remains supported for non-dbt pipeline commands.
+- GitHub Actions runs on push/pull request and once daily through the scheduled workflow.
+- CI uploads run reports, ingestion audit output, download summaries, and pipeline metadata as artifacts.
+
+## Example Questions
+
+- Which genes are most overexpressed in TCGA-BRCA compared with GTEx breast tissue?
+- Which genes are commonly mutated in TCGA-LUAD?
+- Which cancer-gene relationships are exported to the graph layer?
+- What percentage of source files and table rows passed quality checks?
+
+See `docs/sample_queries.md` and `outputs/sample_queries/` for reviewer-friendly SQL examples.
 
 ## Compliance Notice
 

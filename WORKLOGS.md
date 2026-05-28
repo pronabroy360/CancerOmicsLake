@@ -244,6 +244,14 @@ Impact values:
   - Added TCGA workflow-vs-unit compatibility quality check to flag suspicious workflow/unit combinations
   - Expanded loader and quality tests for summary-row filtering and workflow-unit compatibility (`67 passed`)
 - Next:
-  - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion
   - Add dashboard screenshots and README embeds from live pages for professor-facing presentation
+  - Add a reviewer-facing demo script that runs API, dashboard, and graph export checks in one command
+
+## 2026-05-28 - Reviewer Documentation And Query Packaging
+
+- Expanded README with architecture, graph/dashboard/API entrypoints, medium-cap runtime notes, and example analytical questions.
+- Added `docs/sample_queries.md` and publish-safe SQL files under `outputs/sample_queries/`.
+- Expanded reproducibility documentation for medium capped runs, scheduled CI, dbt runtime expectations, and run artifact history.
+- Expanded data dictionary coverage for implemented silver/gold, mutation, expression, and graph marts.
+- Added documentation packaging tests so CI protects reviewer-facing project quality.

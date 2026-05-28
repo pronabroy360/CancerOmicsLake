@@ -1,0 +1,123 @@
+# Sample Queries
+
+These SQL examples are safe to publish because they query local marts and aggregate outputs. Run the pipeline first:
+
+```bash
+make run-flow-medium
+make run-graph-export
+```
+
+For DuckDB, either query dbt models or read parquet files directly from `data/gold/`.
+
+## Cohort Summary
+
+```sql
+SELECT
+    tcga_project_count,
+    tcga_patient_count,
+    tcga_sample_count,
+    tcga_file_count,
+    gtex_expression_sample_count,
+    tcga_expression_row_count,
+    gtex_expression_row_count,
+    gene_count,
+    mutation_record_count,
+    generated_at
+FROM read_parquet('data/gold/gold_cohort_summary/*.parquet');
+```
+
+## Top Overexpressed Genes In BRCA
+
+```sql
+SELECT
+    gene_symbol,
+    cancer_type,
+    median_tumor_expression,
+    median_normal_expression,
+    log2_fold_change,
+    sample_count_tumor,
+    sample_count_normal
+FROM read_parquet('data/gold/gold_tumor_vs_normal_expression/*.parquet')
+WHERE cancer_type = 'TCGA-BRCA'
+ORDER BY log2_fold_change DESC
+LIMIT 20;
+```
+
+## Top Mutated Genes In LUAD
+
+```sql
+SELECT
+    gene_symbol,
+    cancer_type,
+    mutated_sample_count,
+    total_profiled_sample_count,
+    mutation_frequency,
+    top_variant_classification
+FROM read_parquet('data/gold/gold_mutation_frequency_by_gene/*.parquet')
+WHERE cancer_type = 'TCGA-LUAD'
+ORDER BY mutation_frequency DESC, mutated_sample_count DESC
+LIMIT 20;
+```
+
+## Cancer-Gene Graph Edges
+
+```sql
+SELECT
+    source_node_id,
+    target_node_id,
+    edge_type,
+    weight,
+    evidence_source
+FROM read_parquet('data/gold/gold_graph_edges/*.parquet')
+WHERE edge_type IN ('EXPRESSED_IN_TISSUE', 'MUTATED_IN_CANCER')
+ORDER BY weight DESC
+LIMIT 100;
+```
+
+## Genes With Expression And Mutation Signals
+
+```sql
+WITH expression_signal AS (
+    SELECT
+        cancer_type,
+        gene_symbol,
+        log2_fold_change
+    FROM read_parquet('data/gold/gold_tumor_vs_normal_expression/*.parquet')
+    WHERE log2_fold_change IS NOT NULL
+),
+mutation_signal AS (
+    SELECT
+        cancer_type,
+        gene_symbol,
+        mutation_frequency
+    FROM read_parquet('data/gold/gold_mutation_frequency_by_gene/*.parquet')
+)
+SELECT
+    e.cancer_type,
+    e.gene_symbol,
+    e.log2_fold_change,
+    m.mutation_frequency
+FROM expression_signal e
+JOIN mutation_signal m
+    ON e.cancer_type = m.cancer_type
+   AND e.gene_symbol = m.gene_symbol
+ORDER BY e.log2_fold_change DESC, m.mutation_frequency DESC
+LIMIT 25;
+```
+
+## Quality Checks That Need Attention
+
+```sql
+SELECT
+    check_name,
+    status,
+    failed_rows,
+    message
+FROM read_json_auto('outputs/reports/silver_data_quality_report.json')
+WHERE status IN ('failed', 'warning')
+ORDER BY status, check_name;
+```
+
+## Caveat
+
+Tumor-vs-normal expression comparisons join TCGA tumor data to GTEx normal tissue references. These are useful for demonstrating data engineering and exploratory analytics, but batch effects mean they are not clinical or validated biological claims.
