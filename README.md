@@ -11,6 +11,7 @@ Implemented so far:
 - Bronze metadata and manifest generation
 - GDC ingestion audit reporting (`outputs/reports/gdc_ingestion_audit.json`)
 - Strict live-ingestion support (`tcga.require_live_gdc`)
+- File-based TCGA/GTEx expression loaders with fallback behavior
 - Silver parquet outputs for projects, patients, samples, file manifest, and expression tables
 - Gold cohort summary mart
 - Quality report generation

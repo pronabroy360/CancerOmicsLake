@@ -1,6 +1,6 @@
 {
-  "pipeline_run_id": "20260528T070225Z",
-  "generated_at": "2026-05-28T07:02:25.600182+00:00",
+  "pipeline_run_id": "20260528T075406Z",
+  "generated_at": "2026-05-28T07:54:06.472131+00:00",
   "status": "passed",
   "checks": [
     {
@@ -37,6 +37,22 @@
     },
     {
       "check_name": "silver_expression_gtex_non_negative",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
+      "check_name": "silver_expression_tcga_null_gene_id",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
+      "check_name": "silver_expression_tcga_non_negative",
       "status": "passed",
       "failed_rows": 0,
       "metric_name": "",

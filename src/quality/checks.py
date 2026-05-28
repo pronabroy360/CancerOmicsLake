@@ -130,6 +130,23 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
             "ingested_at": pl.Utf8,
         },
     )
+    expr_tcga = _read_or_empty(
+        root / "silver_expression_tcga.parquet",
+        {
+            "project_id": pl.Utf8,
+            "case_id": pl.Utf8,
+            "sample_id": pl.Utf8,
+            "sample_type": pl.Utf8,
+            "gene_id": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "expression_value": pl.Float64,
+            "expression_unit": pl.Utf8,
+            "log2_expression": pl.Float64,
+            "pipeline_workflow": pl.Utf8,
+            "data_origin": pl.Utf8,
+            "ingested_at": pl.Utf8,
+        },
+    )
 
     null_project_ids = _count_null_or_blank(projects, "project_id")
     duplicate_sample_ids = (
@@ -144,6 +161,12 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
     negative_expr = (
         expr_gtex.filter(pl.col("expression_value").cast(pl.Float64, strict=False) < 0).height
         if "expression_value" in expr_gtex.columns
+        else 0
+    )
+    null_gene_ids_tcga = _count_null_or_blank(expr_tcga, "gene_id")
+    negative_expr_tcga = (
+        expr_tcga.filter(pl.col("expression_value").cast(pl.Float64, strict=False) < 0).height
+        if "expression_value" in expr_tcga.columns
         else 0
     )
 
@@ -172,5 +195,15 @@ def run_silver_quality_checks(silver_dir: str | Path = "data/silver") -> list[Ch
             check_name="silver_expression_gtex_non_negative",
             status="passed" if negative_expr == 0 else "failed",
             failed_rows=int(negative_expr),
+        ),
+        CheckResult(
+            check_name="silver_expression_tcga_null_gene_id",
+            status="passed" if null_gene_ids_tcga == 0 else "failed",
+            failed_rows=int(null_gene_ids_tcga),
+        ),
+        CheckResult(
+            check_name="silver_expression_tcga_non_negative",
+            status="passed" if negative_expr_tcga == 0 else "failed",
+            failed_rows=int(negative_expr_tcga),
         ),
     ]
