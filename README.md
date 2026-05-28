@@ -99,7 +99,8 @@ make run-demo-check-strict
 - dbt execution source-of-truth is CI Python `3.11`.
 - Local Python `3.14` remains supported for non-dbt pipeline commands.
 - GitHub Actions runs on push/pull request and once daily through the scheduled workflow.
-- CI uploads run reports, ingestion audit output, download summaries, and pipeline metadata as artifacts.
+- CI uploads run reports, ingestion audit output, download summaries, pipeline metadata, and graph export bundles as artifacts.
+- CI now runs `make run-graph-export` and `make run-demo-check` as a reviewer-readiness gate.
 
 ## Example Questions
 

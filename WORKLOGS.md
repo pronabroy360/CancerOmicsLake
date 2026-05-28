@@ -263,3 +263,10 @@ Impact values:
 - Implemented demo verification for silver/gold parquet readiness, quality report status, Graphify/Neo4j exports, API health, and dashboard data contracts.
 - Added strict no-stub mode to reject stub/demo-origin rows and require live GDC audit provenance.
 - Updated README/reproducibility/query docs so reviewers have a clear demo path.
+
+## 2026-05-28 - CI Demo Gate Enforcement
+
+- Updated CI workflow to run `make run-graph-export` and `make run-demo-check` after quality checks.
+- Added graph export artifact upload bundle (`neo4j` + `graphify` outputs and Neo4j bulk import script/files).
+- Added CI workflow contract test to prevent accidental removal of the demo gate and schedule/dbt checks.
+- Synced README and reproducibility docs with the enforced CI demo-gate behavior.

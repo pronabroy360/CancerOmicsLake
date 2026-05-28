@@ -18,6 +18,7 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "daily" in readme.lower()
     assert "Graphify and Neo4j" in readme
     assert "open-access-only" in readme
+    assert "make run-demo-check" in readme
 
 
 def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
@@ -28,6 +29,7 @@ def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
     assert "Python `3.11`" in reproducibility
     assert "pipeline_run_history.json" in reproducibility
     assert "scheduled" in reproducibility
+    assert "make run-graph-export" in reproducibility
 
 
 def test_sample_queries_cover_core_marts() -> None:

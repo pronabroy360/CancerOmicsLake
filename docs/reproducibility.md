@@ -61,7 +61,7 @@ make run-demo-check-strict
 - Daily scheduled automation runs from `.github/workflows/ci.yml`.
 - Python `3.11` is the source-of-truth runtime for dbt in CI.
 - Local Python `3.14` remains acceptable for non-dbt pipeline commands.
-- CI executes `make test`, metadata/silver/gold/quality stages, `dbt run`, and `dbt test`.
+- CI executes `make test`, metadata/silver/gold/quality stages, `dbt run`, `dbt test`, `make run-graph-export`, and `make run-demo-check`.
 - CI uploads operational artifacts so run state is reviewable without committing generated outputs.
 
 ## Run Metadata

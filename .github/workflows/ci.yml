@@ -54,10 +54,30 @@ jobs:
       - name: Silver Quality
         run: make run-quality
 
+      - name: Graph Export
+        run: make run-graph-export
+
+      - name: Reviewer Demo Check
+        run: make run-demo-check
+
       - name: Upload Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: reports
           path: outputs/reports/*.json
+          if-no-files-found: warn
+
+      - name: Upload Graph Exports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: graph-exports
+          path: |
+            outputs/graph_exports/neo4j/nodes.csv
+            outputs/graph_exports/neo4j/edges.csv
+            outputs/graph_exports/neo4j/import_bulk.cypher
+            outputs/graph_exports/neo4j/bulk/**
+            outputs/graph_exports/graphify/nodes.csv
+            outputs/graph_exports/graphify/edges.csv
           if-no-files-found: warn
