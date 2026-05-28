@@ -232,6 +232,13 @@ Impact values:
   - Implemented graph explorer controls for edge-type filtering, node search, visible-node/edge metrics, and Neo4j bulk export file visibility
   - Added targeted unit tests for dashboard analytics coverage (`tests/test_dashboard_data.py`)
   - Revalidated test suite after dashboard integration (`60 passed`)
+  - Added project-level modality download caps to config and downloader (`expression`/`mutations`) with deterministic selection and cap metadata in reports
+  - Added CLI cap controls and medium-cap run targets (`run-download-tcga-medium`, `run-flow-medium`) while preserving open-access and checksum/retry behavior
+  - Expanded silver quality checks with schema presence contracts, sample/project linkage checks, gold graph/node schema checks, graph edge-node FK checks, and live-mode non-zero row sanity checks
+  - Added report context utilities for run-mode tagging and persistent run history (`pipeline_run_history.json`)
+  - Updated orchestration metadata to include run-mode and cap settings in pipeline run metadata
+  - Added daily scheduled CI trigger and dbt run/test gates in GitHub Actions
+  - Added new test coverage for cap logic, reporting utilities, and live-mode quality sanity (`65 passed`)
 - Next:
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion

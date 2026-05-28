@@ -46,19 +46,22 @@ def check_gene_mapping_rate(mapped_rows: list[dict[str, str]], threshold: float 
     )
 
 
-def build_quality_payload(run_id: str, results: list[CheckResult]) -> dict[str, object]:
+def build_quality_payload(run_id: str, results: list[CheckResult], context: dict[str, object] | None = None) -> dict[str, object]:
     statuses = {result.status for result in results}
     status = "passed"
     if "failed" in statuses:
         status = "failed"
     elif "warning" in statuses:
         status = "passed_with_warnings"
-    return {
+    payload: dict[str, object] = {
         "pipeline_run_id": run_id,
         "generated_at": datetime.now(UTC).isoformat(),
         "status": status,
         "checks": [result.to_dict() for result in results],
     }
+    if context:
+        payload.update(context)
+    return payload
 
 
 def _read_or_empty(path: Path, schema: dict[str, pl.DataType]) -> pl.DataFrame:
@@ -109,6 +112,21 @@ def _count_invalid_expression_unit(df: pl.DataFrame, col: str, allowed: set[str]
     )
 
 
+def _missing_columns(df: pl.DataFrame, required: list[str]) -> int:
+    return len([c for c in required if c not in df.columns])
+
+
+def _detect_live_mode(download_report_path: Path) -> bool:
+    if not download_report_path.exists():
+        return False
+    try:
+        payload = json.loads(download_report_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return False
+    source_metadata_file = str(payload.get("source_metadata_file", ""))
+    return "_live" in Path(source_metadata_file).name
+
+
 def _infer_data_subdir(data_category: str) -> str:
     category = data_category.lower()
     if "transcriptome profiling" in category:
@@ -155,8 +173,14 @@ def _download_integrity_counts(
 
     max_downloads = payload.get("max_downloads")
     total_candidates = int(payload.get("total_candidates", 0) or 0)
+    selected_candidates = int(payload.get("selected_candidates", total_candidates) or 0)
     attempted_downloads = int(payload.get("attempted_downloads", 0) or 0)
-    partial_mode = bool(max_downloads is not None and attempted_downloads < total_candidates)
+    cap_applied = bool(payload.get("cap_applied", False))
+    partial_mode = bool(
+        (max_downloads is not None and attempted_downloads < total_candidates)
+        or cap_applied
+        or selected_candidates < total_candidates
+    )
 
     missing = 0
     checksum_mismatch = 0
@@ -188,8 +212,10 @@ def run_silver_quality_checks(
     silver_dir: str | Path = "data/silver",
     bronze_tcga_root: str | Path = "data/bronze/tcga",
     download_report_path: str | Path = "outputs/reports/tcga_download_report.json",
+    gold_dir: str | Path = "data/gold",
 ) -> list[CheckResult]:
     root = Path(silver_dir)
+    gold_root = Path(gold_dir)
 
     projects = _read_or_empty(
         root / "silver_projects.parquet",
@@ -269,6 +295,32 @@ def run_silver_quality_checks(
             "ingested_at": pl.Utf8,
         },
     )
+    gold_mut_gene = _read_or_empty(
+        gold_root / "gold_mutation_frequency_by_gene.parquet",
+        {
+            "gene_symbol": pl.Utf8,
+            "cancer_type": pl.Utf8,
+            "mutated_sample_count": pl.Int64,
+            "total_profiled_sample_count": pl.Int64,
+            "mutation_frequency": pl.Float64,
+            "top_variant_classification": pl.Utf8,
+        },
+    )
+    gold_graph_nodes = _read_or_empty(
+        gold_root / "gold_graph_nodes.parquet",
+        {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
+    )
+    gold_graph_edges = _read_or_empty(
+        gold_root / "gold_graph_edges.parquet",
+        {
+            "edge_id": pl.Utf8,
+            "source_node_id": pl.Utf8,
+            "target_node_id": pl.Utf8,
+            "edge_type": pl.Utf8,
+            "weight": pl.Float64,
+            "evidence_source": pl.Utf8,
+        },
+    )
 
     null_project_ids = _count_null_or_blank(projects, "project_id")
     duplicate_sample_ids = (
@@ -326,6 +378,65 @@ def run_silver_quality_checks(
         bronze_tcga_root=Path(bronze_tcga_root),
         download_report_path=Path(download_report_path),
     )
+    missing_projects_cols = _missing_columns(projects, ["project_id", "primary_site", "disease_type"])
+    missing_samples_cols = _missing_columns(samples, ["project_id", "case_id", "sample_id", "sample_type"])
+    missing_expr_tcga_cols = _missing_columns(
+        expr_tcga,
+        ["project_id", "case_id", "sample_id", "gene_id", "gene_symbol", "expression_value", "expression_unit"],
+    )
+    missing_mut_cols = _missing_columns(
+        mutations,
+        ["project_id", "case_id", "sample_id", "gene_symbol", "variant_classification", "start_position", "end_position"],
+    )
+    missing_gold_mut_cols = _missing_columns(
+        gold_mut_gene,
+        ["gene_symbol", "cancer_type", "mutated_sample_count", "mutation_frequency"],
+    )
+    missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
+    missing_gold_graph_edge_cols = _missing_columns(
+        gold_graph_edges,
+        ["edge_id", "source_node_id", "target_node_id", "edge_type"],
+    )
+    samples_missing_project_fk = (
+        samples.join(projects.select(["project_id"]).unique(), on=["project_id"], how="anti").height
+        if ("project_id" in samples.columns and "project_id" in projects.columns)
+        else 0
+    )
+    mutation_missing_case_fk = (
+        mutations.filter(
+            pl.col("case_id").cast(pl.Utf8, strict=False).is_not_null()
+            & (pl.col("case_id").cast(pl.Utf8, strict=False).str.strip_chars() != "")
+            & (pl.col("case_id").cast(pl.Utf8, strict=False).str.to_lowercase() != "unknown")
+        )
+        .join(
+            patients.select(["project_id", "case_id"]).unique(),
+            on=["project_id", "case_id"],
+            how="anti",
+        )
+        .height
+        if {"project_id", "case_id"}.issubset(set(mutations.columns))
+        else 0
+    )
+    if not gold_graph_edges.is_empty():
+        if gold_graph_nodes.is_empty() or "node_id" not in gold_graph_nodes.columns:
+            graph_edges_missing_nodes = gold_graph_edges.height
+        else:
+            node_ids = gold_graph_nodes.get_column("node_id").to_list()
+            graph_edges_missing_nodes = gold_graph_edges.filter(
+                ~pl.col("source_node_id").is_in(node_ids)
+                | ~pl.col("target_node_id").is_in(node_ids)
+            ).height
+    else:
+        graph_edges_missing_nodes = 0
+    live_mode_detected = _detect_live_mode(Path(download_report_path))
+    expected_non_zero_failure = 0
+    if live_mode_detected:
+        if expr_tcga.height == 0:
+            expected_non_zero_failure += 1
+        if mutations.height == 0:
+            expected_non_zero_failure += 1
+        if gold_mut_gene.height == 0:
+            expected_non_zero_failure += 1
 
     return [
         CheckResult(
@@ -352,6 +463,26 @@ def run_silver_quality_checks(
             check_name="silver_manifest_md5_present",
             status="passed" if missing_manifest_md5 == 0 else "failed",
             failed_rows=int(missing_manifest_md5),
+        ),
+        CheckResult(
+            check_name="silver_projects_schema_columns_present",
+            status="passed" if missing_projects_cols == 0 else "failed",
+            failed_rows=int(missing_projects_cols),
+        ),
+        CheckResult(
+            check_name="silver_samples_schema_columns_present",
+            status="passed" if missing_samples_cols == 0 else "failed",
+            failed_rows=int(missing_samples_cols),
+        ),
+        CheckResult(
+            check_name="silver_expression_tcga_schema_columns_present",
+            status="passed" if missing_expr_tcga_cols == 0 else "failed",
+            failed_rows=int(missing_expr_tcga_cols),
+        ),
+        CheckResult(
+            check_name="silver_mutations_schema_columns_present",
+            status="passed" if missing_mut_cols == 0 else "failed",
+            failed_rows=int(missing_mut_cols),
         ),
         CheckResult(
             check_name="silver_expression_gtex_null_gene_id",
@@ -397,6 +528,41 @@ def run_silver_quality_checks(
             check_name="silver_mutations_end_position_valid_integer",
             status="passed" if invalid_mut_end == 0 else "failed",
             failed_rows=int(invalid_mut_end),
+        ),
+        CheckResult(
+            check_name="silver_samples_project_fk_integrity",
+            status="passed" if samples_missing_project_fk == 0 else "failed",
+            failed_rows=int(samples_missing_project_fk),
+        ),
+        CheckResult(
+            check_name="silver_mutations_case_fk_integrity",
+            status="passed" if mutation_missing_case_fk == 0 else "warning",
+            failed_rows=int(mutation_missing_case_fk),
+        ),
+        CheckResult(
+            check_name="gold_mutation_frequency_schema_columns_present",
+            status="passed" if (gold_mut_gene.is_empty() or missing_gold_mut_cols == 0) else "failed",
+            failed_rows=int(missing_gold_mut_cols),
+        ),
+        CheckResult(
+            check_name="gold_graph_nodes_schema_columns_present",
+            status="passed" if (gold_graph_nodes.is_empty() or missing_gold_graph_node_cols == 0) else "failed",
+            failed_rows=int(missing_gold_graph_node_cols),
+        ),
+        CheckResult(
+            check_name="gold_graph_edges_schema_columns_present",
+            status="passed" if (gold_graph_edges.is_empty() or missing_gold_graph_edge_cols == 0) else "failed",
+            failed_rows=int(missing_gold_graph_edge_cols),
+        ),
+        CheckResult(
+            check_name="gold_graph_edges_node_fk_integrity",
+            status="passed" if graph_edges_missing_nodes == 0 else "failed",
+            failed_rows=int(graph_edges_missing_nodes),
+        ),
+        CheckResult(
+            check_name="live_mode_non_zero_row_sanity",
+            status="passed" if expected_non_zero_failure == 0 else "failed",
+            failed_rows=int(expected_non_zero_failure),
         ),
         CheckResult(
             check_name="bronze_tcga_download_file_presence",

@@ -79,6 +79,38 @@ def _write_json(path: str | Path, payload: dict[str, Any]) -> Path:
     return out
 
 
+def _canonicalize_caps(raw_caps: dict[str, dict[str, int]] | None) -> dict[str, dict[str, int]]:
+    if not raw_caps:
+        return {}
+    normalized: dict[str, dict[str, int]] = {}
+    for project_id, cap_map in raw_caps.items():
+        if not isinstance(cap_map, dict):
+            continue
+        entry: dict[str, int] = {}
+        for modality, cap in cap_map.items():
+            key = str(modality).strip().lower()
+            if key not in {"expression", "mutations"}:
+                continue
+            try:
+                parsed = int(cap)
+            except (TypeError, ValueError):
+                continue
+            if parsed < 0:
+                continue
+            entry[key] = parsed
+        if entry:
+            normalized[str(project_id)] = entry
+    return normalized
+
+
+def _count_inc(store: dict[str, int], key: str) -> None:
+    store[key] = store.get(key, 0) + 1
+
+
+def _build_project_subdir_key(project_id: str, subdir: str) -> str:
+    return f"{project_id}|{subdir}"
+
+
 def download_tcga_files(
     config: AppConfig,
     metadata_csv_path: str | Path | None = None,
@@ -89,11 +121,14 @@ def download_tcga_files(
     force_download: bool = False,
     max_downloads: int | None = None,
     allowed_data_subdirs: set[str] | None = None,
+    project_modality_caps: dict[str, dict[str, int]] | None = None,
+    run_mode: str = "manual",
 ) -> dict[str, Any]:
     run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     if config.tcga.metadata_only and not force_download:
         summary = {
             "pipeline_run_id": run_id,
+            "run_mode": run_mode,
             "status": "skipped_metadata_only",
             "reason": "tcga.metadata_only=true",
             "total_candidates": 0,
@@ -125,11 +160,39 @@ def download_tcga_files(
         and bool(row.get("file_id"))
         and bool(row.get("file_name"))
     ]
+
+    candidate_rows = sorted(
+        candidate_rows,
+        key=lambda row: (
+            row.get("project_id", ""),
+            _infer_data_subdir(row.get("data_category", "")),
+            row.get("file_id", ""),
+            row.get("file_name", ""),
+        ),
+    )
     if allowed_data_subdirs:
         normalized_allowed = {x.strip().lower() for x in allowed_data_subdirs if x.strip()}
         candidate_rows = [
             row for row in candidate_rows if _infer_data_subdir(row.get("data_category", "")) in normalized_allowed
         ]
+
+    effective_caps = _canonicalize_caps(project_modality_caps) if project_modality_caps is not None else _canonicalize_caps(
+        config.tcga.download_caps_by_project
+    )
+    candidate_counts: dict[str, int] = {}
+    selected_counts: dict[str, int] = {}
+    selected_rows: list[dict[str, str]] = []
+    for row in candidate_rows:
+        project_id = row.get("project_id", "")
+        subdir = _infer_data_subdir(row.get("data_category", ""))
+        key = _build_project_subdir_key(project_id, subdir)
+        _count_inc(candidate_counts, key)
+
+        cap_for_modality = effective_caps.get(project_id, {}).get(subdir)
+        if cap_for_modality is not None and selected_counts.get(key, 0) >= cap_for_modality:
+            continue
+        _count_inc(selected_counts, key)
+        selected_rows.append(row)
 
     downloaded_count = 0
     skipped_existing_count = 0
@@ -138,9 +201,12 @@ def download_tcga_files(
     attempted_downloads = 0
     total_bytes_downloaded = 0
     failures: list[dict[str, str]] = []
+    downloaded_counts: dict[str, int] = {}
+    skipped_counts: dict[str, int] = {}
+    failed_counts: dict[str, int] = {}
 
     root = Path(bronze_tcga_root)
-    for row in candidate_rows:
+    for row in selected_rows:
         if max_downloads is not None and attempted_downloads >= max_downloads:
             break
         project_id = row["project_id"]
@@ -148,12 +214,14 @@ def download_tcga_files(
         file_name = row["file_name"]
         md5sum = row.get("md5sum", "").strip()
         data_subdir = _infer_data_subdir(row.get("data_category", ""))
+        key = _build_project_subdir_key(project_id, data_subdir)
         destination = root / project_id / data_subdir / file_name
 
         if destination.exists() and md5sum:
             existing_md5 = _md5_file(destination)
             if existing_md5 == md5sum:
                 skipped_existing_count += 1
+                _count_inc(skipped_counts, key)
                 continue
 
         attempted_downloads += 1
@@ -167,6 +235,7 @@ def download_tcga_files(
         )
         if error:
             failed_count += 1
+            _count_inc(failed_counts, key)
             failures.append(
                 {
                     "project_id": project_id,
@@ -179,6 +248,7 @@ def download_tcga_files(
 
         if not destination.exists():
             failed_count += 1
+            _count_inc(failed_counts, key)
             failures.append(
                 {
                     "project_id": project_id,
@@ -196,6 +266,7 @@ def download_tcga_files(
             if downloaded_md5 != md5sum:
                 checksum_mismatch_count += 1
                 failed_count += 1
+                _count_inc(failed_counts, key)
                 failures.append(
                     {
                         "project_id": project_id,
@@ -207,15 +278,26 @@ def download_tcga_files(
                 destination.unlink(missing_ok=True)
                 continue
         downloaded_count += 1
+        _count_inc(downloaded_counts, key)
 
     status = "completed_with_failures" if failures else "completed"
+    cap_applied = len(selected_rows) < len(candidate_rows)
     summary = {
         "pipeline_run_id": run_id,
+        "run_mode": run_mode,
         "status": status,
         "source_metadata_file": str(source_path),
         "total_candidates": len(candidate_rows),
+        "selected_candidates": len(selected_rows),
         "max_downloads": max_downloads,
         "allowed_data_subdirs": sorted(list(allowed_data_subdirs)) if allowed_data_subdirs else [],
+        "project_modality_caps": effective_caps,
+        "cap_applied": cap_applied,
+        "candidate_counts_by_project_subdir": candidate_counts,
+        "selected_counts_by_project_subdir": selected_counts,
+        "downloaded_counts_by_project_subdir": downloaded_counts,
+        "skipped_counts_by_project_subdir": skipped_counts,
+        "failed_counts_by_project_subdir": failed_counts,
         "attempted_downloads": attempted_downloads,
         "downloaded_count": downloaded_count,
         "skipped_existing_count": skipped_existing_count,

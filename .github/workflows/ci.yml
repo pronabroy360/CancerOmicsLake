@@ -5,6 +5,8 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  schedule:
+    - cron: "0 2 * * *"
 
 permissions:
   contents: read
@@ -12,6 +14,8 @@ permissions:
 jobs:
   test-and-smoke:
     runs-on: ubuntu-latest
+    env:
+      RUN_MODE: ${{ github.event_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,6 +41,12 @@ jobs:
 
       - name: Silver Build
         run: make run-silver
+
+      - name: dbt Run
+        run: make run-dbt
+
+      - name: dbt Test
+        run: make test-dbt
 
       - name: Gold Build
         run: make run-gold

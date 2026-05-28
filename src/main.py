@@ -4,11 +4,13 @@ import argparse
 import csv
 from datetime import UTC, datetime
 import json
+import os
 from pathlib import Path
 
 from src.common.config import load_config
 from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
+from src.common.reporting import inject_report_context, resolve_run_mode
 from src.analytics.build_gold_tables import build_gold_cohort_summary
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
@@ -45,6 +47,7 @@ def run_metadata_mode(
     config_path: str,
     require_live_gdc: bool = False,
     gdc_base_url_override: str | None = None,
+    run_mode: str = "manual",
 ) -> None:
     logger = get_logger("canceromicslake")
     ensure_base_dirs()
@@ -60,6 +63,7 @@ def run_metadata_mode(
         audit_out = Path(cfg.gdc_api.audit_output_path)
         audit_out.parent.mkdir(parents=True, exist_ok=True)
         audit_out.write_text(json.dumps(exc.audit, indent=2), encoding="utf-8")
+        inject_report_context(audit_out, {"run_mode": run_mode})
         logger.error("Live GDC required run failed. Audit written: %s", audit_out)
         raise
     if source_mode == "stub":
@@ -99,6 +103,7 @@ def run_metadata_mode(
     audit_out = Path(cfg.gdc_api.audit_output_path)
     audit_out.parent.mkdir(parents=True, exist_ok=True)
     audit_out.write_text(json.dumps(audit, indent=2), encoding="utf-8")
+    inject_report_context(audit_out, {"run_mode": run_mode})
     logger.info("Wrote GDC ingestion audit: %s", audit_out)
 
     gtex_rows = gtex_metadata_stub(cfg)
@@ -109,7 +114,7 @@ def run_metadata_mode(
         check_gene_mapping_rate(gtex_expr, threshold=cfg.quality.gene_mapping_rate_threshold),
     ]
     run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-    payload = build_quality_payload(run_id, check_results)
+    payload = build_quality_payload(run_id, check_results, context={"run_mode": run_mode})
     write_quality_json(payload, "outputs/reports/data_quality_report.json")
     logger.info("Wrote quality report for run: %s", run_id)
 
@@ -134,6 +139,9 @@ def main() -> None:
     parser_download.add_argument("--force-download", action="store_true")
     parser_download.add_argument("--max-downloads", type=int, default=None)
     parser_download.add_argument("--data-subdirs", default=None, help="comma-separated: expression,mutations,clinical,biospecimen,other")
+    parser_download.add_argument("--expression-cap-per-project", type=int, default=None)
+    parser_download.add_argument("--mutation-cap-per-project", type=int, default=None)
+    parser_download.add_argument("--use-medium-cap-profile", action="store_true")
 
     parser_gold = subparsers.add_parser("run-gold")
     parser_gold.add_argument("--config", required=True)
@@ -147,9 +155,13 @@ def main() -> None:
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
     parser_flow.add_argument("--require-live-gdc", action="store_true")
+    parser_flow.add_argument("--use-medium-cap-profile", action="store_true")
+    parser_flow.add_argument("--expression-cap-per-project", type=int, default=None)
+    parser_flow.add_argument("--mutation-cap-per-project", type=int, default=None)
 
     args = parser.parse_args()
     configure_logging()
+    run_mode = resolve_run_mode(os.getenv("RUN_MODE") or os.getenv("GITHUB_EVENT_NAME"))
 
     if args.command == "validate-config":
         load_config(args.config)
@@ -160,6 +172,7 @@ def main() -> None:
             args.config,
             require_live_gdc=args.require_live_gdc,
             gdc_base_url_override=args.gdc_base_url,
+            run_mode=run_mode,
         )
         print("Metadata-only pipeline run completed.")
         return
@@ -185,11 +198,27 @@ def main() -> None:
         subdirs = None
         if args.data_subdirs:
             subdirs = {x.strip().lower() for x in args.data_subdirs.split(",") if x.strip()}
+        cap_expression = args.expression_cap_per_project
+        cap_mutation = args.mutation_cap_per_project
+        if args.use_medium_cap_profile:
+            cap_expression = 25
+            cap_mutation = 10
+        caps = None
+        if cap_expression is not None or cap_mutation is not None:
+            caps = {
+                project_id: {
+                    **({"expression": cap_expression} if cap_expression is not None else {}),
+                    **({"mutations": cap_mutation} if cap_mutation is not None else {}),
+                }
+                for project_id in cfg.tcga.projects
+            }
         summary = download_tcga_files(
             cfg,
             force_download=args.force_download,
             max_downloads=args.max_downloads,
             allowed_data_subdirs=subdirs,
+            project_modality_caps=caps,
+            run_mode=run_mode,
         )
         logger = get_logger("canceromicslake")
         logger.info(
@@ -228,7 +257,7 @@ def main() -> None:
         load_config(args.config)
         results = run_silver_quality_checks()
         run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
-        payload = build_quality_payload(run_id, results)
+        payload = build_quality_payload(run_id, results, context={"run_mode": run_mode})
         output = write_quality_json(payload, "outputs/reports/silver_data_quality_report.json")
         logger = get_logger("canceromicslake")
         logger.info("Silver quality report written to %s", output)
@@ -261,9 +290,18 @@ def main() -> None:
     if args.command == "run-flow":
         from src.orchestration.pipeline_flow import run_pipeline_with_fallback
 
+        cap_expression = args.expression_cap_per_project
+        cap_mutation = args.mutation_cap_per_project
+        if args.use_medium_cap_profile:
+            cap_expression = 25
+            cap_mutation = 10
+
         result = run_pipeline_with_fallback(
             config_path=args.config,
             require_live_gdc=args.require_live_gdc,
+            run_mode=run_mode,
+            expression_cap_per_project=cap_expression,
+            mutation_cap_per_project=cap_mutation,
         )
         logger = get_logger("canceromicslake")
         logger.info("Pipeline flow completed: run_id=%s status=%s", result["pipeline_run_id"], result["status"])

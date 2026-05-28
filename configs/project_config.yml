@@ -22,6 +22,16 @@ tcga:
   workflow_types: null
   use_stub_on_error: true
   require_live_gdc: false
+  download_caps_by_project:
+    TCGA-BRCA:
+      expression: 25
+      mutations: 10
+    TCGA-LUAD:
+      expression: 25
+      mutations: 10
+    TCGA-COAD:
+      expression: 25
+      mutations: 10
 
 gtex:
   version: v8

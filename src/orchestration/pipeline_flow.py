@@ -11,6 +11,7 @@ from prefect import flow, task
 
 from src.analytics.build_gold_tables import build_gold_cohort_summary
 from src.common.config import AppConfig, load_config
+from src.common.reporting import append_run_history, inject_report_context
 from src.ingestion.gdc_client import query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.tcga_downloader import download_tcga_files
@@ -57,7 +58,7 @@ def _load_config_impl(config_path: str) -> AppConfig:
     return load_config(config_path)
 
 
-def _metadata_impl(config_path: str, require_live_gdc: bool = False) -> None:
+def _metadata_impl(config_path: str, require_live_gdc: bool = False, run_mode: str = "manual") -> None:
     cfg = load_config(config_path)
     if require_live_gdc:
         cfg.tcga.require_live_gdc = True
@@ -89,6 +90,7 @@ def _metadata_impl(config_path: str, require_live_gdc: bool = False) -> None:
     audit_out = Path(cfg.gdc_api.audit_output_path)
     audit_out.parent.mkdir(parents=True, exist_ok=True)
     audit_out.write_text(json.dumps(audit, indent=2), encoding="utf-8")
+    inject_report_context(audit_out, {"run_mode": run_mode})
 
 
 def _silver_impl(cfg: AppConfig) -> dict[str, object]:
@@ -163,6 +165,9 @@ def _execute_pipeline(
     config_path: str = "configs/project_config.yml",
     require_live_gdc: bool = False,
     output_metadata_path: str = "outputs/reports/pipeline_run_metadata.json",
+    run_mode: str = "manual",
+    expression_cap_per_project: int | None = None,
+    mutation_cap_per_project: int | None = None,
 ) -> dict[str, Any]:
     run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     start = datetime.now(UTC)
@@ -176,12 +181,30 @@ def _execute_pipeline(
     gold_summary: dict[str, object] = {}
     quality_summary: dict[str, Any] = {}
 
+    caps = None
+    if expression_cap_per_project is not None or mutation_cap_per_project is not None:
+        caps = {
+            project_id: {
+                **({"expression": int(expression_cap_per_project)} if expression_cap_per_project is not None else {}),
+                **({"mutations": int(mutation_cap_per_project)} if mutation_cap_per_project is not None else {}),
+            }
+            for project_id in cfg.tcga.projects
+        }
+
     try:
-        _metadata_impl(config_path=config_path, require_live_gdc=require_live_gdc)
-        download_summary = _download_impl(cfg)
+        _metadata_impl(config_path=config_path, require_live_gdc=require_live_gdc, run_mode=run_mode)
+        download_summary = download_tcga_files(
+            config=cfg,
+            project_modality_caps=caps,
+            run_mode=run_mode,
+        )
         silver_summary = _silver_impl(cfg)
         gold_summary = _gold_impl()
         quality_summary = _quality_impl()
+        inject_report_context(
+            "outputs/reports/silver_data_quality_report.json",
+            {"run_mode": run_mode},
+        )
         _graph_export_impl()
     except Exception:
         status = "failed"
@@ -198,6 +221,7 @@ def _execute_pipeline(
             output_table_count += 6
         run_payload = {
             "pipeline_run_id": run_id,
+            "run_mode": run_mode,
             "start_time": start.isoformat(),
             "end_time": end.isoformat(),
             "status": status,
@@ -206,8 +230,22 @@ def _execute_pipeline(
             "output_table_count": output_table_count,
             "error_count": error_count,
             "warning_count": warning_count,
+            "expression_cap_per_project": expression_cap_per_project,
+            "mutation_cap_per_project": mutation_cap_per_project,
         }
         _write_run_metadata(run_payload, output_metadata_path)
+        append_run_history(
+            {
+                "pipeline_run_id": run_id,
+                "run_mode": run_mode,
+                "status": status,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+                "warning_count": warning_count,
+                "error_count": error_count,
+            },
+            "outputs/reports/pipeline_run_history.json",
+        )
 
     return {
         "pipeline_run_id": run_id,
@@ -224,11 +262,17 @@ def canceromicslake_pipeline(
     config_path: str = "configs/project_config.yml",
     require_live_gdc: bool = False,
     output_metadata_path: str = "outputs/reports/pipeline_run_metadata.json",
+    run_mode: str = "manual",
+    expression_cap_per_project: int | None = None,
+    mutation_cap_per_project: int | None = None,
 ) -> dict[str, Any]:
     return _execute_pipeline(
         config_path=config_path,
         require_live_gdc=require_live_gdc,
         output_metadata_path=output_metadata_path,
+        run_mode=run_mode,
+        expression_cap_per_project=expression_cap_per_project,
+        mutation_cap_per_project=mutation_cap_per_project,
     )
 
 
@@ -236,12 +280,18 @@ def run_pipeline_with_fallback(
     config_path: str = "configs/project_config.yml",
     require_live_gdc: bool = False,
     output_metadata_path: str = "outputs/reports/pipeline_run_metadata.json",
+    run_mode: str = "manual",
+    expression_cap_per_project: int | None = None,
+    mutation_cap_per_project: int | None = None,
 ) -> dict[str, Any]:
     try:
         return canceromicslake_pipeline(
             config_path=config_path,
             require_live_gdc=require_live_gdc,
             output_metadata_path=output_metadata_path,
+            run_mode=run_mode,
+            expression_cap_per_project=expression_cap_per_project,
+            mutation_cap_per_project=mutation_cap_per_project,
         )
     except RuntimeError as exc:
         if "Unable to find an available port" not in str(exc):
@@ -250,4 +300,7 @@ def run_pipeline_with_fallback(
             config_path=config_path,
             require_live_gdc=require_live_gdc,
             output_metadata_path=output_metadata_path,
+            run_mode=run_mode,
+            expression_cap_per_project=expression_cap_per_project,
+            mutation_cap_per_project=mutation_cap_per_project,
         )

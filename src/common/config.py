@@ -28,6 +28,7 @@ class TcgaConfig(BaseModel):
     workflow_types: list[str] | None = None
     use_stub_on_error: bool = True
     require_live_gdc: bool = False
+    download_caps_by_project: dict[str, dict[str, int]] = Field(default_factory=dict)
 
 
 class GdcApiConfig(BaseModel):

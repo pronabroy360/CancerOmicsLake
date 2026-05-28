@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-silver run-gold run-quality run-graph-export run-flow run-dbt test-dbt run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-medium run-silver run-gold run-quality run-graph-export run-flow run-flow-medium run-dbt test-dbt run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -30,6 +30,9 @@ run-silver:
 run-download-tcga:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml
 
+run-download-tcga-medium:
+	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations
+
 run-download-tcga-force-smoke:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --max-downloads 3 --data-subdirs expression,mutations
 
@@ -44,6 +47,9 @@ run-graph-export:
 
 run-flow:
 	$(PYTHON) -m src.main run-flow --config configs/project_config.yml
+
+run-flow-medium:
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --use-medium-cap-profile
 
 run-dbt:
 	$(VENV)/bin/dbt run --project-dir dbt --profiles-dir dbt

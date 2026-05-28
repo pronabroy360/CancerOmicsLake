@@ -258,3 +258,85 @@ def test_download_tcga_files_respects_max_downloads_and_subdir_filters(tmp_path:
     assert summary["attempted_downloads"] == 1
     assert summary["downloaded_count"] == 1
     assert not (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "clinical" / "clin.tsv").exists()
+
+
+def test_download_tcga_files_respects_project_modality_caps_deterministically(tmp_path: Path, monkeypatch) -> None:
+    cfg = load_config("configs/project_config.yml")
+    cfg.tcga.metadata_only = False
+    cfg.gdc_api.retry_count = 0
+    metadata = tmp_path / "tcga_metadata_live.csv"
+
+    payload = b"ok"
+    md5 = "444bcb3a3fcf8389296c49467f27e1d6"
+    rows: list[dict[str, str]] = []
+    for idx in range(1, 4):
+        rows.append(
+            {
+                "project_id": "TCGA-BRCA",
+                "case_id": "case-1",
+                "submitter_id": "sub-1",
+                "sample_id": "sample-1",
+                "sample_type": "Primary Tumor",
+                "primary_site": "Breast",
+                "disease_type": "Adeno",
+                "file_id": f"expr-{idx}",
+                "file_name": f"expr-{idx}.tsv",
+                "data_category": "Transcriptome Profiling",
+                "data_type": "Gene Expression Quantification",
+                "experimental_strategy": "RNA-Seq",
+                "workflow_type": "STAR",
+                "access": "open",
+                "file_size": str(len(payload)),
+                "md5sum": md5,
+            }
+        )
+    for idx in range(1, 3):
+        rows.append(
+            {
+                "project_id": "TCGA-BRCA",
+                "case_id": "case-1",
+                "submitter_id": "sub-1",
+                "sample_id": "sample-1",
+                "sample_type": "Primary Tumor",
+                "primary_site": "Breast",
+                "disease_type": "Adeno",
+                "file_id": f"mut-{idx}",
+                "file_name": f"mut-{idx}.maf",
+                "data_category": "Simple Nucleotide Variation",
+                "data_type": "Masked Somatic Mutation",
+                "experimental_strategy": "WXS",
+                "workflow_type": "Mutect2",
+                "access": "open",
+                "file_size": str(len(payload)),
+                "md5sum": md5,
+            }
+        )
+    _write_metadata_csv(metadata, rows)
+
+    def fake_fetch(url: str, destination: Path, timeout_sec: int) -> None:  # noqa: ARG001
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(payload)
+
+    monkeypatch.setattr(tcga_downloader, "_fetch_to_path", fake_fetch)
+    summary = tcga_downloader.download_tcga_files(
+        config=cfg,
+        metadata_csv_path=metadata,
+        bronze_tcga_root=tmp_path / "bronze" / "tcga",
+        report_path=tmp_path / "report.json",
+        retry_log_path=tmp_path / "retry.json",
+        project_modality_caps={"TCGA-BRCA": {"expression": 2, "mutations": 1}},
+        run_mode="scheduled",
+    )
+
+    assert summary["run_mode"] == "scheduled"
+    assert summary["total_candidates"] == 5
+    assert summary["selected_candidates"] == 3
+    assert summary["cap_applied"] is True
+    assert summary["selected_counts_by_project_subdir"]["TCGA-BRCA|expression"] == 2
+    assert summary["selected_counts_by_project_subdir"]["TCGA-BRCA|mutations"] == 1
+    assert summary["downloaded_count"] == 3
+    assert (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "expression" / "expr-1.tsv").exists()
+    assert (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "expression" / "expr-2.tsv").exists()
+    assert not (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "expression" / "expr-3.tsv").exists()
+    assert (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "mutations" / "mut-1.maf").exists()
+    assert not (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "mutations" / "mut-2.maf").exists()

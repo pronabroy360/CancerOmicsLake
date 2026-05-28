@@ -107,6 +107,7 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
     end_col = _resolve_column(raw, ["end_position", "end_pos", "position"])
     ref_col = _resolve_column(raw, ["reference_allele", "ref_allele"])
     alt_col = _resolve_column(raw, ["tumor_seq_allele2", "tumor_seq_allele", "tumor_allele"])
+    case_col = _resolve_column(raw, ["case_id"])
 
     if sample_col is None or gene_symbol_col is None or start_col is None:
         return _empty_mutation_df().head(0)
@@ -151,20 +152,53 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
                 if alt_col is not None
                 else pl.lit("Unknown", dtype=pl.Utf8)
             ).alias("tumor_seq_allele"),
+            (
+                pl.col(case_col).cast(pl.Utf8)
+                if case_col is not None
+                else pl.lit(None, dtype=pl.Utf8)
+            ).alias("case_id_file"),
         ]
     )
 
     meta_columns = {"sample_id", "project_id", "case_id"}
+    project_id_from_path = "Unknown"
+    if len(path.parents) >= 2 and path.parents[1].name.startswith("TCGA-"):
+        project_id_from_path = path.parents[1].name
     if meta_columns.issubset(set(metadata_df.columns)):
-        sample_map = metadata_df.select([pl.col("sample_id"), pl.col("project_id"), pl.col("case_id")]).unique(
-            subset=["sample_id"]
+        sample_map = metadata_df.select(
+            [
+                pl.col("sample_id"),
+                pl.col("project_id").alias("project_id_meta"),
+                pl.col("case_id").alias("case_id_meta"),
+            ]
+        ).unique(subset=["sample_id"])
+        case_map = metadata_df.select(
+            [
+                pl.col("case_id").alias("case_id_file"),
+                pl.col("project_id").alias("project_id_case"),
+            ]
+        ).unique(subset=["case_id_file"])
+        base = (
+            base.join(sample_map, on="sample_id", how="left")
+            .join(case_map, on="case_id_file", how="left")
+            .with_columns(
+                [
+                    pl.coalesce(
+                        [
+                            pl.col("project_id_meta"),
+                            pl.col("project_id_case"),
+                            pl.lit(project_id_from_path),
+                        ]
+                    ).alias("project_id"),
+                    pl.coalesce([pl.col("case_id_meta"), pl.col("case_id_file")]).alias("case_id"),
+                ]
+            )
         )
-        base = base.join(sample_map, on="sample_id", how="left")
     else:
         base = base.with_columns(
             [
-                pl.lit("Unknown").alias("project_id"),
-                pl.lit("Unknown").alias("case_id"),
+                pl.lit(project_id_from_path).alias("project_id"),
+                pl.col("case_id_file").fill_null("Unknown").alias("case_id"),
             ]
         )
 

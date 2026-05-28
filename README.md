@@ -17,6 +17,9 @@ Implemented so far:
 - Quality report generation
 - FastAPI and Streamlit scaffolds
 - Test suite for config, ingestion, silver, and gold builders
+- Daily CI schedule + dbt run/test gate on Python 3.11
+- Medium-cap real ingestion profile (`expression<=25`, `mutations<=10` per project)
+- Pipeline run-mode tagging (`manual`/`push`/`scheduled`) and run history tracking
 
 ## Quickstart
 
@@ -26,10 +29,27 @@ make test
 make run-metadata
 make run-metadata-strict
 make run-metadata-strict-smoke
+make run-download-tcga-medium
 make run-silver
 make run-gold
 make run-quality
+make run-flow-medium
 ```
+
+## Medium Cap Profile
+
+- Default medium cap in this sprint:
+  - `expression: 25 files/project`
+  - `mutations: 10 files/project`
+- Applies to `TCGA-BRCA`, `TCGA-LUAD`, and `TCGA-COAD`.
+- Use:
+  - `make run-download-tcga-medium` for download-only stage
+  - `make run-flow-medium` for end-to-end flow
+
+## Runtime Notes
+
+- dbt execution source-of-truth is CI Python `3.11`.
+- Local Python `3.14` remains supported for non-dbt pipeline commands.
 
 ## Compliance Notice
 
