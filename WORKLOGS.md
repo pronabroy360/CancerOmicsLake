@@ -186,9 +186,12 @@ Impact values:
   - Added `run-graph-export` stage to produce Neo4j and Graphify CSV bundles from gold graph tables
   - Added graph export unit coverage and generated first local exports under `outputs/graph_exports/` (`23 passed`)
   - Added silver quality checks for sample-to-patient FK integrity and manifest MD5 presence, increasing silver checks from 10 to 12
+  - Implemented gold `gold_tumor_vs_normal_expression.parquet` generation from silver TCGA tumor + mapped GTEx normal tissues (BRCA/LUAD/COAD mapping)
+  - Updated `/expression/tumor-vs-normal/{gene_symbol}` API path to read gold tumor-vs-normal table with stub fallback
+  - Added tumor-vs-normal integration and service tests (`26 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
-  - Expand quality checks with file-checksum verification and sample-to-patient mapping integrity
+  - Expand quality checks with file-checksum verification against download manifests
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion
   - Add Neo4j import script templates and graph query examples tied to exported CSV schema

@@ -29,6 +29,97 @@ def _read_or_empty(path: Path, schema: dict[str, pl.DataType]) -> pl.DataFrame:
     return pl.DataFrame(schema=schema)
 
 
+def _project_tissue_mapping() -> pl.DataFrame:
+    return pl.DataFrame(
+        [
+            {"project_id": "TCGA-BRCA", "tissue_site": "Breast - Mammary Tissue"},
+            {"project_id": "TCGA-BRCA", "tissue_site": "Breast"},
+            {"project_id": "TCGA-LUAD", "tissue_site": "Lung"},
+            {"project_id": "TCGA-COAD", "tissue_site": "Colon - Transverse"},
+            {"project_id": "TCGA-COAD", "tissue_site": "Colon - Sigmoid"},
+            {"project_id": "TCGA-COAD", "tissue_site": "Colon"},
+        ]
+    )
+
+
+def _empty_tumor_vs_normal() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "gene_symbol": pl.Utf8,
+            "cancer_type": pl.Utf8,
+            "median_tcga_tumor_expression": pl.Float64,
+            "median_gtex_normal_expression": pl.Float64,
+            "mean_tcga_tumor_expression": pl.Float64,
+            "mean_gtex_normal_expression": pl.Float64,
+            "log2_fold_change": pl.Float64,
+            "sample_count_tumor": pl.Int64,
+            "sample_count_normal": pl.Int64,
+        }
+    )
+
+
+def _build_tumor_vs_normal_table(expr_tcga: pl.DataFrame, expr_gtex: pl.DataFrame) -> pl.DataFrame:
+    if expr_tcga.is_empty() or expr_gtex.is_empty():
+        return _empty_tumor_vs_normal()
+
+    tumor = expr_tcga.filter(
+        pl.col("sample_type").cast(pl.Utf8, strict=False).str.to_lowercase().str.contains("tumor")
+    )
+    if tumor.is_empty():
+        return _empty_tumor_vs_normal()
+
+    tumor_agg = tumor.group_by(["project_id", "gene_symbol"]).agg(
+        [
+            pl.col("expression_value").median().alias("median_tcga_tumor_expression"),
+            pl.col("expression_value").mean().alias("mean_tcga_tumor_expression"),
+            pl.col("sample_id").n_unique().cast(pl.Int64).alias("sample_count_tumor"),
+        ]
+    )
+
+    mapping = _project_tissue_mapping()
+    normal = expr_gtex.join(mapping, on="tissue_site", how="inner")
+    if normal.is_empty():
+        return _empty_tumor_vs_normal()
+
+    normal_agg = normal.group_by(["project_id", "gene_symbol"]).agg(
+        [
+            pl.col("expression_value").median().alias("median_gtex_normal_expression"),
+            pl.col("expression_value").mean().alias("mean_gtex_normal_expression"),
+            pl.col("gtex_sample_id").n_unique().cast(pl.Int64).alias("sample_count_normal"),
+        ]
+    )
+
+    combined = tumor_agg.join(normal_agg, on=["project_id", "gene_symbol"], how="inner")
+    if combined.is_empty():
+        return _empty_tumor_vs_normal()
+
+    return combined.with_columns(
+        [
+            pl.col("project_id").alias("cancer_type"),
+            (
+                (
+                    (pl.col("median_tcga_tumor_expression") + 1.0)
+                    / (pl.col("median_gtex_normal_expression") + 1.0)
+                )
+                .log(base=2)
+                .cast(pl.Float64)
+            ).alias("log2_fold_change"),
+        ]
+    ).select(
+        [
+            pl.col("gene_symbol"),
+            pl.col("cancer_type"),
+            pl.col("median_tcga_tumor_expression").cast(pl.Float64),
+            pl.col("median_gtex_normal_expression").cast(pl.Float64),
+            pl.col("mean_tcga_tumor_expression").cast(pl.Float64),
+            pl.col("mean_gtex_normal_expression").cast(pl.Float64),
+            pl.col("log2_fold_change"),
+            pl.col("sample_count_tumor").cast(pl.Int64),
+            pl.col("sample_count_normal").cast(pl.Int64),
+        ]
+    )
+
+
 def build_gold_cohort_summary(
     silver_dir: str | Path = "data/silver",
     gold_dir: str | Path = "data/gold",
@@ -244,14 +335,18 @@ def build_gold_cohort_summary(
     output_path = gold_root / "gold_cohort_summary.parquet"
     output_mut_by_gene = gold_root / "gold_mutation_frequency_by_gene.parquet"
     output_mut_by_cancer = gold_root / "gold_mutation_frequency_by_cancer.parquet"
+    output_tumor_vs_normal = gold_root / "gold_tumor_vs_normal_expression.parquet"
+    tumor_vs_normal = _build_tumor_vs_normal_table(expr_tcga=expr_tcga, expr_gtex=expr_gtex)
     summary.write_parquet(output_path)
     mutation_by_gene.write_parquet(output_mut_by_gene)
     mutation_by_cancer.write_parquet(output_mut_by_cancer)
+    tumor_vs_normal.write_parquet(output_tumor_vs_normal)
 
     return {
         "gold_cohort_summary_path": str(output_path),
         "gold_mutation_frequency_by_gene_path": str(output_mut_by_gene),
         "gold_mutation_frequency_by_cancer_path": str(output_mut_by_cancer),
+        "gold_tumor_vs_normal_expression_path": str(output_tumor_vs_normal),
         "tcga_project_count": int(summary["tcga_project_count"][0]),
         "tcga_patient_count": int(summary["tcga_patient_count"][0]),
         "tcga_sample_count": int(summary["tcga_sample_count"][0]),
@@ -262,4 +357,5 @@ def build_gold_cohort_summary(
         "mutation_record_count": int(summary["mutation_record_count"][0]),
         "mutation_gene_rows": int(mutation_by_gene.height),
         "mutation_cancer_rows": int(mutation_by_cancer.height),
+        "tumor_vs_normal_rows": int(tumor_vs_normal.height),
     }

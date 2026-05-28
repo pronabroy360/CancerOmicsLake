@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene_stub
 from src.analytics.mutation_frequency import mutation_frequency_by_cancer, mutation_frequency_by_gene
-from src.analytics.tumor_vs_normal import tumor_vs_normal_stub
+from src.analytics.tumor_vs_normal import tumor_vs_normal_by_gene
 from src.graph.build_edges import load_graph_edges
 from src.graph.build_nodes import load_graph_nodes
 
@@ -49,7 +49,7 @@ def expression_gene(gene_symbol: str) -> dict[str, object]:
 
 @app.get("/expression/tumor-vs-normal/{gene_symbol}")
 def expression_tumor_vs_normal(gene_symbol: str) -> dict[str, object]:
-    return tumor_vs_normal_stub(gene_symbol)
+    return tumor_vs_normal_by_gene(gene_symbol)
 
 
 @app.get("/mutations/gene/{gene_symbol}")
