@@ -200,6 +200,9 @@ Impact values:
   - Added resilient fallback execution when Prefect cannot start local ephemeral API (restricted-port environments)
   - Added orchestration unit tests and validated local flow command (`35 passed`)
   - Added FastAPI endpoint smoke tests for health, metadata, expression, tumor-vs-normal, and mutation routes (`40 passed`)
+  - Replaced `/genes/search` stub with silver-backed gene search across expression/mutation tables
+  - Replaced `/quality/latest` stub with report-backed quality payload reader plus cohort summary merge
+  - Added analytics tests for gene search and quality-latest readers, and expanded API smoke coverage (`46 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks with file-checksum verification against download manifests

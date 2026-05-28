@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene
+from src.analytics.gene_search import search_genes
 from src.analytics.metadata import metadata_projects as metadata_projects_data
 from src.analytics.metadata import metadata_samples as metadata_samples_data
 from src.analytics.mutation_frequency import mutation_frequency_by_cancer, mutation_frequency_by_gene
+from src.analytics.quality_latest import quality_latest as quality_latest_payload
 from src.analytics.tumor_vs_normal import tumor_vs_normal_by_gene
 from src.graph.build_edges import load_graph_edges
 from src.graph.build_nodes import load_graph_nodes
@@ -31,17 +32,7 @@ def metadata_samples(project_id: str) -> dict[str, object]:
 
 @app.get("/genes/search")
 def genes_search(query: str) -> dict[str, object]:
-    return {
-        "query": query,
-        "results": [
-            {
-                "gene_id": "ENSG00000141510",
-                "gene_symbol": "TP53",
-                "gene_name": "tumor protein p53",
-                "chromosome": "17",
-            }
-        ],
-    }
+    return search_genes(query)
 
 
 @app.get("/expression/gene/{gene_symbol}")
@@ -76,4 +67,4 @@ def graph_edges() -> dict[str, object]:
 
 @app.get("/quality/latest")
 def quality_latest() -> dict[str, object]:
-    return {"status": "passed_with_warnings", "checks": [], "summary": cohort_summary_from_gold()}
+    return quality_latest_payload()

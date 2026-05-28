@@ -20,6 +20,14 @@ def test_metadata_projects_endpoint() -> None:
     assert isinstance(payload["projects"], list)
 
 
+def test_genes_search_endpoint() -> None:
+    response = client.get("/genes/search", params={"query": "TP53"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["query"] == "TP53"
+    assert "results" in payload
+
+
 def test_expression_gene_endpoint() -> None:
     response = client.get("/expression/gene/TP53")
     assert response.status_code == 200
@@ -42,3 +50,12 @@ def test_mutations_gene_endpoint() -> None:
     payload = response.json()
     assert payload["gene_symbol"] == "TP53"
     assert "rows" in payload
+
+
+def test_quality_latest_endpoint() -> None:
+    response = client.get("/quality/latest")
+    assert response.status_code == 200
+    payload = response.json()
+    assert "status" in payload
+    assert "checks" in payload
+    assert "summary" in payload
