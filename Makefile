@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-silver run-gold run-quality run-graph-export run-dbt test-dbt run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-silver run-gold run-quality run-graph-export run-flow run-dbt test-dbt run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -35,6 +35,9 @@ run-quality:
 
 run-graph-export:
 	$(PYTHON) -m src.main run-graph-export --config configs/project_config.yml
+
+run-flow:
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml
 
 run-dbt:
 	$(VENV)/bin/dbt run --project-dir dbt --profiles-dir dbt

@@ -17,6 +17,7 @@ from src.graph.export_neo4j import export_neo4j_from_gold_graph_tables
 from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.gtex_downloader import gtex_metadata_stub
+from src.orchestration.pipeline_flow import run_pipeline_with_fallback
 from src.processing.build_expression_table import with_log2_expression
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
 from src.processing.normalize_gtex_expression import normalize_gtex_rows
@@ -137,6 +138,10 @@ def main() -> None:
     parser_graph_export = subparsers.add_parser("run-graph-export")
     parser_graph_export.add_argument("--config", required=True)
 
+    parser_flow = subparsers.add_parser("run-flow")
+    parser_flow.add_argument("--config", required=True)
+    parser_flow.add_argument("--require-live-gdc", action="store_true")
+
     args = parser.parse_args()
     configure_logging()
 
@@ -217,6 +222,15 @@ def main() -> None:
             graphify_summary["edges_count"],
         )
         print("Graph export completed.")
+        return
+    if args.command == "run-flow":
+        result = run_pipeline_with_fallback(
+            config_path=args.config,
+            require_live_gdc=args.require_live_gdc,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info("Pipeline flow completed: run_id=%s status=%s", result["pipeline_run_id"], result["status"])
+        print("Pipeline flow completed.")
         return
 
 

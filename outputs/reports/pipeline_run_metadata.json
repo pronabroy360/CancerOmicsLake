@@ -1,0 +1,11 @@
+{
+  "pipeline_run_id": "20260528T092351Z",
+  "start_time": "2026-05-28T09:23:51.044249+00:00",
+  "end_time": "2026-05-28T09:23:55.624291+00:00",
+  "status": "success",
+  "config_hash": "8c5dd3179be3eb44f1756b2830a9fb04332520238787bf177749ce45b6f1a9bf",
+  "input_file_count": 2,
+  "output_table_count": 13,
+  "error_count": 0,
+  "warning_count": 0
+}

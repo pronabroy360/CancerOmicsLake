@@ -196,6 +196,9 @@ Impact values:
   - Implemented dbt scaffolding with bronze staging views, silver cleaned models, gold marts, and dbt schema tests for mutation/tumor-vs-normal/graph outputs
   - Added `make run-dbt` and `make test-dbt` targets plus `dbt/profiles.yml` for local DuckDB execution
   - Added dbt dependencies (`dbt-core`, `dbt-duckdb`) to `requirements.txt` (note: local Python 3.14 environment cannot execute dbt runtime; CI Python 3.11 remains the target runtime)
+  - Implemented Prefect orchestration flow (`run-flow`) that executes metadata → silver → gold → quality → graph-export stages and writes `outputs/reports/pipeline_run_metadata.json`
+  - Added resilient fallback execution when Prefect cannot start local ephemeral API (restricted-port environments)
+  - Added orchestration unit tests and validated local flow command (`35 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks with file-checksum verification against download manifests
