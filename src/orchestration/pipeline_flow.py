@@ -13,6 +13,7 @@ from src.analytics.build_gold_tables import build_gold_cohort_summary
 from src.common.config import AppConfig, load_config
 from src.ingestion.gdc_client import query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
+from src.ingestion.tcga_downloader import download_tcga_files
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
@@ -94,6 +95,10 @@ def _silver_impl(cfg: AppConfig) -> dict[str, object]:
     return build_silver_tables_from_bronze(config=cfg)
 
 
+def _download_impl(cfg: AppConfig) -> dict[str, Any]:
+    return download_tcga_files(config=cfg)
+
+
 def _gold_impl() -> dict[str, object]:
     gold_summary = build_gold_cohort_summary()
     node_summary = build_graph_nodes_table()
@@ -135,6 +140,11 @@ def silver_stage(cfg: AppConfig) -> dict[str, object]:
 
 
 @task
+def download_stage(cfg: AppConfig) -> dict[str, Any]:
+    return _download_impl(cfg)
+
+
+@task
 def gold_stage() -> dict[str, object]:
     return _gold_impl()
 
@@ -162,11 +172,13 @@ def _execute_pipeline(
     warning_count = 0
     status = "success"
     silver_summary: dict[str, object] = {}
+    download_summary: dict[str, Any] = {}
     gold_summary: dict[str, object] = {}
     quality_summary: dict[str, Any] = {}
 
     try:
         _metadata_impl(config_path=config_path, require_live_gdc=require_live_gdc)
+        download_summary = _download_impl(cfg)
         silver_summary = _silver_impl(cfg)
         gold_summary = _gold_impl()
         quality_summary = _quality_impl()
@@ -201,6 +213,7 @@ def _execute_pipeline(
         "pipeline_run_id": run_id,
         "status": status,
         "silver": silver_summary,
+        "download": download_summary,
         "gold": gold_summary,
         "quality": quality_summary,
     }

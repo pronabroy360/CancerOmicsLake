@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-silver run-gold run-quality run-graph-export run-flow run-dbt test-dbt run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-silver run-gold run-quality run-graph-export run-flow run-dbt test-dbt run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -26,6 +26,9 @@ run-metadata-strict-smoke:
 
 run-silver:
 	$(PYTHON) -m src.main run-silver --config configs/project_config.yml
+
+run-download-tcga:
+	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml
 
 run-gold:
 	$(PYTHON) -m src.main run-gold --config configs/project_config.yml

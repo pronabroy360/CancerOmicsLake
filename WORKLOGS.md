@@ -203,9 +203,13 @@ Impact values:
   - Replaced `/genes/search` stub with silver-backed gene search across expression/mutation tables
   - Replaced `/quality/latest` stub with report-backed quality payload reader plus cohort summary merge
   - Added analytics tests for gene search and quality-latest readers, and expanded API smoke coverage (`46 passed`)
+  - Implemented manifest/metadata-driven TCGA file download stage with retry, checksum verification, project/category foldering, and report outputs
+  - Added `run-download-tcga` CLI/Make target and integrated download stage into orchestration flow execution
+  - Added downloader unit tests for metadata-only skip, successful expression/mutation placement, and checksum mismatch handling (`49 passed`)
+  - Reduced CLI side effects by lazy-loading Prefect flow imports so non-flow commands run without Prefect initialization warnings
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
-  - Expand quality checks with file-checksum verification against download manifests
+  - Expand quality checks with cross-table file-checksum reconciliation against download reports/manifests
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion
   - Add Neo4j import script templates and graph query examples tied to exported CSV schema

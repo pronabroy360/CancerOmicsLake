@@ -16,8 +16,8 @@ from src.graph.export_graphify import export_graphify_from_gold_graph_tables
 from src.graph.export_neo4j import export_neo4j_from_gold_graph_tables
 from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
+from src.ingestion.tcga_downloader import download_tcga_files
 from src.ingestion.gtex_downloader import gtex_metadata_stub
-from src.orchestration.pipeline_flow import run_pipeline_with_fallback
 from src.processing.build_expression_table import with_log2_expression
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
 from src.processing.normalize_gtex_expression import normalize_gtex_rows
@@ -129,6 +129,10 @@ def main() -> None:
     parser_silver = subparsers.add_parser("run-silver")
     parser_silver.add_argument("--config", required=True)
 
+    parser_download = subparsers.add_parser("run-download-tcga")
+    parser_download.add_argument("--config", required=True)
+    parser_download.add_argument("--force-download", action="store_true")
+
     parser_gold = subparsers.add_parser("run-gold")
     parser_gold.add_argument("--config", required=True)
 
@@ -173,6 +177,20 @@ def main() -> None:
             summary["mutations_count"],
         )
         print("Silver table build completed.")
+        return
+    if args.command == "run-download-tcga":
+        cfg = load_config(args.config)
+        summary = download_tcga_files(cfg, force_download=args.force_download)
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "TCGA download status=%s candidates=%s downloaded=%s skipped=%s failed=%s",
+            summary["status"],
+            summary["total_candidates"],
+            summary["downloaded_count"],
+            summary["skipped_existing_count"],
+            summary["failed_count"],
+        )
+        print("TCGA file download stage completed.")
         return
     if args.command == "run-gold":
         load_config(args.config)
@@ -224,6 +242,8 @@ def main() -> None:
         print("Graph export completed.")
         return
     if args.command == "run-flow":
+        from src.orchestration.pipeline_flow import run_pipeline_with_fallback
+
         result = run_pipeline_with_fallback(
             config_path=args.config,
             require_live_gdc=args.require_live_gdc,
