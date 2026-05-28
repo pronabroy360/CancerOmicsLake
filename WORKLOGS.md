@@ -199,6 +199,7 @@ Impact values:
   - Implemented Prefect orchestration flow (`run-flow`) that executes metadata → silver → gold → quality → graph-export stages and writes `outputs/reports/pipeline_run_metadata.json`
   - Added resilient fallback execution when Prefect cannot start local ephemeral API (restricted-port environments)
   - Added orchestration unit tests and validated local flow command (`35 passed`)
+  - Added FastAPI endpoint smoke tests for health, metadata, expression, tumor-vs-normal, and mutation routes (`40 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Expand quality checks with file-checksum verification against download manifests
