@@ -57,7 +57,7 @@ def test_run_silver_quality_checks_detects_failures(tmp_path: Path) -> None:
             "gene_id": ["", "ENSG2"],
             "gene_symbol": ["TP53", "EGFR"],
             "expression_value": [1.0, -1.0],
-            "expression_unit": ["TPM", "TPM"],
+            "expression_unit": ["TPM", "RPKM"],
             "log2_expression": [1.0, 0.0],
             "source_version": ["v8", "v8"],
             "data_origin": ["stub", "stub"],
@@ -73,7 +73,7 @@ def test_run_silver_quality_checks_detects_failures(tmp_path: Path) -> None:
             "gene_id": ["", "ENSG2"],
             "gene_symbol": ["TP53", "EGFR"],
             "expression_value": [1.0, -1.0],
-            "expression_unit": ["TPM", "TPM"],
+            "expression_unit": ["TPM", "UNKNOWN"],
             "log2_expression": [1.0, 0.0],
             "pipeline_workflow": ["STAR", "STAR"],
             "data_origin": ["stub", "stub"],
@@ -110,6 +110,8 @@ def test_run_silver_quality_checks_detects_failures(tmp_path: Path) -> None:
     assert status_by_name["silver_expression_gtex_non_negative"] == "failed"
     assert status_by_name["silver_expression_tcga_null_gene_id"] == "failed"
     assert status_by_name["silver_expression_tcga_non_negative"] == "failed"
+    assert status_by_name["silver_expression_tcga_unit_supported"] == "failed"
+    assert status_by_name["silver_expression_gtex_unit_supported"] == "failed"
     assert status_by_name["silver_mutations_null_gene_symbol"] == "failed"
     assert status_by_name["silver_mutations_start_position_valid_integer"] == "failed"
     assert status_by_name["silver_mutations_end_position_valid_integer"] == "failed"

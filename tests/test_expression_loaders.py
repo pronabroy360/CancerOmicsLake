@@ -115,3 +115,41 @@ def test_load_tcga_expression_table_prefers_manifest_expression_files(tmp_path: 
     row = df.row(0, named=True)
     assert row["sample_id"] == "TCGA-BRCA-SAMPLE-0001"
     assert row["gene_symbol"] == "TP53"
+
+
+def test_load_tcga_expression_table_infers_count_unit_from_column(tmp_path: Path) -> None:
+    config = load_config("configs/project_config.yml")
+    ingest_time = "2026-05-28T00:00:00Z"
+
+    tcga_root = tmp_path / "tcga"
+    expr_dir = tcga_root / "TCGA-LUAD" / "expression"
+    expr_dir.mkdir(parents=True, exist_ok=True)
+    expr_file = expr_dir / "counts.tsv"
+    expr_file.write_text(
+        "sample_id\tgene_id\tgene_symbol\tcount\n"
+        "TCGA-LUAD-SAMPLE-0001\tENSG00000141510.17\tTP53\t12\n",
+        encoding="utf-8",
+    )
+
+    metadata_df = pl.DataFrame(
+        {
+            "project_id": ["TCGA-LUAD"],
+            "case_id": ["TCGA-LUAD-CASE-0001"],
+            "sample_id": ["TCGA-LUAD-SAMPLE-0001"],
+            "sample_type": ["Primary Tumor"],
+            "workflow_type": ["STAR - Counts"],
+            "file_name": ["counts.tsv"],
+            "data_category": ["Transcriptome Profiling"],
+            "data_type": ["Gene Expression Quantification"],
+            "access": ["open"],
+        }
+    )
+
+    df = load_tcga_expression_table(
+        config=config,
+        ingest_time=ingest_time,
+        metadata_df=metadata_df,
+        tcga_expression_dir=tcga_root,
+    )
+    assert df.height == 1
+    assert df.row(0, named=True)["expression_unit"] == "COUNT"

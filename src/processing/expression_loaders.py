@@ -72,6 +72,20 @@ def _normalize_gene_id_series(series: pl.Series) -> pl.Series:
     )
 
 
+def _infer_tcga_expression_unit(expr_col_name: str, workflow_type: str) -> str:
+    col = expr_col_name.lower().strip()
+    workflow = workflow_type.lower().strip()
+    if col == "tpm":
+        return "TPM"
+    if col == "fpkm":
+        return "FPKM"
+    if col == "count":
+        return "COUNT"
+    if "count" in workflow:
+        return "COUNT"
+    return "TPM"
+
+
 def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
     raw = _safe_read_table(path)
     if raw.is_empty():
@@ -121,6 +135,10 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
 
     gene_id_series = _normalize_gene_id_series(base.get_column("gene_id_raw")).alias("gene_id")
     base = base.with_columns(gene_id_series)
+    expr_unit = _infer_tcga_expression_unit(
+        expr_col_name=expr_col,
+        workflow_type=str(base.get_column("workflow_type")[0] if base.height > 0 else ""),
+    )
 
     return base.select(
         [
@@ -131,7 +149,7 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
             pl.col("gene_id").fill_null("").cast(pl.Utf8),
             pl.col("gene_symbol").fill_null("Unknown").cast(pl.Utf8),
             pl.col("expression_value").cast(pl.Float64),
-            pl.lit("TPM").alias("expression_unit"),
+            pl.lit(expr_unit).alias("expression_unit"),
             pl.col("expression_value").map_elements(_to_log2, return_dtype=pl.Float64).alias("log2_expression"),
             pl.col("workflow_type").fill_null("Unknown").cast(pl.Utf8).alias("pipeline_workflow"),
             pl.lit(str(path)).alias("data_origin"),

@@ -94,6 +94,21 @@ def _count_invalid_int(df: pl.DataFrame, col: str) -> int:
     )
 
 
+def _count_invalid_expression_unit(df: pl.DataFrame, col: str, allowed: set[str]) -> int:
+    if col not in df.columns:
+        return 0
+    allowed_upper = {v.upper() for v in allowed}
+    return (
+        df.select(
+            (~pl.col(col).cast(pl.Utf8, strict=False).str.to_uppercase().is_in(list(allowed_upper)))
+            .sum()
+            .cast(pl.Int64)
+            .alias("cnt")
+        ).item(0, 0)
+        or 0
+    )
+
+
 def _infer_data_subdir(data_category: str) -> str:
     category = data_category.lower()
     if "transcriptome profiling" in category:
@@ -288,6 +303,8 @@ def run_silver_quality_checks(
     null_mut_gene = _count_null_or_blank(mutations, "gene_symbol")
     invalid_mut_start = _count_invalid_int(mutations, "start_position")
     invalid_mut_end = _count_invalid_int(mutations, "end_position")
+    invalid_tcga_units = _count_invalid_expression_unit(expr_tcga, "expression_unit", {"TPM", "FPKM", "COUNT"})
+    invalid_gtex_units = _count_invalid_expression_unit(expr_gtex, "expression_unit", {"TPM"})
     missing_downloaded_files, checksum_mismatches, download_check_applicable = _download_integrity_counts(
         manifest=manifest,
         bronze_tcga_root=Path(bronze_tcga_root),
@@ -339,6 +356,16 @@ def run_silver_quality_checks(
             check_name="silver_expression_tcga_non_negative",
             status="passed" if negative_expr_tcga == 0 else "failed",
             failed_rows=int(negative_expr_tcga),
+        ),
+        CheckResult(
+            check_name="silver_expression_tcga_unit_supported",
+            status="passed" if invalid_tcga_units == 0 else "failed",
+            failed_rows=int(invalid_tcga_units),
+        ),
+        CheckResult(
+            check_name="silver_expression_gtex_unit_supported",
+            status="passed" if invalid_gtex_units == 0 else "failed",
+            failed_rows=int(invalid_gtex_units),
         ),
         CheckResult(
             check_name="silver_mutations_null_gene_symbol",

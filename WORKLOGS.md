@@ -209,6 +209,9 @@ Impact values:
   - Reduced CLI side effects by lazy-loading Prefect flow imports so non-flow commands run without Prefect initialization warnings
   - Added silver-quality reconciliation checks for downloaded TCGA file presence and manifest MD5 match (gated by download-report applicability)
   - Added targeted quality test coverage for missing-file and checksum-mismatch detection paths (`50 passed`)
+  - Added workflow/column-aware TCGA expression unit inference (`TPM`/`FPKM`/`COUNT`) in expression loader path
+  - Added silver quality unit-support contracts for TCGA and GTEx expression tables, increasing silver checks to 16
+  - Added regression tests for count-unit inference and invalid-unit detection (`51 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
 - Next:
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
