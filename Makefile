@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-silver run-gold run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-silver run-gold run-quality run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -25,6 +25,9 @@ run-silver:
 
 run-gold:
 	$(PYTHON) -m src.main run-gold --config configs/project_config.yml
+
+run-quality:
+	$(PYTHON) -m src.main run-quality --config configs/project_config.yml
 
 run-api:
 	$(PYTHON) -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000

@@ -56,6 +56,7 @@ Status values:
 | 20260527T174949Z | 2026-05-27 23:49:49 +06 | 2026-05-27 23:49:49 +06 | passed_with_warnings | m4-gold-bootstrap-v2 | 12 metadata rows | 10 artifacts | 0 | 1 | Sequential silver->gold run confirmed stable `gtex_expr_samples=4` |
 | 20260527T190117Z | 2026-05-28 01:01:17 +06 | 2026-05-28 01:01:17 +06 | passed_with_warnings | m2-strict-live-and-audit | 12 metadata rows | 10 artifacts | 0 | 1 | Added strict live mode and persisted GDC ingestion audit report |
 | 20260528T065035Z | 2026-05-28 12:50:35 +06 | 2026-05-28 12:50:35 +06 | failed | m2-strict-cli | 0 metadata rows | 0 artifacts | 1 | 0 | `run-metadata-strict` correctly failed fast and wrote strict-failure ingestion audit |
+| 20260528T070225Z | 2026-05-28 13:02:25 +06 | 2026-05-28 13:02:25 +06 | success | m3-silver-quality-contracts | 12 metadata rows | 11 artifacts | 0 | 0 | Added silver table quality runner and generated `silver_data_quality_report.json` |
 
 Template status values:
 - `success`
@@ -114,6 +115,7 @@ Download mode:
 | 2026-05-28 | DEC-010 | Ingestion observability | Persist GDC ingestion audit JSON with retries, fallback reason, and project status | Log-only visibility | Improves debugging, traceability, and run explainability |
 | 2026-05-28 | DEC-011 | Strict runtime ergonomics | Add CLI flag and Make target for strict live metadata mode | Editing config for each run | Makes CI/dev fail-fast invocation explicit and repeatable |
 | 2026-05-28 | DEC-012 | Strict-failure traceability | Persist ingestion audit JSON even when strict live mode fails | Failure without persisted audit | Preserves diagnostics for CI and operations triage |
+| 2026-05-28 | DEC-013 | Silver contract checks | Add explicit quality checks for null IDs, duplicates, access level, and expression constraints on silver outputs | Implicit trust in transforms | Improves data reliability and catches regressions before gold modeling |
 
 Example Decision IDs:
 - `DEC-001`: Default dataframe engine = Polars
@@ -164,7 +166,8 @@ Impact values:
   - Added strict live metadata mode (`require_live_gdc`) and GDC ingestion audit output
   - Extended ingestion tests to cover strict-mode failure and audit content shape
   - Added `run-metadata --require-live-gdc` and `make run-metadata-strict` for operational fail-fast runs
+  - Added `run-quality` and silver contract checks with JSON report output
 - Next:
-  - Add silver schema contracts and null/duplicate checks per table
   - Build real TCGA/GTEx expression file parsers to replace stub-origin rows
   - Add lightweight CI workflow for `make test` and strict metadata smoke path
+  - Expand quality checks for mutation and future TCGA expression tables when parsers land

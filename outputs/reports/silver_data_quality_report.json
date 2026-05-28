@@ -1,0 +1,47 @@
+{
+  "pipeline_run_id": "20260528T070225Z",
+  "generated_at": "2026-05-28T07:02:25.600182+00:00",
+  "status": "passed",
+  "checks": [
+    {
+      "check_name": "silver_projects_null_project_id",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
+      "check_name": "silver_samples_duplicate_sample_id",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
+      "check_name": "silver_manifest_access_open_only",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
+      "check_name": "silver_expression_gtex_null_gene_id",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    },
+    {
+      "check_name": "silver_expression_gtex_non_negative",
+      "status": "passed",
+      "failed_rows": 0,
+      "metric_name": "",
+      "metric_value": null,
+      "threshold": null
+    }
+  ]
+}

@@ -9,6 +9,7 @@ make run-metadata
 make run-metadata-strict
 make run-silver
 make run-gold
+make run-quality
 make test
 ```
 
@@ -18,3 +19,4 @@ make test
 - Use synthetic or aggregate outputs for GitHub publishing.
 - Metadata runs write GDC ingestion audit details to `outputs/reports/gdc_ingestion_audit.json`.
 - Set `tcga.require_live_gdc: true` to fail fast if live GDC query is unavailable.
+- Silver quality checks write `outputs/reports/silver_data_quality_report.json`.

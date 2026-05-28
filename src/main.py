@@ -20,6 +20,7 @@ from src.quality.checks import (
     build_quality_payload,
     check_gene_mapping_rate,
     check_non_negative_expression,
+    run_silver_quality_checks,
 )
 from src.quality.generate_quality_report import write_quality_json
 
@@ -119,6 +120,9 @@ def main() -> None:
     parser_gold = subparsers.add_parser("run-gold")
     parser_gold.add_argument("--config", required=True)
 
+    parser_quality = subparsers.add_parser("run-quality")
+    parser_quality.add_argument("--config", required=True)
+
     args = parser.parse_args()
     configure_logging()
 
@@ -160,6 +164,17 @@ def main() -> None:
             summary["gtex_expression_sample_count"],
         )
         print("Gold table build completed.")
+        return
+    if args.command == "run-quality":
+        load_config(args.config)
+        results = run_silver_quality_checks()
+        run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+        payload = build_quality_payload(run_id, results)
+        output = write_quality_json(payload, "outputs/reports/silver_data_quality_report.json")
+        logger = get_logger("canceromicslake")
+        logger.info("Silver quality report written to %s", output)
+        logger.info("Silver quality status=%s checks=%s", payload["status"], len(results))
+        print("Silver quality run completed.")
         return
 
 

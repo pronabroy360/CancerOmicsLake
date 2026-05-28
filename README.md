@@ -26,6 +26,7 @@ make run-metadata
 make run-metadata-strict
 make run-silver
 make run-gold
+make run-quality
 ```
 
 ## Compliance Notice
