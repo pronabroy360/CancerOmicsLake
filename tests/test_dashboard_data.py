@@ -1,0 +1,134 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import polars as pl
+
+from src.analytics.dashboard_data import (
+    cohort_distribution_data,
+    graph_explorer_data,
+    overview_metrics,
+    quality_report_data,
+)
+
+
+def test_overview_metrics_reads_gold_and_quality(tmp_path: Path) -> None:
+    gold = tmp_path / "gold_cohort_summary.parquet"
+    report = tmp_path / "silver_data_quality_report.json"
+
+    pl.DataFrame(
+        [
+            {
+                "tcga_project_count": 3,
+                "tcga_sample_count": 120,
+                "gtex_expression_sample_count": 40,
+                "gene_count": 1000,
+                "mutation_record_count": 5000,
+                "gtex_expression_row_count": 4000,
+                "tcga_expression_row_count": 10000,
+            }
+        ]
+    ).write_parquet(gold)
+    report.write_text(
+        json.dumps(
+            {
+                "status": "passed_with_warnings",
+                "generated_at": "2026-05-28T10:00:00Z",
+                "pipeline_run_id": "20260528T100000Z",
+                "checks": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = overview_metrics(gold_summary_path=gold, quality_report_path=report)
+    assert payload["tcga_projects"] == 3
+    assert payload["expression_records"] == 14000
+    assert payload["quality_status"] == "passed_with_warnings"
+
+
+def test_cohort_distribution_data_builds_counts(tmp_path: Path) -> None:
+    silver = tmp_path / "silver_samples.parquet"
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA", "TCGA-BRCA", "TCGA-LUAD"],
+            "case_id": ["c1", "c2", "c3"],
+            "sample_id": ["s1", "s2", "s3"],
+            "sample_type": ["Primary Tumor", "Solid Tissue Normal", "Primary Tumor"],
+        }
+    ).write_parquet(silver)
+
+    payload = cohort_distribution_data(silver)
+    assert payload["total_samples"] == 3
+    assert payload["total_cases"] == 3
+    assert payload["project_options"] == ["TCGA-BRCA", "TCGA-LUAD"]
+    assert payload["sample_by_cancer"].height == 2
+
+
+def test_graph_explorer_data_filters_edges_and_nodes(tmp_path: Path) -> None:
+    nodes_path = tmp_path / "nodes.parquet"
+    edges_path = tmp_path / "edges.parquet"
+
+    pl.DataFrame(
+        [
+            {"node_id": "GENE:TP53", "node_label": "Gene", "name": "TP53", "primary_site": "NA", "source": "TCGA"},
+            {"node_id": "TCGA-BRCA", "node_label": "CancerType", "name": "TCGA-BRCA", "primary_site": "Breast", "source": "TCGA"},
+            {"node_id": "TISSUE:Lung", "node_label": "Tissue", "name": "Lung", "primary_site": "Lung", "source": "GTEx"},
+        ]
+    ).write_parquet(nodes_path)
+    pl.DataFrame(
+        [
+            {
+                "edge_id": "e1",
+                "source_node_id": "GENE:TP53",
+                "target_node_id": "TCGA-BRCA",
+                "edge_type": "MUTATED_IN_CANCER",
+                "weight": 0.5,
+                "evidence_source": "TCGA",
+            },
+            {
+                "edge_id": "e2",
+                "source_node_id": "GENE:TP53",
+                "target_node_id": "TISSUE:Lung",
+                "edge_type": "EXPRESSED_IN_TISSUE",
+                "weight": 2.1,
+                "evidence_source": "GTEx",
+            },
+        ]
+    ).write_parquet(edges_path)
+
+    payload = graph_explorer_data(
+        edge_types=["MUTATED_IN_CANCER"],
+        node_query="TP53",
+        max_rows=100,
+        graph_nodes_path=nodes_path,
+        graph_edges_path=edges_path,
+    )
+    assert payload["edges"].height == 1
+    assert payload["nodes"].height == 2
+    assert payload["edge_type_counts"].height == 1
+
+
+def test_quality_report_data_builds_status_counts(tmp_path: Path) -> None:
+    report = tmp_path / "silver_data_quality_report.json"
+    report.write_text(
+        json.dumps(
+            {
+                "status": "failed",
+                "pipeline_run_id": "x",
+                "generated_at": "y",
+                "checks": [
+                    {"check_name": "a", "status": "passed", "failed_rows": 0},
+                    {"check_name": "b", "status": "warning", "failed_rows": 2},
+                    {"check_name": "c", "status": "failed", "failed_rows": 1},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = quality_report_data(report)
+    assert payload["status"] == "failed"
+    assert payload["checks"].height == 3
+    assert payload["status_counts"].height == 3

@@ -219,7 +219,20 @@ Impact values:
   - Added partial-download-aware integrity semantics: file presence/checksum checks become `warning` (not hard failure) under capped smoke mode
   - Added test coverage for downloader limits/subdir filters, real-format parser behavior, and partial-mode quality warnings (`54 passed`)
   - Added `run-metadata-strict-smoke` operational target and `.github/workflows/ci.yml` automation
+  - Added gzip/comment-safe mutation parsing for real GDC `*.maf.gz` files and wired mutation loader root to the active bronze metadata root
+  - Executed capped live mutation download smoke (`max_downloads=1`, mutations-only) and validated real BRCA mutation ingestion into silver (`mutations_count=48`)
+  - Updated silver duplicate-sample quality rule to ignore placeholder IDs (`Unknown`/blank) while retaining strict checks for real IDs
+  - Expanded tests for gzipped mutation parsing and placeholder duplicate handling; full suite now passing (`56 passed`)
+  - Upgraded Neo4j export layer to generate bulk-import-friendly CSV bundles by node label and edge type under `outputs/graph_exports/neo4j/bulk/`
+  - Added generated Neo4j import script output (`outputs/graph_exports/neo4j/import_bulk.cypher`) with no-APOC Cypher `LOAD CSV` workflow
+  - Extended graph export logging and test coverage to validate bulk artifact generation
+  - Expanded `docs/graph_schema.md` with concrete schema details, import instructions, and executable Cypher query examples
+  - Added a dashboard analytics data layer (`src/analytics/dashboard_data.py`) for overview metrics, cohort distributions, expression views, mutation landscape, graph explorer, and quality report parsing
+  - Replaced all Streamlit page placeholders with live parquet-backed interactive pages, including filters, tables, chart views, and CSV export buttons
+  - Implemented graph explorer controls for edge-type filtering, node search, visible-node/edge metrics, and Neo4j bulk export file visibility
+  - Added targeted unit tests for dashboard analytics coverage (`tests/test_dashboard_data.py`)
+  - Revalidated test suite after dashboard integration (`60 passed`)
 - Next:
   - Add parser normalization presets per workflow (STAR/HTSeq variants) and strict expression unit compatibility checks
   - Replace stub-first TCGA expression path with real cohort expression files from manifest-driven ingestion
-  - Add Neo4j import script templates and graph query examples tied to exported CSV schema
+  - Add dashboard screenshots and README embeds from live pages for professor-facing presentation
