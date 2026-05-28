@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-silver run-gold run-quality run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-silver run-gold run-quality run-graph-export run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -32,6 +32,9 @@ run-gold:
 
 run-quality:
 	$(PYTHON) -m src.main run-quality --config configs/project_config.yml
+
+run-graph-export:
+	$(PYTHON) -m src.main run-graph-export --config configs/project_config.yml
 
 run-api:
 	$(PYTHON) -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000

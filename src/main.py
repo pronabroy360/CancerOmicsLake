@@ -12,6 +12,8 @@ from src.common.paths import ensure_base_dirs
 from src.analytics.build_gold_tables import build_gold_cohort_summary
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
+from src.graph.export_graphify import export_graphify_from_gold_graph_tables
+from src.graph.export_neo4j import export_neo4j_from_gold_graph_tables
 from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.gtex_downloader import gtex_metadata_stub
@@ -132,6 +134,9 @@ def main() -> None:
     parser_quality = subparsers.add_parser("run-quality")
     parser_quality.add_argument("--config", required=True)
 
+    parser_graph_export = subparsers.add_parser("run-graph-export")
+    parser_graph_export.add_argument("--config", required=True)
+
     args = parser.parse_args()
     configure_logging()
 
@@ -194,6 +199,23 @@ def main() -> None:
         logger.info("Silver quality report written to %s", output)
         logger.info("Silver quality status=%s checks=%s", payload["status"], len(results))
         print("Silver quality run completed.")
+        return
+    if args.command == "run-graph-export":
+        load_config(args.config)
+        neo4j_summary = export_neo4j_from_gold_graph_tables()
+        graphify_summary = export_graphify_from_gold_graph_tables()
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Neo4j export: nodes=%s edges=%s dir=outputs/graph_exports/neo4j",
+            neo4j_summary["nodes_count"],
+            neo4j_summary["edges_count"],
+        )
+        logger.info(
+            "Graphify export: nodes=%s edges=%s dir=outputs/graph_exports/graphify",
+            graphify_summary["nodes_count"],
+            graphify_summary["edges_count"],
+        )
+        print("Graph export completed.")
         return
 
 
