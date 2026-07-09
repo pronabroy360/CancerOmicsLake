@@ -17,6 +17,7 @@ from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
 from src.graph.export_neo4j import export_neo4j_from_gold_graph_tables
+from src.graph.graph_metrics import build_graph_node_metrics
 from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.tcga_downloader import download_tcga_files
@@ -164,6 +165,9 @@ def main() -> None:
     parser_graph_export = subparsers.add_parser("run-graph-export")
     parser_graph_export.add_argument("--config", required=True)
 
+    parser_graph_metrics = subparsers.add_parser("run-graph-metrics")
+    parser_graph_metrics.add_argument("--config", required=True)
+
     parser_dbt_run = subparsers.add_parser("run-dbt")
     parser_dbt_run.add_argument("--config", required=True)
     parser_dbt_run.add_argument("--mode", choices=["auto", "local", "docker"], default="auto")
@@ -306,6 +310,7 @@ def main() -> None:
         load_config(args.config)
         neo4j_summary = export_neo4j_from_gold_graph_tables()
         graphify_summary = export_graphify_from_gold_graph_tables()
+        metrics_summary = build_graph_node_metrics()
         logger = get_logger("canceromicslake")
         logger.info(
             "Neo4j export: nodes=%s edges=%s dir=outputs/graph_exports/neo4j",
@@ -323,7 +328,23 @@ def main() -> None:
             graphify_summary["nodes_count"],
             graphify_summary["edges_count"],
         )
+        logger.info(
+            "Graph metrics: rows=%s report=%s",
+            metrics_summary["metric_rows"],
+            metrics_summary["report_path"],
+        )
         print("Graph export completed.")
+        return
+    if args.command == "run-graph-metrics":
+        load_config(args.config)
+        metrics_summary = build_graph_node_metrics()
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Graph metrics written: rows=%s report=%s",
+            metrics_summary["metric_rows"],
+            metrics_summary["report_path"],
+        )
+        print("Graph metrics completed.")
         return
     if args.command == "run-dbt":
         load_config(args.config)

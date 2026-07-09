@@ -17,6 +17,7 @@ Implemented so far:
 - Gold cohort, expression, tumor-vs-normal, mutation, candidate gene-priority, and graph marts
 - Quality report generation
 - Graphify and Neo4j CSV graph exports
+- Graph node-degree metrics and graph metrics report
 - FastAPI endpoints and Streamlit dashboard pages backed by local marts
 - Test suite for config, ingestion, parsing, silver/gold builders, graph exports, API, dashboard data, reporting, and quality checks
 - Daily CI schedule + dbt run/test gate on Python 3.11
@@ -64,6 +65,7 @@ make run-download-tcga-aggressive
 make run-silver
 make run-gold
 make run-quality
+make run-graph-metrics
 make run-dbt
 make test-dbt
 make run-flow-medium

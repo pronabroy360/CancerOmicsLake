@@ -333,3 +333,14 @@ Impact values:
 - Updated API docs and README with the research endpoint and dashboard page.
 - Added tests for candidate-priority analytics, API contract, dashboard data helper, and docs packaging.
 - Verified `make test` passes with `98 passed`.
+
+## 2026-07-10 - Graph Metrics And Hub Node Analytics
+
+- Replaced the placeholder graph metrics module with node-degree analytics over `gold_graph_nodes` and `gold_graph_edges`.
+- Added `gold_graph_node_metrics.parquet` with total degree, in-degree, out-degree, weighted degree, edge-type count, and degree rank.
+- Added `outputs/reports/graph_metrics_report.json` with graph size, top hub nodes, and edge-type summaries.
+- Wired graph metrics into `run-graph-export`, added `run-graph-metrics`, and integrated metrics generation into the orchestration flow.
+- Extended reviewer demo checks to require graph node metrics and graph metrics report outputs.
+- Added top graph hub nodes to the Knowledge Graph dashboard page.
+- Added reviewer SQL query `06_graph_node_metrics.sql` and updated graph/data-dictionary docs.
+- Verified `make run-graph-export`, `make run-demo-check`, and `make test` (`102 passed`).

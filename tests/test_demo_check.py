@@ -120,6 +120,19 @@ def _write_demo_fixture(root: Path, *, tcga_origin: str = "data/bronze/tcga/TCGA
             "evidence_source": ["gold_mutation_frequency_by_gene"],
         }
     ).write_parquet(gold / "gold_graph_edges.parquet")
+    pl.DataFrame(
+        {
+            "node_id": ["CANCER:TCGA-BRCA", "GENE:TP53"],
+            "node_label": ["CancerType", "Gene"],
+            "name": ["TCGA-BRCA", "TP53"],
+            "total_degree": [1, 1],
+            "in_degree": [1, 0],
+            "out_degree": [0, 1],
+            "weighted_degree": [1.0, 1.0],
+            "edge_type_count": [1, 1],
+            "degree_rank": [1, 2],
+        }
+    ).write_parquet(gold / "gold_graph_node_metrics.parquet")
 
     quality = {
         "status": "passed_with_warnings",
@@ -128,6 +141,10 @@ def _write_demo_fixture(root: Path, *, tcga_origin: str = "data/bronze/tcga/TCGA
         "checks": [{"check_name": "x", "status": "passed", "failed_rows": 0}],
     }
     (reports / "silver_data_quality_report.json").write_text(json.dumps(quality), encoding="utf-8")
+    (reports / "graph_metrics_report.json").write_text(
+        json.dumps({"status": "passed", "node_count": 2, "edge_count": 1, "metric_rows": 2}),
+        encoding="utf-8",
+    )
     (reports / "gdc_ingestion_audit.json").write_text(json.dumps({"source_mode": "live"}), encoding="utf-8")
 
     (neo4j / "nodes.csv").write_text("node_id,node_label,name\nGENE:TP53,Gene,TP53\n", encoding="utf-8")

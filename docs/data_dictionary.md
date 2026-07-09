@@ -186,6 +186,18 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `weight`: relationship score/count/frequency.
 - `evidence_source`: source table or rule that produced the edge.
 
+### `gold_graph_node_metrics.parquet`
+
+- `node_id`: stable graph node identifier.
+- `node_label`: node type.
+- `name`: display name.
+- `total_degree`: incoming plus outgoing graph degree.
+- `in_degree`: incoming edge count.
+- `out_degree`: outgoing edge count.
+- `weighted_degree`: sum of incoming and outgoing edge weights.
+- `edge_type_count`: number of directional edge-type families connected to the node.
+- `degree_rank`: rank ordered by total degree and weighted degree.
+
 ## Quality And Caveats
 
 - Expression units are preserved and checked for workflow/unit compatibility.

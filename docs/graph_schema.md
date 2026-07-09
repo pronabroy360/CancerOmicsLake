@@ -12,6 +12,8 @@ CancerOmicsLake builds graph tables from silver and gold marts, then exports:
 - `outputs/graph_exports/neo4j/import_bulk.cypher`
 - `outputs/graph_exports/graphify/nodes.csv`
 - `outputs/graph_exports/graphify/edges.csv`
+- `data/gold/gold_graph_node_metrics.parquet`
+- `outputs/reports/graph_metrics_report.json`
 
 ## Node Types
 
@@ -78,6 +80,15 @@ Use:
 - `outputs/graph_exports/graphify/edges.csv`
 
 These files follow the same node/edge IDs and relationship semantics as Neo4j exports.
+
+## Graph Metrics
+
+`make run-graph-export` also writes graph analytics outputs:
+
+- `data/gold/gold_graph_node_metrics.parquet`
+- `outputs/reports/graph_metrics_report.json`
+
+The node metrics table includes total degree, in-degree, out-degree, weighted degree, connected edge-type count, and degree rank. Use it to identify graph hub genes, cancer types, samples, and tissue references for exploratory review.
 
 ## Example Neo4j Queries
 

@@ -9,6 +9,7 @@ from src.analytics.dashboard_data import (
     candidate_priority_data,
     cohort_distribution_data,
     graph_explorer_data,
+    graph_node_metrics_data,
     overview_metrics,
     quality_report_data,
 )
@@ -150,6 +151,41 @@ def test_candidate_priority_data_filters_rows(tmp_path: Path) -> None:
 
     assert df.height == 1
     assert df.row(0, named=True)["gene_symbol"] == "TP53"
+
+
+def test_graph_node_metrics_data_returns_top_nodes(tmp_path: Path) -> None:
+    metrics = tmp_path / "gold_graph_node_metrics.parquet"
+    pl.DataFrame(
+        [
+            {
+                "node_id": "GENE:TP53",
+                "node_label": "Gene",
+                "name": "TP53",
+                "total_degree": 3,
+                "in_degree": 1,
+                "out_degree": 2,
+                "weighted_degree": 2.5,
+                "edge_type_count": 2,
+                "degree_rank": 1,
+            },
+            {
+                "node_id": "TCGA-BRCA",
+                "node_label": "CancerType",
+                "name": "TCGA-BRCA",
+                "total_degree": 1,
+                "in_degree": 1,
+                "out_degree": 0,
+                "weighted_degree": 1.0,
+                "edge_type_count": 1,
+                "degree_rank": 2,
+            },
+        ]
+    ).write_parquet(metrics)
+
+    df = graph_node_metrics_data(limit=1, graph_metrics_path=metrics)
+
+    assert df.height == 1
+    assert df.row(0, named=True)["node_id"] == "GENE:TP53"
 
 
 def test_quality_report_data_builds_status_counts(tmp_path: Path) -> None:

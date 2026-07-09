@@ -123,6 +123,24 @@ ORDER BY priority_score DESC, mutation_frequency DESC
 LIMIT 25;
 ```
 
+## Top Graph Hub Nodes
+
+```sql
+SELECT
+    node_id,
+    node_label,
+    name,
+    total_degree,
+    in_degree,
+    out_degree,
+    weighted_degree,
+    edge_type_count,
+    degree_rank
+FROM read_parquet('data/gold/gold_graph_node_metrics/*.parquet')
+ORDER BY total_degree DESC, weighted_degree DESC
+LIMIT 25;
+```
+
 ## Quality Checks That Need Attention
 
 ```sql

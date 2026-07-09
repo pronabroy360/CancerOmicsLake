@@ -5,7 +5,7 @@ from pathlib import Path
 import polars as pl
 import streamlit as st
 
-from src.analytics.dashboard_data import graph_explorer_data
+from src.analytics.dashboard_data import graph_explorer_data, graph_node_metrics_data
 
 
 st.title("Knowledge Graph Explorer")
@@ -38,6 +38,13 @@ left.subheader("Edge Type Counts")
 left.dataframe(edge_counts, use_container_width=True, hide_index=True)
 right.subheader("Node Label Counts")
 right.dataframe(node_counts, use_container_width=True, hide_index=True)
+
+metrics = graph_node_metrics_data(limit=25)
+st.subheader("Top Graph Hub Nodes")
+if metrics.is_empty():
+    st.info("Run `make run-graph-export` or `make run-graph-metrics` to create graph node metrics.")
+else:
+    st.dataframe(metrics, use_container_width=True, hide_index=True, height=260)
 
 st.subheader("Nodes")
 st.dataframe(nodes, use_container_width=True, hide_index=True, height=280)

@@ -260,6 +260,30 @@ def graph_explorer_data(
     }
 
 
+def graph_node_metrics_data(
+    limit: int = 50,
+    graph_metrics_path: str | Path = "data/gold/gold_graph_node_metrics.parquet",
+) -> pl.DataFrame:
+    path = Path(graph_metrics_path)
+    schema = {
+        "node_id": pl.Utf8,
+        "node_label": pl.Utf8,
+        "name": pl.Utf8,
+        "total_degree": pl.Int64,
+        "in_degree": pl.Int64,
+        "out_degree": pl.Int64,
+        "weighted_degree": pl.Float64,
+        "edge_type_count": pl.Int64,
+        "degree_rank": pl.Int64,
+    }
+    if not path.exists():
+        return pl.DataFrame(schema=schema)
+    df = pl.read_parquet(path)
+    if df.is_empty() or "total_degree" not in df.columns:
+        return pl.DataFrame(schema=schema)
+    return df.sort(["total_degree", "weighted_degree"], descending=[True, True]).head(limit)
+
+
 def quality_report_data(
     quality_report_path: str | Path = "outputs/reports/silver_data_quality_report.json",
 ) -> dict[str, object]:

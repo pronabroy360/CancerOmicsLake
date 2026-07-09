@@ -19,6 +19,7 @@ from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
 from src.graph.export_neo4j import export_neo4j_from_gold_graph_tables
+from src.graph.graph_metrics import build_graph_node_metrics
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
 from src.quality.checks import build_quality_payload, run_silver_quality_checks
 from src.quality.generate_quality_report import write_quality_json
@@ -123,7 +124,8 @@ def _quality_impl() -> dict[str, Any]:
 def _graph_export_impl() -> dict[str, object]:
     neo4j = export_neo4j_from_gold_graph_tables()
     graphify = export_graphify_from_gold_graph_tables()
-    return {"neo4j": neo4j, "graphify": graphify}
+    metrics = build_graph_node_metrics()
+    return {"neo4j": neo4j, "graphify": graphify, "metrics": metrics}
 
 
 @task
@@ -222,7 +224,7 @@ def _execute_pipeline(
         if silver_summary:
             output_table_count += 7
         if gold_summary:
-            output_table_count += 6
+            output_table_count += 7
         run_payload = {
             "pipeline_run_id": run_id,
             "run_mode": run_mode,

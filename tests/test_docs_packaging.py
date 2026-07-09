@@ -17,6 +17,7 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "make run-demo" in readme
     assert "make run-demo-check-strict" in readme
     assert "make run-dashboard" in readme
+    assert "make run-graph-metrics" in readme
     assert "/research/candidate-genes" in readme
     assert "Candidate Gene Priority" in readme
     assert "daily" in readme.lower()
@@ -49,6 +50,7 @@ def test_sample_queries_cover_core_marts() -> None:
     assert "gold_mutation_frequency_by_gene" in sample_queries
     assert "gold_graph_edges" in sample_queries
     assert "gold_candidate_gene_priority" in sample_queries
+    assert "gold_graph_node_metrics" in sample_queries
 
 
 def test_publish_safe_sql_query_files_exist() -> None:
@@ -59,6 +61,7 @@ def test_publish_safe_sql_query_files_exist() -> None:
     assert (query_dir / "03_top_mutated_luad.sql").exists()
     assert (query_dir / "04_graph_edges.sql").exists()
     assert (query_dir / "05_candidate_gene_priority.sql").exists()
+    assert (query_dir / "06_graph_node_metrics.sql").exists()
 
 
 def test_research_api_and_dashboard_docs_are_packaged() -> None:
