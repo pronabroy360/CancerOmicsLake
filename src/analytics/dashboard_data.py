@@ -5,6 +5,7 @@ from pathlib import Path
 
 import polars as pl
 
+from src.analytics.candidate_priority import candidate_priority_dataframe
 from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene
 from src.analytics.tumor_vs_normal import tumor_vs_normal_by_gene
@@ -172,6 +173,24 @@ def mutation_landscape_data(
         q = gene_query.upper()
         df = df.filter(pl.col("gene_symbol").cast(pl.Utf8).str.to_uppercase().str.contains(q))
     return df.sort("mutation_frequency", descending=True).head(limit)
+
+
+def candidate_priority_data(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    tier: str | None = None,
+    min_priority_score: float | None = None,
+    limit: int = 50,
+    gold_path: str | Path = "data/gold/gold_candidate_gene_priority.parquet",
+) -> pl.DataFrame:
+    return candidate_priority_dataframe(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        tier=tier,
+        min_priority_score=min_priority_score,
+        limit=limit,
+        gold_path=gold_path,
+    )
 
 
 def graph_explorer_data(

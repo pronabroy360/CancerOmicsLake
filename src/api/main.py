@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from src.analytics.candidate_priority import candidate_gene_priority
 from src.analytics.expression_summary import expression_by_gene
 from src.analytics.gene_search import search_genes
 from src.analytics.metadata import metadata_projects as metadata_projects_data
@@ -53,6 +54,23 @@ def mutations_gene(gene_symbol: str) -> dict[str, object]:
 @app.get("/mutations/cancer/{project_id}")
 def mutations_cancer(project_id: str) -> dict[str, object]:
     return mutation_frequency_by_cancer(project_id)
+
+
+@app.get("/research/candidate-genes")
+def research_candidate_genes(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    tier: str | None = None,
+    min_priority_score: float | None = None,
+    limit: int = 50,
+) -> dict[str, object]:
+    return candidate_gene_priority(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        tier=tier,
+        min_priority_score=min_priority_score,
+        limit=limit,
+    )
 
 
 @app.get("/graph/nodes")

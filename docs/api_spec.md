@@ -12,6 +12,7 @@ Implemented endpoints:
 - `GET /expression/tumor-vs-normal/{gene_symbol}`
 - `GET /mutations/gene/{gene_symbol}`
 - `GET /mutations/cancer/{project_id}`
+- `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -65,6 +66,30 @@ Example response: `GET /quality/latest`
     {
       "check_name": "expression_values_non_negative",
       "status": "passed"
+    }
+  ]
+}
+```
+
+Example response: `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
+
+```json
+{
+  "filters": {
+    "cancer_type": "TCGA-BRCA",
+    "tier": "high",
+    "limit": 20
+  },
+  "row_count": 1,
+  "total_matching_rows": 1,
+  "warning": "Exploratory prioritization only; scores are not clinically validated.",
+  "rows": [
+    {
+      "cancer_type": "TCGA-BRCA",
+      "gene_symbol": "TP53",
+      "priority_score": 0.72,
+      "priority_tier": "high",
+      "evidence_summary": "mutation_frequency=0.4;abs_log2_fold_change=1.5"
     }
   ]
 }

@@ -81,6 +81,11 @@ make run-dashboard
 make run-graph-export
 ```
 
+Research surface:
+
+- API: `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
+- Dashboard: `Candidate Gene Priority` page for filtering and exporting ranked candidate cancer-gene pairs.
+
 Reviewer demo path:
 
 ```bash

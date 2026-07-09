@@ -17,6 +17,8 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "make run-demo" in readme
     assert "make run-demo-check-strict" in readme
     assert "make run-dashboard" in readme
+    assert "/research/candidate-genes" in readme
+    assert "Candidate Gene Priority" in readme
     assert "daily" in readme.lower()
     assert "Graphify and Neo4j" in readme
     assert "open-access-only" in readme
@@ -57,3 +59,10 @@ def test_publish_safe_sql_query_files_exist() -> None:
     assert (query_dir / "03_top_mutated_luad.sql").exists()
     assert (query_dir / "04_graph_edges.sql").exists()
     assert (query_dir / "05_candidate_gene_priority.sql").exists()
+
+
+def test_research_api_and_dashboard_docs_are_packaged() -> None:
+    api_spec = read_text("docs/api_spec.md")
+
+    assert "/research/candidate-genes" in api_spec
+    assert (ROOT / "dashboard" / "pages" / "7_Candidate_Gene_Priority.py").exists()

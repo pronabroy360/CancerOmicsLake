@@ -324,3 +324,12 @@ Impact values:
 - Tightened GDC sample ID extraction to use sample submitter IDs when GDC omits `sample_id`.
 - Aligned dbt sample uniqueness tests with quality semantics by excluding placeholder `Unknown` sample IDs from uniqueness assertions.
 - Verified gates: `make test` (`93 passed`), `make test-dbt` (`43 passed`), `make run-demo-check`, and `make run-project-completion`.
+
+## 2026-07-10 - Candidate Priority API And Dashboard Surface
+
+- Added `src.analytics.candidate_priority` query helpers for the `gold_candidate_gene_priority` research mart.
+- Added `GET /research/candidate-genes` with filters for cancer type, gene query, priority tier, minimum score, and limit.
+- Added Streamlit `Candidate Gene Priority` page for filtering, charting, table review, and CSV export of ranked cancer-gene pairs.
+- Updated API docs and README with the research endpoint and dashboard page.
+- Added tests for candidate-priority analytics, API contract, dashboard data helper, and docs packaging.
+- Verified `make test` passes with `98 passed`.

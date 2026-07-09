@@ -6,6 +6,7 @@ from pathlib import Path
 import polars as pl
 
 from src.analytics.dashboard_data import (
+    candidate_priority_data,
     cohort_distribution_data,
     graph_explorer_data,
     overview_metrics,
@@ -108,6 +109,47 @@ def test_graph_explorer_data_filters_edges_and_nodes(tmp_path: Path) -> None:
     assert payload["edges"].height == 1
     assert payload["nodes"].height == 2
     assert payload["edge_type_counts"].height == 1
+
+
+def test_candidate_priority_data_filters_rows(tmp_path: Path) -> None:
+    gold = tmp_path / "gold_candidate_gene_priority.parquet"
+    pl.DataFrame(
+        [
+            {
+                "cancer_type": "TCGA-BRCA",
+                "gene_symbol": "TP53",
+                "mutation_frequency": 0.4,
+                "mutated_sample_count": 4,
+                "total_profiled_sample_count": 10,
+                "abs_log2_fold_change": 1.2,
+                "log2_fold_change": 1.2,
+                "graph_degree": 2,
+                "evidence_count": 2,
+                "priority_score": 0.7,
+                "priority_tier": "high",
+                "evidence_summary": "x",
+            },
+            {
+                "cancer_type": "TCGA-LUAD",
+                "gene_symbol": "EGFR",
+                "mutation_frequency": 0.2,
+                "mutated_sample_count": 2,
+                "total_profiled_sample_count": 10,
+                "abs_log2_fold_change": 0.3,
+                "log2_fold_change": 0.3,
+                "graph_degree": 2,
+                "evidence_count": 2,
+                "priority_score": 0.25,
+                "priority_tier": "medium",
+                "evidence_summary": "y",
+            },
+        ]
+    ).write_parquet(gold)
+
+    df = candidate_priority_data(cancer_type="TCGA-BRCA", tier="high", gold_path=gold)
+
+    assert df.height == 1
+    assert df.row(0, named=True)["gene_symbol"] == "TP53"
 
 
 def test_quality_report_data_builds_status_counts(tmp_path: Path) -> None:

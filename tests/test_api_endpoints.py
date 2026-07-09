@@ -52,6 +52,15 @@ def test_mutations_gene_endpoint() -> None:
     assert "rows" in payload
 
 
+def test_research_candidate_genes_endpoint() -> None:
+    response = client.get("/research/candidate-genes", params={"limit": 5})
+    assert response.status_code == 200
+    payload = response.json()
+    assert "rows" in payload
+    assert "filters" in payload
+    assert payload["filters"]["limit"] == 5
+
+
 def test_quality_latest_endpoint() -> None:
     response = client.get("/quality/latest")
     assert response.status_code == 200
