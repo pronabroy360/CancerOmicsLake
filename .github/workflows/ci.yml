@@ -39,6 +39,9 @@ jobs:
       - name: Strict Metadata Smoke
         run: make run-metadata-strict-smoke
 
+      - name: Tiny Real Download Smoke
+        run: make run-download-tcga-ci-smoke
+
       - name: Silver Build
         run: make run-silver
 

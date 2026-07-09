@@ -30,6 +30,7 @@ def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
 
     assert "make run-download-tcga-medium" in reproducibility
     assert "make run-download-tcga-aggressive" in reproducibility
+    assert "make run-download-tcga-ci-smoke" in reproducibility
     assert "make run-demo-check" in reproducibility
     assert "Python `3.11`" in reproducibility
     assert "pipeline_run_history.json" in reproducibility

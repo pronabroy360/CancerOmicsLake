@@ -123,7 +123,7 @@ make run-demo-check-strict
 - `make run-dbt` and `make test-dbt` automatically use local dbt when supported, otherwise fall back to the `dbt` Docker Compose service.
 - GitHub Actions runs on push/pull request and once daily through the scheduled workflow.
 - CI uploads run reports, ingestion audit output, download summaries, pipeline metadata, and graph export bundles as artifacts.
-- CI now runs `make run-graph-export` and `make run-demo-check` as a reviewer-readiness gate.
+- CI now runs `make run-download-tcga-ci-smoke`, `make run-graph-export`, and `make run-demo-check` as a bounded reviewer-readiness gate.
 - CI and manual ingestion workflows now also generate `outputs/reports/project_completion_report.json` so milestone readiness is reviewable as an artifact.
 - Manual ingestion workflow is available in GitHub Actions (`CancerOmicsLake Manual Ingestion`) with profile selection (`medium`/`aggressive`) and optional strict no-stub validation.
 

@@ -88,7 +88,8 @@ make run-demo-check-strict
 - Local dbt commands now auto-select execution mode:
   - local `.venv` dbt when the active Python is supported
   - Docker Compose `dbt` service when local Python is `3.14+`
-- CI executes `make test`, metadata/silver/gold/quality stages, `dbt run`, `dbt test`, `make run-graph-export`, and `make run-demo-check`.
+- CI executes `make test`, metadata, `make run-download-tcga-ci-smoke`, silver/gold/quality stages, `dbt run`, `dbt test`, `make run-graph-export`, and `make run-demo-check`.
+- The CI smoke download is intentionally tiny: one expression file and one mutation file per TCGA MVP project, capped at six attempted downloads.
 - CI uploads operational artifacts so run state is reviewable without committing generated outputs.
 
 ## Manual GitHub Ingestion Workflow
