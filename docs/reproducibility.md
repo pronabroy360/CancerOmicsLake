@@ -13,6 +13,9 @@ make run-metadata-strict-smoke
 make run-silver
 make run-gold
 make run-quality
+make run-dbt
+make test-dbt
+make run-project-completion
 make test
 ```
 
@@ -82,6 +85,9 @@ make run-demo-check-strict
 - Manual high-throughput runs are available through `.github/workflows/manual_ingestion.yml`.
 - Python `3.11` is the source-of-truth runtime for dbt in CI.
 - Local Python `3.14` remains acceptable for non-dbt pipeline commands.
+- Local dbt commands now auto-select execution mode:
+  - local `.venv` dbt when the active Python is supported
+  - Docker Compose `dbt` service when local Python is `3.14+`
 - CI executes `make test`, metadata/silver/gold/quality stages, `dbt run`, `dbt test`, `make run-graph-export`, and `make run-demo-check`.
 - CI uploads operational artifacts so run state is reviewable without committing generated outputs.
 
@@ -114,6 +120,8 @@ Pipeline/report artifacts are written under `outputs/reports/`:
 - `data_quality_report.json`
 - `pipeline_run_metadata.json`
 - `pipeline_run_history.json`
+- `dbt_execution_report.json`
+- `project_completion_report.json`
 
 Reports include `run_mode` where available:
 

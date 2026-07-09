@@ -9,5 +9,6 @@ def test_ci_workflow_enforces_demo_gate_and_artifacts() -> None:
     assert "make test-dbt" in workflow
     assert "make run-graph-export" in workflow
     assert "make run-demo-check" in workflow
+    assert "make run-project-completion" in workflow
     assert "make run-ingestion-traceability" in workflow
     assert "name: graph-exports" in workflow

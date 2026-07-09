@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-medium run-download-tcga-aggressive run-silver run-gold run-quality run-graph-export run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-medium run-download-tcga-aggressive run-silver run-gold run-quality run-graph-export run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -77,10 +77,13 @@ run-flow-aggressive:
 	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations
 
 run-dbt:
-	$(VENV)/bin/dbt run --project-dir dbt --profiles-dir dbt
+	$(PYTHON) -m src.main run-dbt --config configs/project_config.yml
 
 test-dbt:
-	$(VENV)/bin/dbt test --project-dir dbt --profiles-dir dbt
+	$(PYTHON) -m src.main test-dbt --config configs/project_config.yml
+
+run-project-completion:
+	$(PYTHON) -m src.main run-project-completion --config configs/project_config.yml
 
 run-api:
 	$(PYTHON) -m uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000

@@ -60,6 +60,9 @@ jobs:
       - name: Reviewer Demo Check
         run: make run-demo-check
 
+      - name: Project Completion Report
+        run: make run-project-completion
+
       - name: Ingestion Traceability Report
         run: make run-ingestion-traceability
 

@@ -23,3 +23,4 @@ gdc-user-token*
 codeindex.json
 symbolindex.json
 .codeindex/
+graphify-out/

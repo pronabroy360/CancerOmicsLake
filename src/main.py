@@ -22,9 +22,14 @@ from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.tcga_downloader import download_tcga_files
 from src.ingestion.gtex_downloader import gtex_metadata_stub
 from src.operations.demo_check import run_demo_check, write_demo_check_report
+from src.operations.dbt_runner import run_dbt_command
 from src.operations.ingestion_traceability import (
     build_ingestion_traceability_report,
     write_ingestion_traceability_report,
+)
+from src.operations.project_completion import (
+    build_project_completion_report,
+    write_project_completion_report,
 )
 from src.processing.build_expression_table import with_log2_expression
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
@@ -159,6 +164,14 @@ def main() -> None:
     parser_graph_export = subparsers.add_parser("run-graph-export")
     parser_graph_export.add_argument("--config", required=True)
 
+    parser_dbt_run = subparsers.add_parser("run-dbt")
+    parser_dbt_run.add_argument("--config", required=True)
+    parser_dbt_run.add_argument("--mode", choices=["auto", "local", "docker"], default="auto")
+
+    parser_dbt_test = subparsers.add_parser("test-dbt")
+    parser_dbt_test.add_argument("--config", required=True)
+    parser_dbt_test.add_argument("--mode", choices=["auto", "local", "docker"], default="auto")
+
     parser_traceability = subparsers.add_parser("run-ingestion-traceability")
     parser_traceability.add_argument("--config", required=True)
     parser_traceability.add_argument("--output", default="outputs/reports/ingestion_traceability_report.json")
@@ -167,6 +180,10 @@ def main() -> None:
     parser_demo_check.add_argument("--config", required=True)
     parser_demo_check.add_argument("--strict-no-stub", action="store_true")
     parser_demo_check.add_argument("--output", default="outputs/reports/demo_check_report.json")
+
+    parser_completion = subparsers.add_parser("run-project-completion")
+    parser_completion.add_argument("--config", required=True)
+    parser_completion.add_argument("--output", default="outputs/reports/project_completion_report.json")
 
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
@@ -307,6 +324,20 @@ def main() -> None:
         )
         print("Graph export completed.")
         return
+    if args.command == "run-dbt":
+        load_config(args.config)
+        payload = run_dbt_command("run", requested_mode=args.mode)
+        logger = get_logger("canceromicslake")
+        logger.info("dbt run completed via %s mode.", payload["mode"])
+        print("dbt run completed.")
+        return
+    if args.command == "test-dbt":
+        load_config(args.config)
+        payload = run_dbt_command("test", requested_mode=args.mode)
+        logger = get_logger("canceromicslake")
+        logger.info("dbt test completed via %s mode.", payload["mode"])
+        print("dbt test completed.")
+        return
     if args.command == "run-ingestion-traceability":
         load_config(args.config)
         payload = build_ingestion_traceability_report()
@@ -326,6 +357,19 @@ def main() -> None:
         if payload["status"] != "passed":
             raise RuntimeError(f"Demo check failed. See {output}")
         print("Reviewer demo check completed.")
+        return
+    if args.command == "run-project-completion":
+        load_config(args.config)
+        payload = build_project_completion_report()
+        output = write_project_completion_report(payload, args.output)
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Project completion report written to %s with %s/%s milestones done.",
+            output,
+            payload["completed_milestones"],
+            payload["total_milestones"],
+        )
+        print("Project completion report generated.")
         return
     if args.command == "run-flow":
         from src.orchestration.pipeline_flow import run_pipeline_with_fallback

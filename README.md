@@ -20,8 +20,10 @@ Implemented so far:
 - FastAPI endpoints and Streamlit dashboard pages backed by local marts
 - Test suite for config, ingestion, parsing, silver/gold builders, graph exports, API, dashboard data, reporting, and quality checks
 - Daily CI schedule + dbt run/test gate on Python 3.11
+- Local dbt runner with automatic Docker fallback when Python 3.14 is incompatible
 - Medium-cap real ingestion profile (`expression<=25`, `mutations<=10` per project)
 - Pipeline run-mode tagging (`manual`/`push`/`scheduled`) and run history tracking
+- Project completion report for milestone-level release readiness (`outputs/reports/project_completion_report.json`)
 
 ## Architecture
 
@@ -62,10 +64,13 @@ make run-download-tcga-aggressive
 make run-silver
 make run-gold
 make run-quality
+make run-dbt
+make test-dbt
 make run-flow-medium
 make run-flow-aggressive
 make run-demo-check
 make run-ingestion-traceability
+make run-project-completion
 ```
 
 Optional application surfaces:
@@ -115,9 +120,11 @@ make run-demo-check-strict
 
 - dbt execution source-of-truth is CI Python `3.11`.
 - Local Python `3.14` remains supported for non-dbt pipeline commands.
+- `make run-dbt` and `make test-dbt` automatically use local dbt when supported, otherwise fall back to the `dbt` Docker Compose service.
 - GitHub Actions runs on push/pull request and once daily through the scheduled workflow.
 - CI uploads run reports, ingestion audit output, download summaries, pipeline metadata, and graph export bundles as artifacts.
 - CI now runs `make run-graph-export` and `make run-demo-check` as a reviewer-readiness gate.
+- CI and manual ingestion workflows now also generate `outputs/reports/project_completion_report.json` so milestone readiness is reviewable as an artifact.
 - Manual ingestion workflow is available in GitHub Actions (`CancerOmicsLake Manual Ingestion`) with profile selection (`medium`/`aggressive`) and optional strict no-stub validation.
 
 ## Example Questions

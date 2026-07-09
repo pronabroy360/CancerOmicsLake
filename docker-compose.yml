@@ -1,6 +1,12 @@
 version: "3.9"
 
 services:
+  dbt:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - .:/app
+
   api:
     image: python:3.11-slim
     working_dir: /app
@@ -18,4 +24,3 @@ services:
     command: sh -c "pip install -r requirements.txt && streamlit run dashboard/app.py --server.port 8501 --server.address 0.0.0.0"
     ports:
       - "8501:8501"
-

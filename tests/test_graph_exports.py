@@ -46,3 +46,5 @@ def test_export_graph_csvs_from_gold_tables(tmp_path: Path) -> None:
     assert graphify["edges_count"] == 1
     assert Path(graphify["nodes_csv"]).exists()
     assert Path(graphify["edges_csv"]).exists()
+    assert b"\r\n" not in Path(neo4j["nodes_csv"]).read_bytes()
+    assert b"\r\n" not in Path(graphify["edges_csv"]).read_bytes()

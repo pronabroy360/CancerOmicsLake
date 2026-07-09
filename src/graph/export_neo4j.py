@@ -14,7 +14,7 @@ def export_neo4j_csv(rows: list[dict[str, str]], output_path: str | Path) -> Pat
         output.write_text("", encoding="utf-8")
         return output
     with output.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     return output

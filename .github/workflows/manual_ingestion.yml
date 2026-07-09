@@ -75,6 +75,9 @@ jobs:
         if: inputs.strict_no_stub == true
         run: make run-demo-check-strict
 
+      - name: Project Completion Report
+        run: make run-project-completion
+
       - name: Upload Reports
         if: always()
         uses: actions/upload-artifact@v4

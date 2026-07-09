@@ -27,15 +27,15 @@ Use this file to record milestone progress, pipeline runs, decisions, risks, and
 
 | Milestone | Status | Owner | Start Date | Target Date | Acceptance Notes |
 |---|---|---|---|---|---|
-| M1 Project Setup | Done | pronabroy360 + Codex | 2026-05-27 | 2026-05-27 | Scaffold, configs, Makefile, API/dashboard stubs, tests passing |
-| M2 Metadata Ingestion | In Progress | pronabroy360 + Codex | 2026-05-27 | 2026-05-28 | Live GDC API query path implemented with retries and stub fallback |
-| M3 Expression Processing | In Progress | pronabroy360 + Codex | 2026-05-27 | 2026-05-29 | Silver expression TCGA/GTEx tables now generated with stable schemas |
-| M4 Mutation Processing | Not Started | | | | |
-| M5 dbt Warehouse | Not Started | | | | |
-| M6 Data Quality Layer | Not Started | | | | |
-| M7 Knowledge Graph | Not Started | | | | |
-| M8 Dashboard | Not Started | | | | |
-| M9 Final Packaging | Not Started | | | | |
+| M1 Project Setup | Done | pronabroy360 + Codex | 2026-05-27 | 2026-05-27 | Scaffold, configs, Makefile, Docker Compose, docs baseline, tests passing |
+| M2 Metadata Ingestion | Done | pronabroy360 + Codex | 2026-05-27 | 2026-05-28 | Live GDC query path, manifest generation, audit output, strict live mode, capped download controls |
+| M3 Expression Processing | Done | pronabroy360 + Codex | 2026-05-27 | 2026-05-29 | Silver TCGA/GTEx expression tables, file-based parsing, unit inference, tumor-vs-normal marts |
+| M4 Mutation Processing | Done | pronabroy360 + Codex | 2026-05-27 | 2026-05-29 | MAF parsing, silver mutations, mutation-frequency marts, API integration |
+| M5 dbt Warehouse | Done | pronabroy360 + Codex | 2026-05-28 | 2026-05-30 | dbt staging/silver/gold models, schema tests, CI dbt gate, local Docker fallback runner |
+| M6 Data Quality Layer | Done | pronabroy360 + Codex | 2026-05-28 | 2026-05-30 | Silver quality checks, run history, live-mode sanity checks, report artifacts |
+| M7 Knowledge Graph | Done | pronabroy360 + Codex | 2026-05-28 | 2026-05-30 | Gold graph marts, Graphify/Neo4j exports, bulk import scripts, traceability reporting |
+| M8 Dashboard | Done | pronabroy360 + Codex | 2026-05-28 | 2026-05-31 | Streamlit explorer pages, dashboard data layer, API/demo verification |
+| M9 Final Packaging | Done | pronabroy360 + Codex | 2026-05-28 | 2026-07-09 | Reviewer docs, manual/daily workflows, completion report, operational runbooks |
 
 Status values:
 - `Not Started`
@@ -255,6 +255,16 @@ Impact values:
 - Expanded reproducibility documentation for medium capped runs, scheduled CI, dbt runtime expectations, and run artifact history.
 - Expanded data dictionary coverage for implemented silver/gold, mutation, expression, and graph marts.
 - Added documentation packaging tests so CI protects reviewer-facing project quality.
+
+## 2026-07-09 - Completion And Release Readiness Pass
+
+- Added local `dbt` execution orchestration through `src.operations.dbt_runner`, with automatic Docker Compose fallback when the active Python runtime is incompatible with dbt.
+- Added `docker-compose` `dbt` service so local warehouse validation can use Python `3.11` without rebuilding the main project environment.
+- Added `run-project-completion` CLI/Make target and `src.operations.project_completion` report generator.
+- Added `outputs/reports/project_completion_report.json` as a milestone-level release-readiness artifact for CI and manual ingestion workflows.
+- Updated CI and manual ingestion workflows to generate the completion report alongside existing reports and graph exports.
+- Synced README, reproducibility docs, and API spec with the current implementation and local dbt execution behavior.
+- Reconciled milestone tracker statuses so the worklog reflects the implemented state of the project rather than early scaffold placeholders.
 
 ## 2026-05-28 - Reviewer Demo Verification Gate
 
