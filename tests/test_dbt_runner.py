@@ -27,6 +27,7 @@ def test_build_dbt_command_for_docker_contains_expected_invocation() -> None:
 
     assert command[:5] == ["docker", "compose", "run", "--rm", "dbt"]
     assert "dbt test --project-dir dbt --profiles-dir dbt" in command[-1]
+    assert "pip install" not in command[-1]
 
 
 def test_run_dbt_command_writes_report(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

@@ -58,6 +58,22 @@ def test_map_hit_to_record_extracts_nested_fields() -> None:
     assert record.workflow_type == "STAR - Counts"
 
 
+def test_map_hit_to_record_uses_sample_submitter_id_fallback() -> None:
+    hit = {
+        "id": "file-123",
+        "file_name": "example.tsv",
+        "cases": [
+            {
+                "case_id": "case-1",
+                "project": {"project_id": "TCGA-BRCA"},
+                "samples": [{"submitter_id": "TCGA-XX-0001-01A", "sample_type": "Primary Tumor"}],
+            }
+        ],
+    }
+    record = map_hit_to_record(hit, "TCGA-BRCA")
+    assert record.sample_id == "TCGA-XX-0001-01A"
+
+
 def test_query_tcga_metadata_with_audit_force_stub() -> None:
     config = load_config("configs/project_config.yml")
     records, source_mode, audit = query_tcga_metadata_with_audit(config, force_stub=True)

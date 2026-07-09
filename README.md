@@ -14,7 +14,7 @@ Implemented so far:
 - File-based TCGA/GTEx expression loaders with fallback behavior
 - Silver parquet outputs for projects, patients, samples, file manifest, and expression tables
 - Mutation MAF parsing and mutation-frequency gold marts
-- Gold cohort, expression, tumor-vs-normal, mutation, and graph marts
+- Gold cohort, expression, tumor-vs-normal, mutation, candidate gene-priority, and graph marts
 - Quality report generation
 - Graphify and Neo4j CSV graph exports
 - FastAPI endpoints and Streamlit dashboard pages backed by local marts

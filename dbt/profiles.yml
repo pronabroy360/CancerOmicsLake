@@ -3,5 +3,5 @@ canceromicslake:
   outputs:
     dev:
       type: duckdb
-      path: ../outputs/canceromicslake.duckdb
+      path: outputs/canceromicslake.duckdb
       threads: 4

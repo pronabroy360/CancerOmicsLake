@@ -111,12 +111,7 @@ def build_dbt_command(
         ]
 
     if mode == "docker":
-        shell_command = " && ".join(
-            [
-                "python -m pip install --disable-pip-version-check -r requirements.txt >/tmp/canceromicslake-dbt-pip.log",
-                f"dbt {normalized_action} --project-dir {shlex.quote(project_dir)} --profiles-dir {shlex.quote(profiles_dir)}",
-            ]
-        )
+        shell_command = f"dbt {normalized_action} --project-dir {shlex.quote(project_dir)} --profiles-dir {shlex.quote(profiles_dir)}"
         return [
             "docker",
             "compose",

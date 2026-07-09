@@ -154,6 +154,21 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `mutation_record_count`
 - `mean_mutation_frequency`
 
+### `gold_candidate_gene_priority.parquet`
+
+- `cancer_type`: TCGA project ID.
+- `gene_symbol`: gene symbol.
+- `mutation_frequency`: fraction of profiled samples with mutation evidence for the gene.
+- `mutated_sample_count`: number of mutated samples for the gene/cancer pair.
+- `total_profiled_sample_count`: profiled sample denominator.
+- `abs_log2_fold_change`: absolute tumor-vs-normal expression shift when available.
+- `log2_fold_change`: signed exploratory tumor-vs-normal expression shift.
+- `graph_degree`: count of available evidence families represented for the gene/cancer pair.
+- `evidence_count`: count of evidence families contributing to the score.
+- `priority_score`: weighted exploratory score combining mutation, expression shift, and evidence coverage.
+- `priority_tier`: `high`, `medium`, or `low`.
+- `evidence_summary`: compact score provenance string.
+
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.

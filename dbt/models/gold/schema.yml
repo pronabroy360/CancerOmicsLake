@@ -44,6 +44,21 @@ models:
         tests:
           - not_null
 
+  - name: gold_candidate_gene_priority
+    columns:
+      - name: cancer_type
+        tests:
+          - not_null
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: priority_score
+        tests:
+          - not_null
+      - name: priority_tier
+        tests:
+          - not_null
+
   - name: gold_graph_nodes
     columns:
       - name: node_id

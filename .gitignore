@@ -20,6 +20,8 @@ gdc-user-token*
 *.parquet
 *.duckdb
 *.log
+dbt/.user.yml
+dbt/target/
 codeindex.json
 symbolindex.json
 .codeindex/

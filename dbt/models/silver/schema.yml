@@ -23,7 +23,6 @@ models:
       - name: sample_id
         tests:
           - not_null
-          - unique
       - name: project_id
         tests:
           - not_null

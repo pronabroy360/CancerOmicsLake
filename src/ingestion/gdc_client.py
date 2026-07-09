@@ -126,6 +126,7 @@ def build_files_payload(config: AppConfig, project_id: str) -> dict[str, Any]:
             "cases.project.primary_site",
             "cases.project.disease_type",
             "cases.samples.sample_id",
+            "cases.samples.submitter_id",
             "cases.samples.sample_type",
         ]
     )
@@ -176,7 +177,7 @@ def map_hit_to_record(hit: dict[str, Any], default_project_id: str) -> GdcFileRe
         project_id=_coerce_to_text(project.get("project_id"), default=default_project_id),
         case_id=_coerce_to_text(case.get("case_id")),
         submitter_id=_coerce_to_text(case.get("submitter_id")),
-        sample_id=_coerce_to_text(sample.get("sample_id")),
+        sample_id=_coerce_to_text(sample.get("sample_id") or sample.get("submitter_id")),
         sample_type=_coerce_to_text(sample.get("sample_type")),
         primary_site=_coerce_to_text(project.get("primary_site")),
         disease_type=_coerce_to_text(project.get("disease_type")),

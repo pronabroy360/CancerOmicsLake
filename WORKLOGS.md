@@ -314,3 +314,13 @@ Impact values:
 - Installed `rtk` and `caveman` from PyPI after verifying they are publicly available packages.
 - Refreshed local `codeindex.json` and `symbolindex.json` indexes for the repository.
 - Added `.codeindex/` to `.gitignore` so the local index database stays untracked.
+
+## 2026-07-09 - Candidate Gene Priority And Dockerized dbt Stability
+
+- Added `gold_candidate_gene_priority` as a research-facing mart that combines mutation frequency, tumor-vs-normal signal, evidence coverage, and priority tiers for candidate cancer-gene ranking.
+- Added matching dbt gold model, data dictionary entry, reviewer SQL query, and documentation packaging coverage.
+- Switched Docker Compose services to a reusable project image so API, dashboard, and dbt runs no longer reinstall dependencies on every container invocation.
+- Fixed Docker dbt profile path resolution and added regression tests for dbt runner/profile behavior.
+- Tightened GDC sample ID extraction to use sample submitter IDs when GDC omits `sample_id`.
+- Aligned dbt sample uniqueness tests with quality semantics by excluding placeholder `Unknown` sample IDs from uniqueness assertions.
+- Verified gates: `make test` (`93 passed`), `make test-dbt` (`43 passed`), `make run-demo-check`, and `make run-project-completion`.

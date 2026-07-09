@@ -45,6 +45,7 @@ def test_sample_queries_cover_core_marts() -> None:
     assert "gold_tumor_vs_normal_expression" in sample_queries
     assert "gold_mutation_frequency_by_gene" in sample_queries
     assert "gold_graph_edges" in sample_queries
+    assert "gold_candidate_gene_priority" in sample_queries
 
 
 def test_publish_safe_sql_query_files_exist() -> None:
@@ -54,3 +55,4 @@ def test_publish_safe_sql_query_files_exist() -> None:
     assert (query_dir / "02_top_overexpressed_brca.sql").exists()
     assert (query_dir / "03_top_mutated_luad.sql").exists()
     assert (query_dir / "04_graph_edges.sql").exists()
+    assert (query_dir / "05_candidate_gene_priority.sql").exists()

@@ -120,6 +120,167 @@ def _build_tumor_vs_normal_table(expr_tcga: pl.DataFrame, expr_gtex: pl.DataFram
     )
 
 
+def _empty_candidate_gene_priority() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "mutation_frequency": pl.Float64,
+            "mutated_sample_count": pl.Int64,
+            "total_profiled_sample_count": pl.Int64,
+            "abs_log2_fold_change": pl.Float64,
+            "log2_fold_change": pl.Float64,
+            "graph_degree": pl.Int64,
+            "evidence_count": pl.Int64,
+            "priority_score": pl.Float64,
+            "priority_tier": pl.Utf8,
+            "evidence_summary": pl.Utf8,
+        }
+    )
+
+
+def _build_candidate_gene_priority_table(
+    mutation_by_gene: pl.DataFrame,
+    tumor_vs_normal: pl.DataFrame,
+) -> pl.DataFrame:
+    if mutation_by_gene.is_empty() and tumor_vs_normal.is_empty():
+        return _empty_candidate_gene_priority()
+
+    mutation_component = (
+        mutation_by_gene.select(
+            [
+                pl.col("cancer_type"),
+                pl.col("gene_symbol"),
+                pl.col("mutation_frequency").cast(pl.Float64),
+                pl.col("mutated_sample_count").cast(pl.Int64),
+                pl.col("total_profiled_sample_count").cast(pl.Int64),
+            ]
+        )
+        if not mutation_by_gene.is_empty()
+        else pl.DataFrame(
+            schema={
+                "cancer_type": pl.Utf8,
+                "gene_symbol": pl.Utf8,
+                "mutation_frequency": pl.Float64,
+                "mutated_sample_count": pl.Int64,
+                "total_profiled_sample_count": pl.Int64,
+            }
+        )
+    )
+
+    expression_component = (
+        tumor_vs_normal.select(
+            [
+                pl.col("cancer_type"),
+                pl.col("gene_symbol"),
+                pl.col("log2_fold_change").cast(pl.Float64),
+                pl.col("log2_fold_change").abs().cast(pl.Float64).alias("abs_log2_fold_change"),
+            ]
+        )
+        if not tumor_vs_normal.is_empty()
+        else pl.DataFrame(
+            schema={
+                "cancer_type": pl.Utf8,
+                "gene_symbol": pl.Utf8,
+                "log2_fold_change": pl.Float64,
+                "abs_log2_fold_change": pl.Float64,
+            }
+        )
+    )
+
+    keys = pl.concat(
+        [
+            mutation_component.select(["cancer_type", "gene_symbol"]),
+            expression_component.select(["cancer_type", "gene_symbol"]),
+        ],
+        how="vertical",
+    ).unique()
+    if keys.is_empty():
+        return _empty_candidate_gene_priority()
+
+    joined = (
+        keys.join(mutation_component, on=["cancer_type", "gene_symbol"], how="left")
+        .join(expression_component, on=["cancer_type", "gene_symbol"], how="left")
+        .with_columns(
+            [
+                pl.col("mutation_frequency").fill_null(0.0),
+                pl.col("mutated_sample_count").fill_null(0).cast(pl.Int64),
+                pl.col("total_profiled_sample_count").fill_null(0).cast(pl.Int64),
+                pl.col("log2_fold_change").fill_null(0.0),
+                pl.col("abs_log2_fold_change").fill_null(0.0),
+            ]
+        )
+    )
+
+    max_abs_fc = joined.select(pl.col("abs_log2_fold_change").max()).item()
+    fc_denominator = float(max_abs_fc) if max_abs_fc and max_abs_fc > 0 else 1.0
+
+    scored = joined.with_columns(
+        [
+            (
+                (pl.col("mutation_frequency").clip(0.0, 1.0) * 0.65)
+                + ((pl.col("abs_log2_fold_change") / fc_denominator).clip(0.0, 1.0) * 0.25)
+                + (
+                    (
+                        (pl.col("mutation_frequency") > 0).cast(pl.Int64)
+                        + (pl.col("abs_log2_fold_change") > 0).cast(pl.Int64)
+                    )
+                    / 2.0
+                    * 0.10
+                )
+            )
+            .round(6)
+            .alias("priority_score"),
+            (
+                (pl.col("mutation_frequency") > 0).cast(pl.Int64)
+                + (pl.col("abs_log2_fold_change") > 0).cast(pl.Int64)
+            ).alias("evidence_count"),
+            (
+                (pl.col("mutation_frequency") > 0).cast(pl.Int64)
+                + (pl.col("abs_log2_fold_change") > 0).cast(pl.Int64)
+            ).alias("graph_degree"),
+        ]
+    )
+
+    return (
+        scored.with_columns(
+            [
+                pl.when(pl.col("priority_score") >= 0.50)
+                .then(pl.lit("high"))
+                .when(pl.col("priority_score") >= 0.20)
+                .then(pl.lit("medium"))
+                .otherwise(pl.lit("low"))
+                .alias("priority_tier"),
+                pl.concat_str(
+                    [
+                        pl.lit("mutation_frequency="),
+                        pl.col("mutation_frequency").round(4).cast(pl.Utf8),
+                        pl.lit(";abs_log2_fold_change="),
+                        pl.col("abs_log2_fold_change").round(4).cast(pl.Utf8),
+                    ]
+                ).alias("evidence_summary"),
+            ]
+        )
+        .select(
+            [
+                "cancer_type",
+                "gene_symbol",
+                "mutation_frequency",
+                "mutated_sample_count",
+                "total_profiled_sample_count",
+                "abs_log2_fold_change",
+                "log2_fold_change",
+                "graph_degree",
+                "evidence_count",
+                "priority_score",
+                "priority_tier",
+                "evidence_summary",
+            ]
+        )
+        .sort(["priority_score", "mutation_frequency", "abs_log2_fold_change"], descending=[True, True, True])
+    )
+
+
 def build_gold_cohort_summary(
     silver_dir: str | Path = "data/silver",
     gold_dir: str | Path = "data/gold",
@@ -337,16 +498,23 @@ def build_gold_cohort_summary(
     output_mut_by_cancer = gold_root / "gold_mutation_frequency_by_cancer.parquet"
     output_tumor_vs_normal = gold_root / "gold_tumor_vs_normal_expression.parquet"
     tumor_vs_normal = _build_tumor_vs_normal_table(expr_tcga=expr_tcga, expr_gtex=expr_gtex)
+    candidate_priority = _build_candidate_gene_priority_table(
+        mutation_by_gene=mutation_by_gene,
+        tumor_vs_normal=tumor_vs_normal,
+    )
+    output_candidate_priority = gold_root / "gold_candidate_gene_priority.parquet"
     summary.write_parquet(output_path)
     mutation_by_gene.write_parquet(output_mut_by_gene)
     mutation_by_cancer.write_parquet(output_mut_by_cancer)
     tumor_vs_normal.write_parquet(output_tumor_vs_normal)
+    candidate_priority.write_parquet(output_candidate_priority)
 
     return {
         "gold_cohort_summary_path": str(output_path),
         "gold_mutation_frequency_by_gene_path": str(output_mut_by_gene),
         "gold_mutation_frequency_by_cancer_path": str(output_mut_by_cancer),
         "gold_tumor_vs_normal_expression_path": str(output_tumor_vs_normal),
+        "gold_candidate_gene_priority_path": str(output_candidate_priority),
         "tcga_project_count": int(summary["tcga_project_count"][0]),
         "tcga_patient_count": int(summary["tcga_patient_count"][0]),
         "tcga_sample_count": int(summary["tcga_sample_count"][0]),
@@ -358,4 +526,5 @@ def build_gold_cohort_summary(
         "mutation_gene_rows": int(mutation_by_gene.height),
         "mutation_cancer_rows": int(mutation_by_cancer.height),
         "tumor_vs_normal_rows": int(tumor_vs_normal.height),
+        "candidate_gene_priority_rows": int(candidate_priority.height),
     }
