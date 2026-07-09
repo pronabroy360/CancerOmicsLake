@@ -22,3 +22,4 @@ gdc-user-token*
 *.log
 codeindex.json
 symbolindex.json
+.codeindex/

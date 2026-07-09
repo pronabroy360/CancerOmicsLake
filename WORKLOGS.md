@@ -297,3 +297,10 @@ Impact values:
 - Added profile input (`medium`/`aggressive`) with optional strict no-stub and strict metadata toggles.
 - Configured manual workflow to run tests, metadata, selected demo profile, optional strict verifier, and artifact uploads.
 - Added workflow contract test coverage and docs updates for the manual dispatch path.
+
+## 2026-07-09 - Codex Tooling Install
+
+- Installed `codeindex` from `scheidydude/codeindex` into the project virtual environment.
+- Installed `rtk` and `caveman` from PyPI after verifying they are publicly available packages.
+- Refreshed local `codeindex.json` and `symbolindex.json` indexes for the repository.
+- Added `.codeindex/` to `.gitignore` so the local index database stays untracked.
