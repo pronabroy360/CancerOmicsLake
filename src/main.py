@@ -14,6 +14,7 @@ from src.common.paths import ensure_base_dirs
 from src.common.reporting import inject_report_context, resolve_run_mode
 from src.analytics.build_gold_tables import build_gold_cohort_summary
 from src.analytics.bootstrap_stability import build_bootstrap_stability
+from src.analytics.consensus_candidates import build_consensus_candidates
 from src.analytics.evidence_confidence import build_evidence_confidence
 from src.analytics.external_validation import build_external_expression_validation
 from src.graph.build_edges import build_graph_edges_table
@@ -194,6 +195,9 @@ def main() -> None:
     parser_external_validation.add_argument("--config", required=True)
     parser_external_validation.add_argument("--recount3-expression-path", default="data/silver/silver_expression_recount3.parquet")
     parser_external_validation.add_argument("--top-k", type=int, default=100)
+
+    parser_consensus = subparsers.add_parser("run-consensus-candidates")
+    parser_consensus.add_argument("--config", required=True)
 
     parser_recount3 = subparsers.add_parser("run-recount3-expression")
     parser_recount3.add_argument("--config", required=True)
@@ -470,6 +474,20 @@ def main() -> None:
             validation_summary["path"],
         )
         print("External expression validation build completed.")
+        return
+    if args.command == "run-consensus-candidates":
+        load_config(args.config)
+        consensus_summary = build_consensus_candidates()
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Consensus candidates: status=%s rows=%s prioritized=%s watchlist=%s path=%s",
+            consensus_summary["status"],
+            consensus_summary["row_count"],
+            consensus_summary["prioritized_count"],
+            consensus_summary["watchlist_count"],
+            consensus_summary["path"],
+        )
+        print("Consensus candidate build completed.")
         return
     if args.command == "run-recount3-expression":
         load_config(args.config)

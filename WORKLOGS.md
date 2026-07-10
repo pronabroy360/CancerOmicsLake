@@ -428,3 +428,14 @@ Impact values:
   1,815 discordant validation-tier rows.
 - Added CLI/Make execution, unit coverage, reproducibility instructions, input data dictionary, and explicit
   non-clinical confounding caveats.
+
+## 2026-07-10 - Consensus Candidate Publication Triage
+
+- Added `gold_consensus_candidate_genes` as the final research-triage mart over candidate priority, evidence confidence,
+  adjacent-normal triangulation, bootstrap stability, recount3 external validation, and mutation support.
+- Implemented conservative score components and explicit rejection reasons for external discordance, reference sensitivity,
+  weak bootstrap support, weak evidence confidence, and low consensus score.
+- Added `make run-consensus-candidates`, CLI execution, API endpoint, dashboard data helper, JSON report output,
+  data dictionary entries, reviewer SQL, and regression coverage.
+- Kept the interpretation scope narrow: this layer ranks candidates for further research review and does not claim
+  batch-corrected differential expression, clinical biomarker status, or causal biology.

@@ -8,6 +8,7 @@ import polars as pl
 from src.analytics.dashboard_data import (
     batch_effect_sensitivity_data,
     candidate_priority_data,
+    consensus_candidates_data,
     cohort_distribution_data,
     evidence_confidence_data,
     external_expression_validation_data,
@@ -319,6 +320,34 @@ def test_external_expression_validation_data_returns_filtered_rows(tmp_path: Pat
         validation_tier="high",
         direction_agreement="concordant",
         min_validation_score=0.8,
+        gold_path=path,
+    )
+
+    assert result.height == 1
+    assert result.row(0, named=True)["gene_symbol"] == "TP53"
+
+
+def test_consensus_candidates_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.consensus_candidates import CONSENSUS_CANDIDATE_SCHEMA
+
+    path = tmp_path / "consensus.parquet"
+    row = {column: None for column in CONSENSUS_CANDIDATE_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "gene_symbol": "TP53",
+            "consensus_score": 0.9,
+            "consensus_decision": "prioritized",
+            "publication_tier": "strong_candidate",
+        }
+    )
+    pl.DataFrame([row], schema=CONSENSUS_CANDIDATE_SCHEMA).write_parquet(path)
+
+    result = consensus_candidates_data(
+        cancer_type="TCGA-BRCA",
+        decision="prioritized",
+        publication_tier="strong_candidate",
+        min_consensus_score=0.8,
         gold_path=path,
     )
 

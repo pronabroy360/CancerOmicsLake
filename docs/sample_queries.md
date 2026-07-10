@@ -246,6 +246,28 @@ LIMIT 50;
 This mart is populated only after adding a normalized recount3 extract. It is an external reproducibility
 check over a uniformly processed source, not clinical validation.
 
+## Consensus Candidate Genes
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    consensus_score,
+    consensus_decision,
+    publication_tier,
+    rejection_reasons,
+    validation_score,
+    reference_concordance,
+    bootstrap_stability_tier
+FROM read_parquet('data/gold/gold_consensus_candidate_genes.parquet')
+WHERE consensus_decision = 'prioritized'
+ORDER BY consensus_score DESC
+LIMIT 50;
+```
+
+Use this mart for manuscript triage only. It is designed to reject candidates with external discordance,
+reference sensitivity, or weak stability before biological interpretation.
+
 ## Quality Checks That Need Attention
 
 ```sql

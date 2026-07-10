@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from src.analytics.batch_effect_sensitivity import batch_effect_sensitivity
 from src.analytics.bootstrap_stability import bootstrap_stability
 from src.analytics.candidate_priority import candidate_gene_priority
+from src.analytics.consensus_candidates import consensus_candidates
 from src.analytics.evidence_confidence import evidence_confidence
 from src.analytics.external_validation import external_expression_validation
 from src.analytics.expression_summary import expression_by_gene
@@ -167,6 +168,25 @@ def research_external_expression_validation(
         validation_tier=validation_tier,
         direction_agreement=direction_agreement,
         min_validation_score=min_validation_score,
+        limit=limit,
+    )
+
+
+@app.get("/research/consensus-candidates")
+def research_consensus_candidates(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    decision: str | None = None,
+    publication_tier: str | None = None,
+    min_consensus_score: float | None = None,
+    limit: int = 50,
+) -> dict[str, object]:
+    return consensus_candidates(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        decision=decision,
+        publication_tier=publication_tier,
+        min_consensus_score=min_consensus_score,
         limit=limit,
     )
 

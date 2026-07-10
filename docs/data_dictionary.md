@@ -273,6 +273,24 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `external_source`, `external_annotation`: external source provenance.
 - `validation_caveat`: required external-validation interpretation warning.
 
+### `gold_consensus_candidate_genes.parquet`
+
+- `cancer_type`, `gene_symbol`: ranked cancer-gene pair.
+- `consensus_score`: bounded publication-triage score from multiple evidence layers.
+- `consensus_decision`: `prioritized`, `watchlist`, or `deprioritized`.
+- `publication_tier`: `strong_candidate`, `research_candidate`, `exploratory`, or `deprioritized`.
+- `rejection_reasons`: semicolon-delimited reasons such as external discordance or reference sensitivity.
+- `priority_score`, `priority_tier`: upstream exploratory priority score.
+- `overall_confidence`, `confidence_tier`: evidence-confidence calibration.
+- `mutation_frequency`, `mutated_sample_count`, `total_profiled_sample_count`: mutation support.
+- `log2_fold_change`, `abs_log2_fold_change`: native TCGA-GTEx expression effect.
+- `reference_stability_score`, `reference_concordance`: TCGA-adjacent versus GTEx reference triangulation.
+- `bootstrap_stability_score`, `bootstrap_stability_tier`: deterministic candidate bootstrap support.
+- `validation_score`, `validation_tier`, `direction_agreement`: recount3 reproducibility support.
+- `evidence_component_count`, `evidence_completeness`: number and fraction of available evidence components.
+- `priority_component`, `confidence_component`, `reference_component`, `bootstrap_component`, `external_component`, `mutation_component`: transparent score inputs.
+- `consensus_caveat`: required interpretation warning.
+
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.

@@ -114,6 +114,8 @@ Research surface:
 - API: `GET /research/external-expression-validation?cancer_type=TCGA-BRCA&validation_tier=high&limit=20`
 - Dashboard: `External Validation` page comparing native effects with an optional recount3 extract.
 - Run the recount3 validation contract with `make run-external-validation` after exporting `data/silver/silver_expression_recount3.parquet`.
+- API: `GET /research/consensus-candidates?cancer_type=TCGA-BRCA&decision=prioritized&limit=20`
+- Build the publication-triage mart with `make run-consensus-candidates` after evidence confidence, bootstrap stability, and external validation are available.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:
@@ -172,6 +174,14 @@ make run-demo-check-strict
 - Current output: 11,494,080 expression rows from 180 samples and 108,012 validated gene-cancer comparisons.
 - Current validation tiers: 84,531 high, 12,056 moderate, 9,610 limited, and 1,815 discordant.
 - Uniform processing improves computational comparability but does not eliminate biological or collection confounding.
+
+## Consensus Candidate Profile
+
+- Run `make run-consensus-candidates` after `make run-evidence-confidence`, `make run-bootstrap-stability`, and `make run-external-validation`.
+- Output: `data/gold/gold_consensus_candidate_genes.parquet` plus `outputs/reports/consensus_candidate_report.json`.
+- The score combines candidate priority, evidence confidence, adjacent-normal triangulation, bootstrap stability, recount3 external validation, and mutation support.
+- Discordant external validation, reference sensitivity, weak bootstrap support, or weak evidence confidence explicitly deprioritizes a gene.
+- This is a publication-triage layer, not a batch-corrected differential-expression result or clinical biomarker claim.
 
 ## Runtime Notes
 

@@ -18,6 +18,7 @@ Implemented endpoints:
 - `GET /research/reference-triangulation?cancer_type=TCGA-BRCA&concordance=concordant_up&limit=20`
 - `GET /research/bootstrap-stability?cancer_type=TCGA-BRCA&stability_tier=high&limit=20`
 - `GET /research/external-expression-validation?cancer_type=TCGA-BRCA&validation_tier=high&limit=20`
+- `GET /research/consensus-candidates?cancer_type=TCGA-BRCA&decision=prioritized&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -127,3 +128,7 @@ interval, top-k selection, and reference-concordance stability metrics.
 `GET /research/external-expression-validation` accepts `cancer_type`, `gene_query`, `validation_tier`,
 `direction_agreement`, `min_validation_score`, and `limit`. It compares native TCGA/GTEx effects with
 a normalized recount3 extract when available. It is an external reproducibility check, not clinical validation.
+
+`GET /research/consensus-candidates` accepts `cancer_type`, `gene_query`, `decision`,
+`publication_tier`, `min_consensus_score`, and `limit`. It returns the final publication-triage
+ranking and explicit rejection reasons from the combined evidence layers.
