@@ -93,6 +93,14 @@ def test_research_bootstrap_stability_endpoint() -> None:
     assert payload["filters"]["limit"] == 5
 
 
+def test_research_external_expression_validation_endpoint() -> None:
+    response = client.get("/research/external-expression-validation", params={"limit": 5})
+    assert response.status_code == 200
+    payload = response.json()
+    assert "rows" in payload
+    assert payload["filters"]["limit"] == 5
+
+
 def test_quality_latest_endpoint() -> None:
     response = client.get("/quality/latest")
     assert response.status_code == 200

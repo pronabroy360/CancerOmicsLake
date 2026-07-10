@@ -66,6 +66,7 @@ make run-silver
 make run-gold
 make run-quality
 make run-graph-metrics
+make run-external-validation
 make run-dbt
 make test-dbt
 make run-flow-medium
@@ -109,6 +110,9 @@ Research surface:
 - API: `GET /research/bootstrap-stability?cancer_type=TCGA-BRCA&stability_tier=high&limit=20`
 - Dashboard: `Bootstrap Stability` page for deterministic candidate rank and direction resampling results.
 - Run the 200-iteration candidate experiment with `make run-bootstrap-stability`.
+- API: `GET /research/external-expression-validation?cancer_type=TCGA-BRCA&validation_tier=high&limit=20`
+- Dashboard: `External Validation` page comparing native effects with an optional recount3 extract.
+- Run the recount3 validation contract with `make run-external-validation` after exporting `data/silver/silver_expression_recount3.parquet`.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:

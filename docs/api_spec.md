@@ -17,6 +17,7 @@ Implemented endpoints:
 - `GET /research/batch-effect-sensitivity?cancer_type=TCGA-BRCA&support_tier=high&direction=rank_up&limit=20`
 - `GET /research/reference-triangulation?cancer_type=TCGA-BRCA&concordance=concordant_up&limit=20`
 - `GET /research/bootstrap-stability?cancer_type=TCGA-BRCA&stability_tier=high&limit=20`
+- `GET /research/external-expression-validation?cancer_type=TCGA-BRCA&validation_tier=high&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -122,3 +123,7 @@ adjacent-normal and GTEx normal references, while preserving reference-shift and
 `GET /research/bootstrap-stability` accepts `cancer_type`, `gene_query`, `stability_tier`,
 `min_stability`, and `limit`. It returns deterministic candidate-level direction, rank, confidence
 interval, top-k selection, and reference-concordance stability metrics.
+
+`GET /research/external-expression-validation` accepts `cancer_type`, `gene_query`, `validation_tier`,
+`direction_agreement`, `min_validation_score`, and `limit`. It compares native TCGA/GTEx effects with
+a normalized recount3 extract when available. It is an external reproducibility check, not clinical validation.

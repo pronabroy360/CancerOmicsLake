@@ -46,6 +46,7 @@ Use this when we want to complete ingestion quickly over a few days:
 make run-download-tcga-aggressive
 make run-download-tcga-normals
 make run-bootstrap-stability
+make run-external-validation
 make run-flow-aggressive
 make run-demo-aggressive
 ```
@@ -159,4 +160,6 @@ Reports include `run_mode` where available:
 - Set `tcga.require_live_gdc: true` to fail fast if live GDC query is unavailable.
 - Silver quality checks write `outputs/reports/silver_data_quality_report.json`.
 - Tumor-vs-normal comparisons are exploratory because TCGA and GTEx have cross-study and pipeline batch effects.
+- `make run-external-validation` is optional until a recount3 extract exists at `data/silver/silver_expression_recount3.parquet`.
+  Without that extract, it writes an empty schema-valid mart and a skipped report.
 - Generated raw data, credentials, and controlled-access files must not be committed.

@@ -10,6 +10,7 @@ from src.analytics.dashboard_data import (
     candidate_priority_data,
     cohort_distribution_data,
     evidence_confidence_data,
+    external_expression_validation_data,
     graph_explorer_data,
     graph_node_metrics_data,
     overview_metrics,
@@ -290,6 +291,34 @@ def test_bootstrap_stability_data_returns_filtered_rows(tmp_path: Path) -> None:
         cancer_type="TCGA-BRCA",
         stability_tier="high",
         min_stability=0.8,
+        gold_path=path,
+    )
+
+    assert result.height == 1
+    assert result.row(0, named=True)["gene_symbol"] == "TP53"
+
+
+def test_external_expression_validation_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.external_validation import EXTERNAL_VALIDATION_SCHEMA
+
+    path = tmp_path / "external_validation.parquet"
+    row = {column: None for column in EXTERNAL_VALIDATION_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "gene_symbol": "TP53",
+            "direction_agreement": "concordant",
+            "validation_score": 0.9,
+            "validation_tier": "high",
+        }
+    )
+    pl.DataFrame([row], schema=EXTERNAL_VALIDATION_SCHEMA).write_parquet(path)
+
+    result = external_expression_validation_data(
+        cancer_type="TCGA-BRCA",
+        validation_tier="high",
+        direction_agreement="concordant",
+        min_validation_score=0.8,
         gold_path=path,
     )
 

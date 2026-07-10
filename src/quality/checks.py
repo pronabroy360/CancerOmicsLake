@@ -400,6 +400,17 @@ def run_silver_quality_checks(
             "bootstrap_stability_tier": pl.Utf8,
         },
     )
+    gold_external_validation = _read_or_empty(
+        gold_root / "gold_external_expression_validation.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "direction_agreement": pl.Utf8,
+            "validation_score": pl.Float64,
+            "validation_tier": pl.Utf8,
+            "top_k_jaccard_by_cancer": pl.Float64,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -599,6 +610,30 @@ def run_silver_quality_checks(
             | ~pl.col("opposite_direction_rate").is_between(0.0, 1.0)
             | ~pl.col("bootstrap_stability_score").is_between(0.0, 1.0)
             | ~pl.col("bootstrap_stability_tier").is_in(["high", "moderate", "limited", "unstable"])
+        ).height
+    missing_gold_external_validation_cols = _missing_columns(
+        gold_external_validation,
+        [
+            "cancer_type",
+            "gene_symbol",
+            "direction_agreement",
+            "validation_score",
+            "validation_tier",
+            "top_k_jaccard_by_cancer",
+        ],
+    )
+    invalid_gold_external_validation_values = 0
+    if not gold_external_validation.is_empty() and {
+        "direction_agreement",
+        "validation_score",
+        "validation_tier",
+        "top_k_jaccard_by_cancer",
+    }.issubset(gold_external_validation.columns):
+        invalid_gold_external_validation_values = gold_external_validation.filter(
+            ~pl.col("direction_agreement").is_in(["concordant", "inconclusive", "discordant"])
+            | ~pl.col("validation_score").is_between(0.0, 1.0)
+            | ~pl.col("top_k_jaccard_by_cancer").is_between(0.0, 1.0)
+            | ~pl.col("validation_tier").is_in(["high", "moderate", "limited", "discordant"])
         ).height
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
@@ -829,6 +864,20 @@ def run_silver_quality_checks(
             check_name="gold_candidate_bootstrap_stability_values_supported",
             status="passed" if invalid_gold_bootstrap_values == 0 else "failed",
             failed_rows=int(invalid_gold_bootstrap_values),
+        ),
+        CheckResult(
+            check_name="gold_external_expression_validation_schema_columns_present",
+            status=(
+                "passed"
+                if (gold_external_validation.is_empty() or missing_gold_external_validation_cols == 0)
+                else "failed"
+            ),
+            failed_rows=int(missing_gold_external_validation_cols),
+        ),
+        CheckResult(
+            check_name="gold_external_expression_validation_values_supported",
+            status="passed" if invalid_gold_external_validation_values == 0 else "failed",
+            failed_rows=int(invalid_gold_external_validation_values),
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",

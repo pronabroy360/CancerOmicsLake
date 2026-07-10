@@ -243,6 +243,23 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `bootstrap_stability_score`, `bootstrap_stability_tier`: transparent bounded stability calibration.
 - `bootstrap_caveat`: required candidate-restricted and non-validation warning.
 
+### `gold_external_expression_validation.parquet`
+
+- `cancer_type`, `gene_symbol`: externally validated cancer-gene pair.
+- `native_log2_fold_change`: native TCGA tumor versus GTEx normal effect from the project mart.
+- `recount3_log2_fold_change`: effect recomputed from a normalized recount3 extract.
+- `effect_delta`: absolute native-versus-recount3 effect difference.
+- `native_direction`, `recount3_direction`: thresholded `up`, `down`, or `stable` directions.
+- `direction_agreement`: `concordant`, `inconclusive`, or `discordant`.
+- `native_abs_effect_rank`, `recount3_abs_effect_rank`: per-cancer absolute-effect ranks.
+- `absolute_rank_delta`: absolute rank difference between native and recount3 effects.
+- `top_k`, `top_k_overlap`, `top_k_jaccard_by_cancer`: top-k reproducibility metrics.
+- `native_sample_count_tumor`, `native_sample_count_normal`: native support counts.
+- `recount3_sample_count_tumor`, `recount3_sample_count_normal`: recount3 support counts.
+- `validation_score`, `validation_tier`: bounded reproducibility calibration.
+- `external_source`, `external_annotation`: external source provenance.
+- `validation_caveat`: required external-validation interpretation warning.
+
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.

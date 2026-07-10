@@ -6,6 +6,7 @@ from src.analytics.batch_effect_sensitivity import batch_effect_sensitivity
 from src.analytics.bootstrap_stability import bootstrap_stability
 from src.analytics.candidate_priority import candidate_gene_priority
 from src.analytics.evidence_confidence import evidence_confidence
+from src.analytics.external_validation import external_expression_validation
 from src.analytics.expression_summary import expression_by_gene
 from src.analytics.gene_search import search_genes
 from src.analytics.metadata import metadata_projects as metadata_projects_data
@@ -147,6 +148,25 @@ def research_bootstrap_stability(
         gene_query=gene_query,
         stability_tier=stability_tier,
         min_stability=min_stability,
+        limit=limit,
+    )
+
+
+@app.get("/research/external-expression-validation")
+def research_external_expression_validation(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    validation_tier: str | None = None,
+    direction_agreement: str | None = None,
+    min_validation_score: float | None = None,
+    limit: int = 50,
+) -> dict[str, object]:
+    return external_expression_validation(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        validation_tier=validation_tier,
+        direction_agreement=direction_agreement,
+        min_validation_score=min_validation_score,
         limit=limit,
     )
 

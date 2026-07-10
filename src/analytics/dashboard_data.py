@@ -12,6 +12,7 @@ from src.analytics.batch_effect_sensitivity import (
 from src.analytics.bootstrap_stability import BOOTSTRAP_STABILITY_SCHEMA, bootstrap_stability
 from src.analytics.candidate_priority import candidate_priority_dataframe
 from src.analytics.evidence_confidence import CONFIDENCE_SCHEMA, evidence_confidence
+from src.analytics.external_validation import EXTERNAL_VALIDATION_SCHEMA, external_expression_validation
 from src.analytics.reference_triangulation import REFERENCE_TRIANGULATION_SCHEMA, reference_triangulation
 from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene
@@ -284,6 +285,28 @@ def bootstrap_stability_data(
     )
     rows = payload.get("rows", [])
     return pl.DataFrame(rows) if rows else pl.DataFrame(schema=BOOTSTRAP_STABILITY_SCHEMA)
+
+
+def external_expression_validation_data(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    validation_tier: str | None = None,
+    direction_agreement: str | None = None,
+    min_validation_score: float | None = None,
+    limit: int = 50,
+    gold_path: str | Path = "data/gold/gold_external_expression_validation.parquet",
+) -> pl.DataFrame:
+    payload = external_expression_validation(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        validation_tier=validation_tier,
+        direction_agreement=direction_agreement,
+        min_validation_score=min_validation_score,
+        limit=limit,
+        gold_path=gold_path,
+    )
+    rows = payload.get("rows", [])
+    return pl.DataFrame(rows) if rows else pl.DataFrame(schema=EXTERNAL_VALIDATION_SCHEMA)
 
 
 def graph_explorer_data(

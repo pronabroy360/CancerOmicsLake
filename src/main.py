@@ -15,6 +15,7 @@ from src.common.reporting import inject_report_context, resolve_run_mode
 from src.analytics.build_gold_tables import build_gold_cohort_summary
 from src.analytics.bootstrap_stability import build_bootstrap_stability
 from src.analytics.evidence_confidence import build_evidence_confidence
+from src.analytics.external_validation import build_external_expression_validation
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
@@ -187,6 +188,11 @@ def main() -> None:
     parser_bootstrap.add_argument("--iterations", type=int, default=200)
     parser_bootstrap.add_argument("--top-k", type=int, default=50)
     parser_bootstrap.add_argument("--random-seed", type=int, default=20260710)
+
+    parser_external_validation = subparsers.add_parser("run-external-validation")
+    parser_external_validation.add_argument("--config", required=True)
+    parser_external_validation.add_argument("--recount3-expression-path", default="data/silver/silver_expression_recount3.parquet")
+    parser_external_validation.add_argument("--top-k", type=int, default=100)
 
     parser_dbt_run = subparsers.add_parser("run-dbt")
     parser_dbt_run.add_argument("--config", required=True)
@@ -440,6 +446,22 @@ def main() -> None:
             bootstrap_summary["elapsed_seconds"],
         )
         print("Bootstrap stability build completed.")
+        return
+    if args.command == "run-external-validation":
+        load_config(args.config)
+        validation_summary = build_external_expression_validation(
+            recount3_expression_path=args.recount3_expression_path,
+            top_k=args.top_k,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "External expression validation: status=%s rows=%s tiers=%s path=%s",
+            validation_summary["status"],
+            validation_summary["row_count"],
+            validation_summary["tier_counts"],
+            validation_summary["path"],
+        )
+        print("External expression validation build completed.")
         return
     if args.command == "run-dbt":
         load_config(args.config)

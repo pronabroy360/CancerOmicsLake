@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-ci-smoke run-download-tcga-medium run-download-tcga-aggressive run-download-tcga-normals run-gtex-live run-silver run-gold run-quality run-graph-export run-graph-metrics run-evidence-confidence run-bootstrap-stability run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-ci-smoke run-download-tcga-medium run-download-tcga-aggressive run-download-tcga-normals run-gtex-live run-silver run-gold run-quality run-graph-export run-graph-metrics run-evidence-confidence run-bootstrap-stability run-external-validation run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -65,6 +65,9 @@ run-evidence-confidence:
 
 run-bootstrap-stability:
 	$(PYTHON) -m src.main run-bootstrap-stability --config configs/project_config.yml --candidates-per-cancer 500 --iterations 200 --top-k 50 --random-seed 20260710
+
+run-external-validation:
+	$(PYTHON) -m src.main run-external-validation --config configs/project_config.yml --recount3-expression-path data/silver/silver_expression_recount3.parquet --top-k 100
 
 run-ingestion-traceability:
 	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml

@@ -23,6 +23,7 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "/research/batch-effect-sensitivity" in readme
     assert "/research/reference-triangulation" in readme
     assert "/research/bootstrap-stability" in readme
+    assert "/research/external-expression-validation" in readme
     assert "make run-download-tcga-normals" in readme
     assert "Candidate Gene Priority" in readme
     assert "Batch-Effect Sensitivity" in readme
@@ -32,6 +33,7 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "make run-demo-check" in readme
     assert "make run-ingestion-traceability" in readme
     assert "make run-gtex-live" in readme
+    assert "make run-external-validation" in readme
     assert "Manual Ingestion" in readme
 
 
@@ -47,6 +49,7 @@ def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
     assert "ingestion_traceability_report.json" in reproducibility
     assert "scheduled" in reproducibility
     assert "make run-graph-export" in reproducibility
+    assert "make run-external-validation" in reproducibility
     assert "manual_ingestion.yml" in reproducibility
 
 
@@ -62,6 +65,7 @@ def test_sample_queries_cover_core_marts() -> None:
     assert "gold_batch_effect_sensitivity" in sample_queries
     assert "gold_reference_triangulation" in sample_queries
     assert "gold_candidate_bootstrap_stability" in sample_queries
+    assert "gold_external_expression_validation" in sample_queries
 
 
 def test_publish_safe_sql_query_files_exist() -> None:
@@ -77,6 +81,7 @@ def test_publish_safe_sql_query_files_exist() -> None:
     assert (query_dir / "08_batch_effect_sensitivity.sql").exists()
     assert (query_dir / "09_reference_triangulation.sql").exists()
     assert (query_dir / "10_bootstrap_stability.sql").exists()
+    assert (query_dir / "11_external_expression_validation.sql").exists()
 
 
 def test_research_api_and_dashboard_docs_are_packaged() -> None:
@@ -87,12 +92,15 @@ def test_research_api_and_dashboard_docs_are_packaged() -> None:
     assert "/research/batch-effect-sensitivity" in api_spec
     assert "/research/reference-triangulation" in api_spec
     assert "/research/bootstrap-stability" in api_spec
+    assert "/research/external-expression-validation" in api_spec
     assert (ROOT / "dashboard" / "pages" / "7_Candidate_Gene_Priority.py").exists()
     assert (ROOT / "dashboard" / "pages" / "8_Evidence_Confidence.py").exists()
     assert (ROOT / "dashboard" / "pages" / "9_Batch_Effect_Sensitivity.py").exists()
     assert (ROOT / "dashboard" / "pages" / "10_Reference_Triangulation.py").exists()
     assert (ROOT / "dashboard" / "pages" / "11_Bootstrap_Stability.py").exists()
+    assert (ROOT / "dashboard" / "pages" / "12_External_Validation.py").exists()
     assert (ROOT / "docs" / "evidence_confidence_methodology.md").exists()
     assert (ROOT / "docs" / "batch_effect_sensitivity.md").exists()
     assert (ROOT / "docs" / "reference_triangulation.md").exists()
     assert (ROOT / "docs" / "bootstrap_stability.md").exists()
+    assert (ROOT / "docs" / "external_validation.md").exists()
