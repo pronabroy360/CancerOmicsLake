@@ -137,6 +137,25 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `sample_count_tumor`
 - `sample_count_normal`
 
+### `gold_batch_effect_sensitivity.parquet`
+
+- `cancer_type`: TCGA project ID.
+- `gene_symbol`: gene symbol.
+- `tumor_log2_median`: log2 median TCGA tumor TPM plus one.
+- `normal_log2_median`: log2 median GTEx normal TPM plus one.
+- `tumor_expression_percentile`: within-cancer percentile rank of tumor gene expression.
+- `normal_expression_percentile`: within-reference percentile rank of normal gene expression.
+- `percentile_delta`: tumor percentile minus normal percentile.
+- `tumor_robust_z`: tumor gene-expression robust z-score within the cancer cohort.
+- `normal_robust_z`: normal gene-expression robust z-score within the mapped GTEx reference.
+- `robust_z_delta`: tumor robust z-score minus normal robust z-score.
+- `sample_count_tumor`: contributing TCGA tumor samples.
+- `sample_count_normal`: contributing GTEx normal samples.
+- `support_tier`: `high`, `moderate`, or `limited` based on sample support.
+- `sensitivity_direction`: `rank_up`, `rank_down`, or `stable`.
+- `batch_method`: normalization method label.
+- `batch_effect_caveat`: machine-readable warning that this is not full batch correction.
+
 ### `gold_mutation_frequency_by_gene.parquet`
 
 - `cancer_type`: TCGA project ID.

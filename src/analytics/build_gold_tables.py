@@ -58,6 +58,29 @@ def _empty_tumor_vs_normal() -> pl.DataFrame:
     )
 
 
+def _empty_batch_effect_sensitivity() -> pl.DataFrame:
+    return pl.DataFrame(
+        schema={
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "tumor_log2_median": pl.Float64,
+            "normal_log2_median": pl.Float64,
+            "tumor_expression_percentile": pl.Float64,
+            "normal_expression_percentile": pl.Float64,
+            "percentile_delta": pl.Float64,
+            "tumor_robust_z": pl.Float64,
+            "normal_robust_z": pl.Float64,
+            "robust_z_delta": pl.Float64,
+            "sample_count_tumor": pl.Int64,
+            "sample_count_normal": pl.Int64,
+            "support_tier": pl.Utf8,
+            "sensitivity_direction": pl.Utf8,
+            "batch_method": pl.Utf8,
+            "batch_effect_caveat": pl.Utf8,
+        }
+    )
+
+
 def _build_tumor_vs_normal_table(expr_tcga: pl.DataFrame, expr_gtex: pl.DataFrame) -> pl.DataFrame:
     if expr_tcga.is_empty() or expr_gtex.is_empty():
         return _empty_tumor_vs_normal()
@@ -126,6 +149,126 @@ def _build_tumor_vs_normal_table(expr_tcga: pl.DataFrame, expr_gtex: pl.DataFram
             pl.col("sample_count_tumor").cast(pl.Int64),
             pl.col("sample_count_normal").cast(pl.Int64),
         ]
+    )
+
+
+def _build_batch_effect_sensitivity_table(tumor_vs_normal: pl.DataFrame) -> pl.DataFrame:
+    if tumor_vs_normal.is_empty():
+        return _empty_batch_effect_sensitivity()
+
+    required = {
+        "cancer_type",
+        "gene_symbol",
+        "median_tcga_tumor_expression",
+        "median_gtex_normal_expression",
+        "sample_count_tumor",
+        "sample_count_normal",
+    }
+    if not required.issubset(set(tumor_vs_normal.columns)):
+        return _empty_batch_effect_sensitivity()
+
+    base = tumor_vs_normal.select(
+        [
+            pl.col("cancer_type"),
+            pl.col("gene_symbol"),
+            (pl.col("median_tcga_tumor_expression") + 1.0).log(base=2).cast(pl.Float64).alias("tumor_log2_median"),
+            (pl.col("median_gtex_normal_expression") + 1.0).log(base=2).cast(pl.Float64).alias("normal_log2_median"),
+            pl.col("sample_count_tumor").cast(pl.Int64),
+            pl.col("sample_count_normal").cast(pl.Int64),
+        ]
+    )
+    if base.is_empty():
+        return _empty_batch_effect_sensitivity()
+
+    ranked = base.with_columns(
+        [
+            pl.col("tumor_log2_median").rank(method="average").over("cancer_type").alias("tumor_rank"),
+            pl.col("normal_log2_median").rank(method="average").over("cancer_type").alias("normal_rank"),
+            pl.len().over("cancer_type").cast(pl.Float64).alias("gene_count_in_comparison"),
+            pl.col("tumor_log2_median").median().over("cancer_type").alias("tumor_cohort_median"),
+            pl.col("normal_log2_median").median().over("cancer_type").alias("normal_cohort_median"),
+        ]
+    ).with_columns(
+        [
+            (pl.col("tumor_log2_median") - pl.col("tumor_cohort_median")).abs().median().over("cancer_type").alias("tumor_mad"),
+            (pl.col("normal_log2_median") - pl.col("normal_cohort_median")).abs().median().over("cancer_type").alias("normal_mad"),
+        ]
+    )
+
+    return (
+        ranked.with_columns(
+            [
+                pl.when(pl.col("gene_count_in_comparison") > 1)
+                .then((pl.col("tumor_rank") - 1.0) / (pl.col("gene_count_in_comparison") - 1.0))
+                .otherwise(0.5)
+                .cast(pl.Float64)
+                .alias("tumor_expression_percentile"),
+                pl.when(pl.col("gene_count_in_comparison") > 1)
+                .then((pl.col("normal_rank") - 1.0) / (pl.col("gene_count_in_comparison") - 1.0))
+                .otherwise(0.5)
+                .cast(pl.Float64)
+                .alias("normal_expression_percentile"),
+                pl.when(pl.col("tumor_mad") > 0)
+                .then((pl.col("tumor_log2_median") - pl.col("tumor_cohort_median")) / (pl.col("tumor_mad") * 1.4826))
+                .otherwise(0.0)
+                .cast(pl.Float64)
+                .alias("tumor_robust_z"),
+                pl.when(pl.col("normal_mad") > 0)
+                .then((pl.col("normal_log2_median") - pl.col("normal_cohort_median")) / (pl.col("normal_mad") * 1.4826))
+                .otherwise(0.0)
+                .cast(pl.Float64)
+                .alias("normal_robust_z"),
+            ]
+        )
+        .with_columns(
+            [
+                (pl.col("tumor_expression_percentile") - pl.col("normal_expression_percentile"))
+                .round(6)
+                .alias("percentile_delta"),
+                (pl.col("tumor_robust_z") - pl.col("normal_robust_z")).round(6).alias("robust_z_delta"),
+                pl.when((pl.col("sample_count_tumor") >= 30) & (pl.col("sample_count_normal") >= 30))
+                .then(pl.lit("high"))
+                .when((pl.col("sample_count_tumor") >= 10) & (pl.col("sample_count_normal") >= 10))
+                .then(pl.lit("moderate"))
+                .otherwise(pl.lit("limited"))
+                .alias("support_tier"),
+            ]
+        )
+        .with_columns(
+            [
+                pl.when((pl.col("percentile_delta") >= 0.20) | (pl.col("robust_z_delta") >= 1.0))
+                .then(pl.lit("rank_up"))
+                .when((pl.col("percentile_delta") <= -0.20) | (pl.col("robust_z_delta") <= -1.0))
+                .then(pl.lit("rank_down"))
+                .otherwise(pl.lit("stable"))
+                .alias("sensitivity_direction"),
+                pl.lit("within_cohort_rank_and_robust_z").alias("batch_method"),
+                pl.lit(
+                    "Exploratory sensitivity analysis only; rank and robust-z scaling reduce scale dependence but do not remove TCGA-GTEx study effects."
+                ).alias("batch_effect_caveat"),
+            ]
+        )
+        .select(
+            [
+                "cancer_type",
+                "gene_symbol",
+                pl.col("tumor_log2_median").round(6),
+                pl.col("normal_log2_median").round(6),
+                pl.col("tumor_expression_percentile").round(6),
+                pl.col("normal_expression_percentile").round(6),
+                "percentile_delta",
+                pl.col("tumor_robust_z").round(6),
+                pl.col("normal_robust_z").round(6),
+                "robust_z_delta",
+                "sample_count_tumor",
+                "sample_count_normal",
+                "support_tier",
+                "sensitivity_direction",
+                "batch_method",
+                "batch_effect_caveat",
+            ]
+        )
+        .sort(["cancer_type", "sensitivity_direction", "percentile_delta"], descending=[False, False, True])
     )
 
 
@@ -507,15 +650,18 @@ def build_gold_cohort_summary(
     output_mut_by_cancer = gold_root / "gold_mutation_frequency_by_cancer.parquet"
     output_tumor_vs_normal = gold_root / "gold_tumor_vs_normal_expression.parquet"
     tumor_vs_normal = _build_tumor_vs_normal_table(expr_tcga=expr_tcga, expr_gtex=expr_gtex)
+    batch_effect_sensitivity = _build_batch_effect_sensitivity_table(tumor_vs_normal)
     candidate_priority = _build_candidate_gene_priority_table(
         mutation_by_gene=mutation_by_gene,
         tumor_vs_normal=tumor_vs_normal,
     )
+    output_batch_effect_sensitivity = gold_root / "gold_batch_effect_sensitivity.parquet"
     output_candidate_priority = gold_root / "gold_candidate_gene_priority.parquet"
     summary.write_parquet(output_path)
     mutation_by_gene.write_parquet(output_mut_by_gene)
     mutation_by_cancer.write_parquet(output_mut_by_cancer)
     tumor_vs_normal.write_parquet(output_tumor_vs_normal)
+    batch_effect_sensitivity.write_parquet(output_batch_effect_sensitivity)
     candidate_priority.write_parquet(output_candidate_priority)
 
     return {
@@ -523,6 +669,7 @@ def build_gold_cohort_summary(
         "gold_mutation_frequency_by_gene_path": str(output_mut_by_gene),
         "gold_mutation_frequency_by_cancer_path": str(output_mut_by_cancer),
         "gold_tumor_vs_normal_expression_path": str(output_tumor_vs_normal),
+        "gold_batch_effect_sensitivity_path": str(output_batch_effect_sensitivity),
         "gold_candidate_gene_priority_path": str(output_candidate_priority),
         "tcga_project_count": int(summary["tcga_project_count"][0]),
         "tcga_patient_count": int(summary["tcga_patient_count"][0]),
@@ -535,5 +682,6 @@ def build_gold_cohort_summary(
         "mutation_gene_rows": int(mutation_by_gene.height),
         "mutation_cancer_rows": int(mutation_by_cancer.height),
         "tumor_vs_normal_rows": int(tumor_vs_normal.height),
+        "batch_effect_sensitivity_rows": int(batch_effect_sensitivity.height),
         "candidate_gene_priority_rows": int(candidate_priority.height),
     }

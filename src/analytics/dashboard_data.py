@@ -5,6 +5,10 @@ from pathlib import Path
 
 import polars as pl
 
+from src.analytics.batch_effect_sensitivity import (
+    BATCH_EFFECT_SENSITIVITY_SCHEMA,
+    batch_effect_sensitivity,
+)
 from src.analytics.candidate_priority import candidate_priority_dataframe
 from src.analytics.evidence_confidence import CONFIDENCE_SCHEMA, evidence_confidence
 from src.analytics.cohort_summary import cohort_summary_from_gold
@@ -212,6 +216,28 @@ def evidence_confidence_data(
     )
     rows = payload.get("rows", [])
     return pl.DataFrame(rows) if rows else pl.DataFrame(schema=CONFIDENCE_SCHEMA)
+
+
+def batch_effect_sensitivity_data(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    support_tier: str | None = None,
+    direction: str | None = None,
+    min_abs_percentile_delta: float | None = None,
+    limit: int = 50,
+    gold_path: str | Path = "data/gold/gold_batch_effect_sensitivity.parquet",
+) -> pl.DataFrame:
+    payload = batch_effect_sensitivity(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        support_tier=support_tier,
+        direction=direction,
+        min_abs_percentile_delta=min_abs_percentile_delta,
+        limit=limit,
+        gold_path=gold_path,
+    )
+    rows = payload.get("rows", [])
+    return pl.DataFrame(rows) if rows else pl.DataFrame(schema=BATCH_EFFECT_SENSITIVITY_SCHEMA)
 
 
 def graph_explorer_data(

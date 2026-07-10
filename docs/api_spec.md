@@ -14,6 +14,7 @@ Implemented endpoints:
 - `GET /mutations/cancer/{project_id}`
 - `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
 - `GET /research/evidence-confidence?cancer_type=TCGA-BRCA&confidence_tier=moderate&limit=20`
+- `GET /research/batch-effect-sensitivity?cancer_type=TCGA-BRCA&support_tier=high&direction=rank_up&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -106,3 +107,8 @@ Notes:
 `min_confidence`, and `limit`. It returns calibrated component scores, an overall tier,
 batch-effect risk, and machine-readable caveats. Confidence measures evidence reliability;
 it does not replace the separate candidate priority score and is not clinical validation.
+
+`GET /research/batch-effect-sensitivity` accepts `cancer_type`, `gene_query`, `support_tier`,
+`direction`, `min_abs_percentile_delta`, and `limit`. It returns within-cohort percentile
+and robust z-score deltas for TCGA tumor versus GTEx normal expression. This is a sensitivity
+analysis that reduces scale dependence; it is not full batch correction.

@@ -44,6 +44,36 @@ models:
         tests:
           - not_null
 
+  - name: gold_batch_effect_sensitivity
+    columns:
+      - name: cancer_type
+        tests:
+          - not_null
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: percentile_delta
+        tests:
+          - not_null
+      - name: robust_z_delta
+        tests:
+          - not_null
+      - name: support_tier
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['high', 'moderate', 'limited']
+      - name: sensitivity_direction
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['rank_up', 'rank_down', 'stable']
+      - name: batch_method
+        tests:
+          - not_null
+
   - name: gold_candidate_gene_priority
     columns:
       - name: cancer_type

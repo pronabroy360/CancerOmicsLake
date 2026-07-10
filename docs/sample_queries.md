@@ -161,6 +161,26 @@ LIMIT 50;
 This mart deliberately separates candidate importance from evidence reliability. Cross-study
 TCGA-GTEx expression evidence remains batch-effect limited until a harmonized analysis is added.
 
+## Batch-Effect Sensitivity Ranking
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    percentile_delta,
+    robust_z_delta,
+    support_tier,
+    sensitivity_direction,
+    batch_method
+FROM read_parquet('data/gold/gold_batch_effect_sensitivity.parquet')
+WHERE support_tier = 'high'
+ORDER BY abs(percentile_delta) DESC, abs(robust_z_delta) DESC
+LIMIT 50;
+```
+
+This mart compares within-cohort expression ranks and robust z-scores. It is a sensitivity analysis,
+not a substitute for full batch correction.
+
 ## Quality Checks That Need Attention
 
 ```sql

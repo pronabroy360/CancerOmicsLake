@@ -320,7 +320,7 @@ def main() -> None:
         logger = get_logger("canceromicslake")
         logger.info("Gold cohort summary written to %s", summary["gold_cohort_summary_path"])
         logger.info(
-            "Gold summary counts: projects=%s patients=%s samples=%s files=%s gtex_expr_samples=%s mutation_records=%s mutation_gene_rows=%s tumor_vs_normal_rows=%s candidate_priority_rows=%s",
+            "Gold summary counts: projects=%s patients=%s samples=%s files=%s gtex_expr_samples=%s mutation_records=%s mutation_gene_rows=%s tumor_vs_normal_rows=%s batch_effect_sensitivity_rows=%s candidate_priority_rows=%s",
             summary["tcga_project_count"],
             summary["tcga_patient_count"],
             summary["tcga_sample_count"],
@@ -329,6 +329,7 @@ def main() -> None:
             summary["mutation_record_count"],
             summary["mutation_gene_rows"],
             summary["tumor_vs_normal_rows"],
+            summary["batch_effect_sensitivity_rows"],
             summary["candidate_gene_priority_rows"],
         )
         logger.info("Graph tables: nodes=%s (%s) edges=%s (%s)", node_summary["count"], node_summary["path"], edge_summary["count"], edge_summary["path"])

@@ -6,6 +6,7 @@ from pathlib import Path
 import polars as pl
 
 from src.analytics.dashboard_data import (
+    batch_effect_sensitivity_data,
     candidate_priority_data,
     cohort_distribution_data,
     evidence_confidence_data,
@@ -206,6 +207,34 @@ def test_evidence_confidence_data_returns_filtered_rows(tmp_path: Path) -> None:
     pl.DataFrame([row], schema=CONFIDENCE_SCHEMA).write_parquet(path)
 
     result = evidence_confidence_data(cancer_type="TCGA-BRCA", confidence_tier="high", gold_path=path)
+
+    assert result.height == 1
+    assert result.row(0, named=True)["gene_symbol"] == "TP53"
+
+
+def test_batch_effect_sensitivity_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.batch_effect_sensitivity import BATCH_EFFECT_SENSITIVITY_SCHEMA
+
+    path = tmp_path / "sensitivity.parquet"
+    row = {column: None for column in BATCH_EFFECT_SENSITIVITY_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "gene_symbol": "TP53",
+            "percentile_delta": 0.8,
+            "robust_z_delta": 1.2,
+            "support_tier": "high",
+            "sensitivity_direction": "rank_up",
+        }
+    )
+    pl.DataFrame([row], schema=BATCH_EFFECT_SENSITIVITY_SCHEMA).write_parquet(path)
+
+    result = batch_effect_sensitivity_data(
+        cancer_type="TCGA-BRCA",
+        support_tier="high",
+        direction="rank_up",
+        gold_path=path,
+    )
 
     assert result.height == 1
     assert result.row(0, named=True)["gene_symbol"] == "TP53"

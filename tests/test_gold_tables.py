@@ -111,6 +111,7 @@ def test_build_gold_cohort_summary_from_silver(tmp_path: Path) -> None:
     assert (gold_dir / "gold_mutation_frequency_by_gene.parquet").exists()
     assert (gold_dir / "gold_mutation_frequency_by_cancer.parquet").exists()
     assert (gold_dir / "gold_tumor_vs_normal_expression.parquet").exists()
+    assert (gold_dir / "gold_batch_effect_sensitivity.parquet").exists()
     assert (gold_dir / "gold_candidate_gene_priority.parquet").exists()
 
 
@@ -214,6 +215,105 @@ def test_build_gold_tumor_vs_normal_expression_rows(tmp_path: Path) -> None:
     assert row["cancer_type"] == "TCGA-BRCA"
     assert row["sample_count_tumor"] == 2
     assert row["sample_count_normal"] == 2
+
+
+def test_build_gold_batch_effect_sensitivity_ranks_genes_within_cancer(tmp_path: Path) -> None:
+    silver_dir = tmp_path / "silver"
+    gold_dir = tmp_path / "gold"
+    silver_dir.mkdir(parents=True, exist_ok=True)
+
+    pl.DataFrame({"project_id": ["TCGA-BRCA"], "primary_site": ["Breast"], "disease_type": ["Adeno"]}).write_parquet(
+        silver_dir / "silver_projects.parquet"
+    )
+    pl.DataFrame({"project_id": ["TCGA-BRCA"], "case_id": ["case-1"], "submitter_id": ["sub-1"]}).write_parquet(
+        silver_dir / "silver_patients.parquet"
+    )
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA", "TCGA-BRCA"],
+            "case_id": ["case-1", "case-2"],
+            "sample_id": ["sample-1", "sample-2"],
+            "sample_type": ["Primary Tumor", "Primary Tumor"],
+        }
+    ).write_parquet(silver_dir / "silver_samples.parquet")
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA"],
+            "case_id": ["case-1"],
+            "sample_id": ["sample-1"],
+            "file_id": ["file-1"],
+            "file_name": ["f1.tsv"],
+            "data_category": ["Transcriptome Profiling"],
+            "data_type": ["Gene Expression Quantification"],
+            "experimental_strategy": ["RNA-Seq"],
+            "workflow_type": ["STAR"],
+            "access": ["open"],
+            "file_size": [100],
+            "md5sum": ["a"],
+            "ingested_at": ["x"],
+        }
+    ).write_parquet(silver_dir / "silver_file_manifest.parquet")
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA", "TCGA-BRCA", "TCGA-BRCA", "TCGA-BRCA"],
+            "case_id": ["case-1", "case-1", "case-2", "case-2"],
+            "sample_id": ["sample-1", "sample-1", "sample-2", "sample-2"],
+            "sample_type": ["Primary Tumor", "Primary Tumor", "Primary Tumor", "Primary Tumor"],
+            "gene_id": ["ENSG1", "ENSG2", "ENSG1", "ENSG2"],
+            "gene_symbol": ["HIGH", "LOW", "HIGH", "LOW"],
+            "expression_value": [100.0, 1.0, 110.0, 1.0],
+            "expression_unit": ["TPM", "TPM", "TPM", "TPM"],
+            "log2_expression": [6.66, 1.0, 6.79, 1.0],
+            "pipeline_workflow": ["STAR", "STAR", "STAR", "STAR"],
+            "data_origin": ["stub", "stub", "stub", "stub"],
+            "ingested_at": ["x", "x", "x", "x"],
+        }
+    ).write_parquet(silver_dir / "silver_expression_tcga.parquet")
+    pl.DataFrame(
+        {
+            "gtex_sample_id": ["GTEX-BR-1", "GTEX-BR-1"],
+            "tissue_site": ["Breast - Mammary Tissue", "Breast - Mammary Tissue"],
+            "tissue_detail": ["Breast - Mammary Tissue", "Breast - Mammary Tissue"],
+            "gene_id": ["ENSG1", "ENSG2"],
+            "gene_symbol": ["HIGH", "LOW"],
+            "expression_value": [1.0, 100.0],
+            "expression_unit": ["TPM", "TPM"],
+            "log2_expression": [1.0, 6.66],
+            "source_version": ["v8", "v8"],
+            "data_origin": ["stub", "stub"],
+            "ingested_at": ["x", "x"],
+        }
+    ).write_parquet(silver_dir / "silver_expression_gtex.parquet")
+    pl.DataFrame(
+        schema={
+            "project_id": pl.Utf8,
+            "case_id": pl.Utf8,
+            "sample_id": pl.Utf8,
+            "gene_id": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "variant_classification": pl.Utf8,
+            "variant_type": pl.Utf8,
+            "chromosome": pl.Utf8,
+            "start_position": pl.Int64,
+            "end_position": pl.Int64,
+            "reference_allele": pl.Utf8,
+            "tumor_seq_allele": pl.Utf8,
+            "data_origin": pl.Utf8,
+            "ingested_at": pl.Utf8,
+        }
+    ).write_parquet(silver_dir / "silver_mutations.parquet")
+
+    summary = build_gold_cohort_summary(silver_dir=silver_dir, gold_dir=gold_dir)
+    assert summary["batch_effect_sensitivity_rows"] == 2
+
+    sensitivity = pl.read_parquet(gold_dir / "gold_batch_effect_sensitivity.parquet")
+    high = sensitivity.filter(pl.col("gene_symbol") == "HIGH").row(0, named=True)
+    low = sensitivity.filter(pl.col("gene_symbol") == "LOW").row(0, named=True)
+    assert high["sensitivity_direction"] == "rank_up"
+    assert high["percentile_delta"] == 1.0
+    assert low["sensitivity_direction"] == "rank_down"
+    assert low["percentile_delta"] == -1.0
+    assert high["batch_method"] == "within_cohort_rank_and_robust_z"
 
 
 def test_build_gold_candidate_gene_priority_ranks_multi_evidence_genes(tmp_path: Path) -> None:

@@ -68,3 +68,7 @@ cancer project. Normal-reference support is adequate for engineering and explora
 remains batch-effect limited. Current aggressive TCGA STAR-TPM support is 95 BRCA, 94 LUAD, and 96 COAD tumor
 samples, which is adequate for stronger exploratory evidence scoring. Batch-aware modeling remains the primary
 prerequisite before making publication-grade biological claims.
+
+The first batch-sensitivity layer is documented in `docs/batch_effect_sensitivity.md`. It adds
+within-cohort rank and robust-z deltas as a scale-reduced sensitivity analysis, but it is still
+not equivalent to full batch correction.

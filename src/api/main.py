@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from src.analytics.batch_effect_sensitivity import batch_effect_sensitivity
 from src.analytics.candidate_priority import candidate_gene_priority
 from src.analytics.evidence_confidence import evidence_confidence
 from src.analytics.expression_summary import expression_by_gene
@@ -87,6 +88,25 @@ def research_evidence_confidence(
         gene_query=gene_query,
         confidence_tier=confidence_tier,
         min_confidence=min_confidence,
+        limit=limit,
+    )
+
+
+@app.get("/research/batch-effect-sensitivity")
+def research_batch_effect_sensitivity(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    support_tier: str | None = None,
+    direction: str | None = None,
+    min_abs_percentile_delta: float | None = None,
+    limit: int = 50,
+) -> dict[str, object]:
+    return batch_effect_sensitivity(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        support_tier=support_tier,
+        direction=direction,
+        min_abs_percentile_delta=min_abs_percentile_delta,
         limit=limit,
     )
 

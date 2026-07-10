@@ -354,6 +354,18 @@ def run_silver_quality_checks(
             "top_variant_classification": pl.Utf8,
         },
     )
+    gold_batch_sensitivity = _read_or_empty(
+        gold_root / "gold_batch_effect_sensitivity.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "percentile_delta": pl.Float64,
+            "robust_z_delta": pl.Float64,
+            "support_tier": pl.Utf8,
+            "sensitivity_direction": pl.Utf8,
+            "batch_method": pl.Utf8,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -463,6 +475,18 @@ def run_silver_quality_checks(
         gold_mut_gene,
         ["gene_symbol", "cancer_type", "mutated_sample_count", "mutation_frequency"],
     )
+    missing_gold_batch_cols = _missing_columns(
+        gold_batch_sensitivity,
+        ["gene_symbol", "cancer_type", "percentile_delta", "robust_z_delta", "support_tier", "sensitivity_direction"],
+    )
+    invalid_gold_batch_values = 0
+    if not gold_batch_sensitivity.is_empty() and {"support_tier", "sensitivity_direction"}.issubset(
+        set(gold_batch_sensitivity.columns)
+    ):
+        invalid_gold_batch_values = gold_batch_sensitivity.filter(
+            ~pl.col("support_tier").is_in(["high", "moderate", "limited"])
+            | ~pl.col("sensitivity_direction").is_in(["rank_up", "rank_down", "stable"])
+        ).height
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
         gold_graph_edges,
@@ -632,6 +656,16 @@ def run_silver_quality_checks(
             check_name="gold_mutation_frequency_schema_columns_present",
             status="passed" if (gold_mut_gene.is_empty() or missing_gold_mut_cols == 0) else "failed",
             failed_rows=int(missing_gold_mut_cols),
+        ),
+        CheckResult(
+            check_name="gold_batch_effect_sensitivity_schema_columns_present",
+            status="passed" if (gold_batch_sensitivity.is_empty() or missing_gold_batch_cols == 0) else "failed",
+            failed_rows=int(missing_gold_batch_cols),
+        ),
+        CheckResult(
+            check_name="gold_batch_effect_sensitivity_values_supported",
+            status="passed" if invalid_gold_batch_values == 0 else "failed",
+            failed_rows=int(invalid_gold_batch_values),
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",

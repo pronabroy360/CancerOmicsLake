@@ -374,3 +374,12 @@ Impact values:
 - Improved tumor-vs-normal support to 95 BRCA, 94 LUAD, and 96 COAD TCGA tumor samples with 50/50/100 matched GTEx normal samples.
 - Evidence confidence now contains 108,781 cancer-gene rows with 51 high-confidence rows after stronger TCGA coverage.
 - Verified gates: silver quality `passed` across 30 checks, ingestion traceability `passed`, strict demo check `passed` (27 checks), dbt run (22 models), dbt test (50 tests), project completion 9/9, and pytest (`116 passed`).
+
+## 2026-07-10 - Batch-Effect Sensitivity Layer
+
+- Added `gold_batch_effect_sensitivity` to reduce dependence on raw TCGA-GTEx TPM fold changes during exploratory review.
+- Implemented within-cancer/reference percentile ranks, robust z-score deltas, support tiers, and direction labels (`rank_up`, `rank_down`, `stable`).
+- Added matching dbt model and schema tests, increasing dbt coverage to 23 models and 59 data tests.
+- Added API endpoint `GET /research/batch-effect-sensitivity`, Streamlit `Batch-Effect Sensitivity` page, dashboard data helper, and reviewer SQL query `08_batch_effect_sensitivity.sql`.
+- Added methodology documentation clarifying that this is sensitivity analysis, not full batch correction.
+- Expanded quality guardrails with batch-sensitivity schema and accepted-value checks, increasing silver/gold quality checks to 32.
