@@ -12,6 +12,7 @@ from src.analytics.dashboard_data import (
     cohort_distribution_data,
     evidence_confidence_data,
     external_expression_validation_data,
+    expression_statistical_support_data,
     graph_explorer_data,
     graph_node_metrics_data,
     overview_metrics,
@@ -348,6 +349,34 @@ def test_consensus_candidates_data_returns_filtered_rows(tmp_path: Path) -> None
         decision="prioritized",
         publication_tier="strong_candidate",
         min_consensus_score=0.8,
+        gold_path=path,
+    )
+
+    assert result.height == 1
+    assert result.row(0, named=True)["gene_symbol"] == "TP53"
+
+
+def test_expression_statistical_support_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.expression_statistics import EXPRESSION_STATISTICS_SCHEMA
+
+    path = tmp_path / "statistics.parquet"
+    row = {column: None for column in EXPRESSION_STATISTICS_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "gene_symbol": "TP53",
+            "statistical_support_score": 0.9,
+            "statistical_support_tier": "replicated_fdr",
+            "recount3_fdr_q_value": 0.01,
+        }
+    )
+    pl.DataFrame([row], schema=EXPRESSION_STATISTICS_SCHEMA).write_parquet(path)
+
+    result = expression_statistical_support_data(
+        cancer_type="TCGA-BRCA",
+        support_tier="replicated_fdr",
+        max_fdr=0.05,
+        min_support_score=0.8,
         gold_path=path,
     )
 

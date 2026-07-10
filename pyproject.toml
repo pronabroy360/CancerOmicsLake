@@ -9,6 +9,7 @@ dependencies = [
   "fastapi>=0.111.0",
   "polars>=1.0.0",
   "numpy>=1.26.0",
+  "scipy>=1.13.0",
   "prefect>=2.19.0",
   "pydantic>=2.7.0",
   "pyyaml>=6.0.1",

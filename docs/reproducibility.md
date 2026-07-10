@@ -48,6 +48,8 @@ make run-download-tcga-normals
 make run-bootstrap-stability
 make run-recount3-expression
 make run-external-validation
+make run-expression-statistics
+make run-consensus-candidates
 make run-flow-aggressive
 make run-demo-aggressive
 ```
@@ -166,6 +168,7 @@ Reports include `run_mode` where available:
 - Silver quality checks write `outputs/reports/silver_data_quality_report.json`.
 - Tumor-vs-normal comparisons are exploratory because TCGA and GTEx have cross-study and pipeline batch effects.
 - Run `make run-recount3-expression` followed by `make run-external-validation` for the real external validation.
+- Run `make run-expression-statistics` before rebuilding consensus candidates to add sample-level effect sizes and FDR support.
   CI intentionally permits a missing extract and writes an empty schema-valid mart because the public source download
   is too large for a bounded smoke job.
 - Generated raw data, credentials, and controlled-access files must not be committed.

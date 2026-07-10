@@ -268,6 +268,25 @@ LIMIT 50;
 Use this mart for manuscript triage only. It is designed to reject candidates with external discordance,
 reference sensitivity, or weak stability before biological interpretation.
 
+## Replicated Sample-Level Statistical Support
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    native_fdr_q_value,
+    recount3_fdr_q_value,
+    native_rank_biserial,
+    recount3_rank_biserial,
+    statistical_support_score
+FROM read_parquet('data/gold/gold_expression_statistical_support.parquet')
+WHERE statistical_support_tier = 'replicated_fdr'
+ORDER BY statistical_support_score DESC
+LIMIT 50;
+```
+
+This table provides FDR-controlled association support. It does not remove source/disease confounding or establish causality.
+
 ## Quality Checks That Need Attention
 
 ```sql

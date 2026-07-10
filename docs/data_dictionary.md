@@ -287,9 +287,28 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `reference_stability_score`, `reference_concordance`: TCGA-adjacent versus GTEx reference triangulation.
 - `bootstrap_stability_score`, `bootstrap_stability_tier`: deterministic candidate bootstrap support.
 - `validation_score`, `validation_tier`, `direction_agreement`: recount3 reproducibility support.
+- `statistical_support_score`, `statistical_support_tier`: replicated sample-level association support.
+- `native_fdr_q_value`, `recount3_fdr_q_value`: cancer-wise Benjamini-Hochberg adjusted values.
+- `native_rank_biserial`, `recount3_rank_biserial`: signed nonparametric effect sizes.
 - `evidence_component_count`, `evidence_completeness`: number and fraction of available evidence components.
-- `priority_component`, `confidence_component`, `reference_component`, `bootstrap_component`, `external_component`, `mutation_component`: transparent score inputs.
+- `priority_component`, `confidence_component`, `reference_component`, `bootstrap_component`, `external_component`, `statistical_component`, `mutation_component`: transparent score inputs.
 - `consensus_caveat`: required interpretation warning.
+
+### `gold_expression_statistical_support.parquet`
+
+- `cancer_type`, `gene_symbol`: tested cancer-gene pair present in native and recount3 contrasts.
+- `native_sample_count_tumor`, `native_sample_count_normal`: native TCGA and GTEx group sizes.
+- `native_median_tumor`, `native_median_normal`, `native_log2_fold_change`: native descriptive effects.
+- `native_mann_whitney_u`, `native_p_value`, `native_fdr_q_value`: native association test and cancer-wise FDR.
+- `native_rank_biserial`: signed native rank-biserial effect size.
+- `recount3_sample_count_tumor`, `recount3_sample_count_normal`: uniformly processed recount3 group sizes.
+- `recount3_median_tumor`, `recount3_median_normal`, `recount3_log2_fold_change`: recount3 descriptive effects.
+- `recount3_mann_whitney_u`, `recount3_p_value`, `recount3_fdr_q_value`: recount3 association test and cancer-wise FDR.
+- `recount3_rank_biserial`: signed recount3 rank-biserial effect size.
+- `effect_direction_agreement`: `concordant` or `discordant` signed effects.
+- `statistical_support_score`: bounded joint significance/effect score, set to zero for materially discordant direction.
+- `statistical_support_tier`: `replicated_fdr`, `recount3_fdr_supported`, `native_only_fdr`, `limited`, or `discordant`.
+- `statistical_caveat`: required source-confounding and non-clinical interpretation warning.
 
 ### `gold_graph_nodes.parquet`
 

@@ -109,6 +109,14 @@ def test_research_consensus_candidates_endpoint() -> None:
     assert payload["filters"]["limit"] == 5
 
 
+def test_research_expression_statistical_support_endpoint() -> None:
+    response = client.get("/research/expression-statistical-support", params={"limit": 5})
+    assert response.status_code == 200
+    payload = response.json()
+    assert "rows" in payload
+    assert payload["filters"]["limit"] == 5
+
+
 def test_quality_latest_endpoint() -> None:
     response = client.get("/quality/latest")
     assert response.status_code == 200

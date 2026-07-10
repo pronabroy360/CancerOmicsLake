@@ -426,6 +426,19 @@ def run_silver_quality_checks(
             "top_k_jaccard_by_cancer": pl.Float64,
         },
     )
+    gold_expression_statistics = _read_or_empty(
+        gold_root / "gold_expression_statistical_support.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "native_fdr_q_value": pl.Float64,
+            "recount3_fdr_q_value": pl.Float64,
+            "native_rank_biserial": pl.Float64,
+            "recount3_rank_biserial": pl.Float64,
+            "statistical_support_score": pl.Float64,
+            "statistical_support_tier": pl.Utf8,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -674,6 +687,42 @@ def run_silver_quality_checks(
             | ~pl.col("validation_score").is_between(0.0, 1.0)
             | ~pl.col("top_k_jaccard_by_cancer").is_between(0.0, 1.0)
             | ~pl.col("validation_tier").is_in(["high", "moderate", "limited", "discordant"])
+        ).height
+    missing_gold_expression_statistics_cols = _missing_columns(
+        gold_expression_statistics,
+        [
+            "cancer_type",
+            "gene_symbol",
+            "native_fdr_q_value",
+            "recount3_fdr_q_value",
+            "native_rank_biserial",
+            "recount3_rank_biserial",
+            "statistical_support_score",
+            "statistical_support_tier",
+        ],
+    )
+    invalid_gold_expression_statistics_values = 0
+    if not gold_expression_statistics.is_empty() and {
+        "native_fdr_q_value",
+        "recount3_fdr_q_value",
+        "native_rank_biserial",
+        "recount3_rank_biserial",
+        "statistical_support_score",
+        "statistical_support_tier",
+    }.issubset(gold_expression_statistics.columns):
+        invalid_gold_expression_statistics_values = gold_expression_statistics.filter(
+            ~pl.col("native_fdr_q_value").is_between(0.0, 1.0)
+            | ~pl.col("recount3_fdr_q_value").is_between(0.0, 1.0)
+            | ~pl.col("native_rank_biserial").is_between(-1.0, 1.0)
+            | ~pl.col("recount3_rank_biserial").is_between(-1.0, 1.0)
+            | ~pl.col("statistical_support_score").is_between(0.0, 1.0)
+            | ~pl.col("statistical_support_tier").is_in(
+                ["replicated_fdr", "recount3_fdr_supported", "native_only_fdr", "limited", "discordant"]
+            )
+            | (
+                (pl.col("statistical_support_tier") == "discordant")
+                & (pl.col("statistical_support_score") != 0.0)
+            )
         ).height
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
@@ -933,6 +982,20 @@ def run_silver_quality_checks(
             check_name="gold_external_expression_validation_values_supported",
             status="passed" if invalid_gold_external_validation_values == 0 else "failed",
             failed_rows=int(invalid_gold_external_validation_values),
+        ),
+        CheckResult(
+            check_name="gold_expression_statistical_support_schema_columns_present",
+            status=(
+                "passed"
+                if (gold_expression_statistics.is_empty() or missing_gold_expression_statistics_cols == 0)
+                else "failed"
+            ),
+            failed_rows=int(missing_gold_expression_statistics_cols),
+        ),
+        CheckResult(
+            check_name="gold_expression_statistical_support_values_supported",
+            status="passed" if invalid_gold_expression_statistics_values == 0 else "failed",
+            failed_rows=int(invalid_gold_expression_statistics_values),
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",

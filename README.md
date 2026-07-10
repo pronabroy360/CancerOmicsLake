@@ -68,6 +68,8 @@ make run-quality
 make run-graph-metrics
 make run-recount3-expression
 make run-external-validation
+make run-expression-statistics
+make run-consensus-candidates
 make run-dbt
 make test-dbt
 make run-flow-medium
@@ -115,7 +117,8 @@ Research surface:
 - Dashboard: `External Validation` page comparing native effects with an optional recount3 extract.
 - Run the recount3 validation contract with `make run-external-validation` after exporting `data/silver/silver_expression_recount3.parquet`.
 - API: `GET /research/consensus-candidates?cancer_type=TCGA-BRCA&decision=prioritized&limit=20`
-- Build the publication-triage mart with `make run-consensus-candidates` after evidence confidence, bootstrap stability, and external validation are available.
+- API: `GET /research/expression-statistical-support?cancer_type=TCGA-BRCA&support_tier=replicated_fdr&max_fdr=0.05&limit=20`
+- Build sample-level association support with `make run-expression-statistics`, then rebuild publication triage with `make run-consensus-candidates`.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:
@@ -177,10 +180,12 @@ make run-demo-check-strict
 
 ## Consensus Candidate Profile
 
-- Run `make run-consensus-candidates` after `make run-evidence-confidence`, `make run-bootstrap-stability`, and `make run-external-validation`.
+- Run `make run-expression-statistics` after native and recount3 silver expression are available.
+- Run `make run-consensus-candidates` after evidence confidence, bootstrap stability, external validation, and expression statistics.
 - Output: `data/gold/gold_consensus_candidate_genes.parquet` plus `outputs/reports/consensus_candidate_report.json`.
-- The score combines candidate priority, evidence confidence, adjacent-normal triangulation, bootstrap stability, recount3 external validation, and mutation support.
+- The score combines candidate priority, evidence confidence, adjacent-normal triangulation, bootstrap stability, recount3 validation, replicated statistical support, and mutation support.
 - Discordant external validation, reference sensitivity, weak bootstrap support, or weak evidence confidence explicitly deprioritizes a gene.
+- Statistical support uses Mann-Whitney effect sizes and cancer-wise Benjamini-Hochberg FDR, but source and disease status remain confounded.
 - This is a publication-triage layer, not a batch-corrected differential-expression result or clinical biomarker claim.
 
 ## Runtime Notes

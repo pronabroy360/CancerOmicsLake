@@ -439,3 +439,13 @@ Impact values:
   data dictionary entries, reviewer SQL, and regression coverage.
 - Kept the interpretation scope narrow: this layer ranks candidates for further research review and does not claim
   batch-corrected differential expression, clinical biomarker status, or causal biology.
+
+## 2026-07-10 - Replicated Expression Statistical Support
+
+- Added sample-level two-sided Mann-Whitney tests for native TCGA/GTEx and uniformly processed recount3 contrasts.
+- Added signed rank-biserial effect sizes and Benjamini-Hochberg FDR correction within each cancer and source.
+- Added conservative replication tiers; significant, material opposite-direction source effects are labeled `discordant` and receive zero statistical score.
+- Real output contains 108,012 tested pairs: 35,600 replicated-FDR, 8,355 recount3-supported, 13,441 native-only, 48,008 limited, and 2,608 materially discordant.
+- Integrated statistical support as a seventh consensus-ranking component with an explicit discordance rejection reason.
+- Added CLI/Make execution, API and dashboard access, data contracts, reviewer SQL, and regression tests.
+- Preserved the caveat that source and disease status remain confounded; these are association tests, not causal, clinical, or batch-corrected differential-expression claims.

@@ -109,6 +109,30 @@ def _write_fixture(gold: Path) -> None:
             },
         ]
     ).write_parquet(gold / "gold_external_expression_validation.parquet")
+    pl.DataFrame(
+        [
+            {
+                "cancer_type": "TCGA-BRCA",
+                "gene_symbol": "STRONG",
+                "statistical_support_score": 0.95,
+                "statistical_support_tier": "replicated_fdr",
+                "native_fdr_q_value": 0.001,
+                "recount3_fdr_q_value": 0.002,
+                "native_rank_biserial": 0.80,
+                "recount3_rank_biserial": 0.75,
+            },
+            {
+                "cancer_type": "TCGA-BRCA",
+                "gene_symbol": "BADREF",
+                "statistical_support_score": 0.0,
+                "statistical_support_tier": "discordant",
+                "native_fdr_q_value": 0.001,
+                "recount3_fdr_q_value": 0.001,
+                "native_rank_biserial": 0.70,
+                "recount3_rank_biserial": -0.70,
+            },
+        ]
+    ).write_parquet(gold / "gold_expression_statistical_support.parquet")
 
 
 def test_build_consensus_candidates_prioritizes_only_concordant_evidence(tmp_path: Path) -> None:
@@ -129,9 +153,12 @@ def test_build_consensus_candidates_prioritizes_only_concordant_evidence(tmp_pat
     assert rows["STRONG"]["consensus_decision"] == "prioritized"
     assert rows["STRONG"]["publication_tier"] == "strong_candidate"
     assert rows["STRONG"]["rejection_reasons"] == "none"
+    assert rows["STRONG"]["statistical_component"] == 0.95
     assert rows["BADREF"]["consensus_decision"] == "deprioritized"
     assert "external_validation_discordant" in rows["BADREF"]["rejection_reasons"]
     assert "reference_sensitive_or_discordant" in rows["BADREF"]["rejection_reasons"]
+    assert "statistical_support_discordant" in rows["BADREF"]["rejection_reasons"]
+    assert rows["BADREF"]["statistical_component"] == 0.0
 
 
 def test_consensus_candidates_query_filters_rows(tmp_path: Path) -> None:

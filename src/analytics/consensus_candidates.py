@@ -31,6 +31,12 @@ CONSENSUS_CANDIDATE_SCHEMA = {
     "validation_score": pl.Float64,
     "validation_tier": pl.Utf8,
     "direction_agreement": pl.Utf8,
+    "statistical_support_score": pl.Float64,
+    "statistical_support_tier": pl.Utf8,
+    "native_fdr_q_value": pl.Float64,
+    "recount3_fdr_q_value": pl.Float64,
+    "native_rank_biserial": pl.Float64,
+    "recount3_rank_biserial": pl.Float64,
     "evidence_component_count": pl.Int64,
     "evidence_completeness": pl.Float64,
     "priority_component": pl.Float64,
@@ -38,6 +44,7 @@ CONSENSUS_CANDIDATE_SCHEMA = {
     "reference_component": pl.Float64,
     "bootstrap_component": pl.Float64,
     "external_component": pl.Float64,
+    "statistical_component": pl.Float64,
     "mutation_component": pl.Float64,
     "consensus_caveat": pl.Utf8,
 }
@@ -67,6 +74,8 @@ def _reason_summary(row: dict[str, object]) -> str:
         reasons.append("bootstrap_support_weak")
     if row.get("confidence_tier") in {"limited", "low"}:
         reasons.append("evidence_confidence_weak")
+    if row.get("statistical_support_tier") == "discordant":
+        reasons.append("statistical_support_discordant")
     if float(row.get("consensus_score") or 0.0) < 0.45:
         reasons.append("low_consensus_score")
     return ";".join(reasons) if reasons else "none"
@@ -93,6 +102,7 @@ def build_consensus_candidates(
         reference = _read_or_empty(gold_root / "gold_reference_triangulation.parquet")
         bootstrap = _read_or_empty(gold_root / "gold_candidate_bootstrap_stability.parquet")
         external = _read_or_empty(gold_root / "gold_external_expression_validation.parquet")
+        statistics = _read_or_empty(gold_root / "gold_expression_statistical_support.parquet")
 
         base = candidate.select(
             [
@@ -169,12 +179,36 @@ def build_consensus_candidates(
                 "direction_agreement": pl.Utf8,
             },
         )
+        statistics_part = _select_existing(
+            statistics,
+            [
+                "cancer_type",
+                "gene_symbol",
+                pl.col("statistical_support_score").cast(pl.Float64, strict=False),
+                pl.col("statistical_support_tier").cast(pl.Utf8, strict=False),
+                pl.col("native_fdr_q_value").cast(pl.Float64, strict=False),
+                pl.col("recount3_fdr_q_value").cast(pl.Float64, strict=False),
+                pl.col("native_rank_biserial").cast(pl.Float64, strict=False),
+                pl.col("recount3_rank_biserial").cast(pl.Float64, strict=False),
+            ],
+            {
+                "cancer_type": pl.Utf8,
+                "gene_symbol": pl.Utf8,
+                "statistical_support_score": pl.Float64,
+                "statistical_support_tier": pl.Utf8,
+                "native_fdr_q_value": pl.Float64,
+                "recount3_fdr_q_value": pl.Float64,
+                "native_rank_biserial": pl.Float64,
+                "recount3_rank_biserial": pl.Float64,
+            },
+        )
 
         joined = (
             base.join(confidence_part, on=["cancer_type", "gene_symbol"], how="left")
             .join(reference_part, on=["cancer_type", "gene_symbol"], how="left")
             .join(bootstrap_part, on=["cancer_type", "gene_symbol"], how="left")
             .join(external_part, on=["cancer_type", "gene_symbol"], how="left")
+            .join(statistics_part, on=["cancer_type", "gene_symbol"], how="left")
             .with_columns(
                 [
                     pl.col("priority_score").fill_null(0.0).clip(0.0, 1.0),
@@ -182,6 +216,11 @@ def build_consensus_candidates(
                     pl.col("reference_stability_score").fill_null(0.0).clip(0.0, 1.0),
                     pl.col("bootstrap_stability_score").fill_null(0.0).clip(0.0, 1.0),
                     pl.col("validation_score").fill_null(0.0).clip(0.0, 1.0),
+                    pl.col("statistical_support_score").fill_null(0.0).clip(0.0, 1.0),
+                    pl.col("native_fdr_q_value").fill_null(1.0).clip(0.0, 1.0),
+                    pl.col("recount3_fdr_q_value").fill_null(1.0).clip(0.0, 1.0),
+                    pl.col("native_rank_biserial").fill_null(0.0).clip(-1.0, 1.0),
+                    pl.col("recount3_rank_biserial").fill_null(0.0).clip(-1.0, 1.0),
                     pl.col("mutation_frequency").fill_null(0.0).clip(0.0, 1.0),
                     pl.col("mutated_sample_count").fill_null(0).cast(pl.Int64),
                     pl.col("total_profiled_sample_count").fill_null(0).cast(pl.Int64),
@@ -193,6 +232,7 @@ def build_consensus_candidates(
                     pl.col("bootstrap_stability_tier").fill_null("missing"),
                     pl.col("validation_tier").fill_null("missing"),
                     pl.col("direction_agreement").fill_null("missing"),
+                    pl.col("statistical_support_tier").fill_null("missing"),
                 ]
             )
             .with_columns(
@@ -217,6 +257,16 @@ def build_consensus_candidates(
                     .then(pl.col("validation_score") * 0.5)
                     .otherwise(0.0)
                     .alias("external_component"),
+                    pl.when(pl.col("statistical_support_tier") == "replicated_fdr")
+                    .then(pl.col("statistical_support_score"))
+                    .when(pl.col("statistical_support_tier") == "recount3_fdr_supported")
+                    .then(pl.col("statistical_support_score") * 0.65)
+                    .when(pl.col("statistical_support_tier") == "native_only_fdr")
+                    .then(pl.col("statistical_support_score") * 0.35)
+                    .when(pl.col("statistical_support_tier") == "limited")
+                    .then(pl.col("statistical_support_score") * 0.15)
+                    .otherwise(0.0)
+                    .alias("statistical_component"),
                     pl.col("mutation_frequency").alias("mutation_component"),
                 ]
             )
@@ -227,16 +277,18 @@ def build_consensus_candidates(
                     + (pl.col("reference_concordance") != "missing").cast(pl.Int64)
                     + (pl.col("bootstrap_stability_tier") != "missing").cast(pl.Int64)
                     + (pl.col("validation_tier") != "missing").cast(pl.Int64)
+                    + (pl.col("statistical_support_tier") != "missing").cast(pl.Int64)
                     + (pl.col("mutation_component") > 0).cast(pl.Int64)
                 ).alias("evidence_component_count")
             )
-            .with_columns((pl.col("evidence_component_count") / 6.0).round(6).alias("evidence_completeness"))
+            .with_columns((pl.col("evidence_component_count") / 7.0).round(6).alias("evidence_completeness"))
             .with_columns(
                 (
-                    pl.col("external_component") * 0.25
-                    + pl.col("reference_component") * 0.20
-                    + pl.col("bootstrap_component") * 0.20
-                    + pl.col("confidence_component") * 0.20
+                    pl.col("statistical_component") * 0.20
+                    + pl.col("external_component") * 0.20
+                    + pl.col("reference_component") * 0.15
+                    + pl.col("bootstrap_component") * 0.15
+                    + pl.col("confidence_component") * 0.15
                     + pl.col("priority_component") * 0.10
                     + pl.col("mutation_component") * 0.05
                 )
@@ -252,6 +304,7 @@ def build_consensus_candidates(
                         "reference_concordance",
                         "bootstrap_stability_tier",
                         "confidence_tier",
+                        "statistical_support_tier",
                         "consensus_score",
                     ]
                 )
@@ -275,14 +328,13 @@ def build_consensus_candidates(
                     .otherwise(pl.lit("deprioritized"))
                     .alias("publication_tier"),
                     pl.lit(
-                        "Consensus prioritization integrates engineering evidence only; it is not a differential-expression claim, batch correction, clinical biomarker validation, or causal finding."
+                        "Consensus prioritization integrates statistical association and engineering evidence; source and disease remain confounded, so it is not a batch-corrected differential-expression, clinical biomarker, or causal claim."
                     ).alias("consensus_caveat"),
                 ]
             )
         )
         result = (
             joined.select(list(CONSENSUS_CANDIDATE_SCHEMA))
-            .with_columns(pl.col(pl.Float64).round(6))
             .sort(["consensus_score", "evidence_completeness", "priority_score"], descending=[True, True, True])
         )
         status = "completed"

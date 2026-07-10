@@ -17,6 +17,7 @@ from src.analytics.bootstrap_stability import build_bootstrap_stability
 from src.analytics.consensus_candidates import build_consensus_candidates
 from src.analytics.evidence_confidence import build_evidence_confidence
 from src.analytics.external_validation import build_external_expression_validation
+from src.analytics.expression_statistics import build_expression_statistical_support
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
@@ -198,6 +199,9 @@ def main() -> None:
 
     parser_consensus = subparsers.add_parser("run-consensus-candidates")
     parser_consensus.add_argument("--config", required=True)
+
+    parser_expression_statistics = subparsers.add_parser("run-expression-statistics")
+    parser_expression_statistics.add_argument("--config", required=True)
 
     parser_recount3 = subparsers.add_parser("run-recount3-expression")
     parser_recount3.add_argument("--config", required=True)
@@ -488,6 +492,20 @@ def main() -> None:
             consensus_summary["path"],
         )
         print("Consensus candidate build completed.")
+        return
+    if args.command == "run-expression-statistics":
+        load_config(args.config)
+        statistics_summary = build_expression_statistical_support()
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Expression statistics: status=%s rows=%s tiers=%s path=%s elapsed_seconds=%s",
+            statistics_summary["status"],
+            statistics_summary["row_count"],
+            statistics_summary["tier_counts"],
+            statistics_summary["path"],
+            statistics_summary["elapsed_seconds"],
+        )
+        print("Expression statistical support build completed.")
         return
     if args.command == "run-recount3-expression":
         load_config(args.config)
