@@ -80,6 +80,7 @@ def research_evidence_confidence(
     cancer_type: str | None = None,
     gene_query: str | None = None,
     confidence_tier: str | None = None,
+    batch_concordance: str | None = None,
     min_confidence: float | None = None,
     limit: int = 50,
 ) -> dict[str, object]:
@@ -87,6 +88,7 @@ def research_evidence_confidence(
         cancer_type=cancer_type,
         gene_query=gene_query,
         confidence_tier=confidence_tier,
+        batch_concordance=batch_concordance,
         min_confidence=min_confidence,
         limit=limit,
     )

@@ -11,6 +11,16 @@ expression_counts as (
   select cancer_type, gene_symbol, sample_count_tumor, sample_count_normal
   from {{ ref('gold_tumor_vs_normal_expression') }}
 ),
+batch_sensitivity as (
+  select
+    cancer_type,
+    gene_symbol,
+    sensitivity_direction,
+    support_tier as sensitivity_support_tier,
+    percentile_delta,
+    robust_z_delta
+  from {{ ref('gold_batch_effect_sensitivity') }}
+),
 graph_degree as (
   select replace(node_id, 'GENE:', '') as gene_symbol, count(*) as gene_graph_degree
   from (
@@ -85,16 +95,55 @@ joined as (
     mutation_provenance.mutation_provenance,
     tcga_expression_provenance.tcga_expression_provenance,
     gtex_expression_provenance.gtex_expression_provenance,
+    coalesce(sensitivity.sensitivity_direction, 'unavailable') as sensitivity_direction,
+    coalesce(sensitivity.sensitivity_support_tier, 'unavailable') as sensitivity_support_tier,
+    sensitivity.percentile_delta,
+    sensitivity.robust_z_delta,
     candidate.mutated_sample_count > 0 as mutation_evidence,
     coalesce(counts.sample_count_tumor, 0) > 0
-      and coalesce(counts.sample_count_normal, 0) > 0 as expression_evidence
+      and coalesce(counts.sample_count_normal, 0) > 0 as expression_evidence,
+    case
+      when candidate.log2_fold_change >= 1.0 then 'raw_up'
+      when candidate.log2_fold_change <= -1.0 then 'raw_down'
+      else 'raw_stable'
+    end as raw_expression_direction
   from {{ ref('gold_candidate_gene_priority') }} candidate
   left join expression_counts counts using (cancer_type, gene_symbol)
+  left join batch_sensitivity sensitivity using (cancer_type, gene_symbol)
   left join graph_degree degree using (gene_symbol)
   left join pair_edges pair using (cancer_type, gene_symbol)
   left join mutation_provenance using (cancer_type, gene_symbol)
   left join tcga_expression_provenance using (cancer_type, gene_symbol)
   left join gtex_expression_provenance using (cancer_type, gene_symbol)
+),
+concordance as (
+  select *,
+    case
+      when not expression_evidence then 'not_applicable'
+      when sensitivity_direction = 'unavailable' then 'unavailable'
+      when (raw_expression_direction = 'raw_up' and sensitivity_direction = 'rank_up')
+        or (raw_expression_direction = 'raw_down' and sensitivity_direction = 'rank_down')
+        or (raw_expression_direction = 'raw_stable' and sensitivity_direction = 'stable')
+      then 'concordant'
+      when (raw_expression_direction = 'raw_up' and sensitivity_direction = 'rank_down')
+        or (raw_expression_direction = 'raw_down' and sensitivity_direction = 'rank_up')
+      then 'discordant'
+      else 'inconclusive'
+    end as batch_concordance
+  from joined
+),
+batch_scored as (
+  select *,
+    case
+      when batch_concordance = 'concordant' and sensitivity_support_tier = 'high' then 1.0
+      when batch_concordance = 'concordant' and sensitivity_support_tier = 'moderate' then 0.8
+      when batch_concordance = 'concordant' then 0.6
+      when batch_concordance = 'inconclusive' and sensitivity_support_tier = 'high' then 0.5
+      when batch_concordance = 'inconclusive' and sensitivity_support_tier = 'moderate' then 0.4
+      when batch_concordance = 'inconclusive' then 0.3
+      else 0.0
+    end as batch_sensitivity_confidence
+  from concordance
 ),
 components as (
   select *,
@@ -106,7 +155,7 @@ components as (
       (
         0.5 * least(greatest(sample_count_tumor / 30.0, 0.0), 1.0)
         + 0.5 * least(greatest(sample_count_normal / 30.0, 0.0), 1.0)
-      ) * 0.5
+      ) * 0.5 * (0.5 + 0.5 * batch_sensitivity_confidence)
     else 0.0 end as expression_confidence,
     cast(graph_pair_edge as integer) * 0.5
       + least(greatest(gene_graph_degree / 5.0, 0.0), 1.0) * 0.5 as graph_confidence,
@@ -123,7 +172,7 @@ components as (
         (coalesce(tcga_expression_provenance, 0.0) + coalesce(gtex_expression_provenance, 0.0)) / 2.0
       else 0.0
     end as traceability_confidence
-  from joined
+  from batch_scored
 ),
 biological as (
   select *,
@@ -161,6 +210,7 @@ select
   expression_evidence,
   mutation_confidence,
   expression_confidence,
+  batch_sensitivity_confidence,
   graph_confidence,
   quality_confidence,
   traceability_confidence,
@@ -172,7 +222,17 @@ select
     when overall_confidence >= 0.25 then 'limited'
     else 'low'
   end as confidence_tier,
-  case when expression_evidence then 'high' else 'not_applicable' end as batch_effect_risk,
+  raw_expression_direction,
+  sensitivity_direction,
+  sensitivity_support_tier,
+  batch_concordance,
+  percentile_delta,
+  robust_z_delta,
+  case
+    when not expression_evidence then 'not_applicable'
+    when batch_concordance in ('discordant', 'unavailable') then 'high'
+    else 'elevated'
+  end as batch_effect_risk,
   case when quality_confidence = 1.0 then 'passed' else 'failed' end as quality_status,
   case
     when traceability_confidence >= 0.999 then 'passed'
@@ -181,6 +241,9 @@ select
   end as traceability_status,
   concat_ws(';',
     case when expression_evidence then 'cross_study_batch_effect_unadjusted' end,
+    case when expression_evidence and batch_concordance = 'discordant' then 'batch_sensitivity_direction_discordant' end,
+    case when expression_evidence and batch_concordance = 'inconclusive' then 'batch_sensitivity_direction_inconclusive' end,
+    case when expression_evidence and batch_concordance = 'unavailable' then 'batch_sensitivity_unavailable' end,
     case when expression_evidence and sample_count_normal < 30 then 'gtex_normal_support_below_30' end,
     case when expression_evidence and sample_count_tumor < 30 then 'tcga_tumor_support_below_30' end,
     case when mutation_evidence and total_profiled_sample_count < 100 then 'mutation_profiled_support_below_100' end,

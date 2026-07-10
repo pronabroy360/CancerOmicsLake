@@ -366,6 +366,17 @@ def run_silver_quality_checks(
             "batch_method": pl.Utf8,
         },
     )
+    gold_evidence_confidence = _read_or_empty(
+        gold_root / "gold_cancer_gene_evidence_confidence.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "overall_confidence": pl.Float64,
+            "batch_sensitivity_confidence": pl.Float64,
+            "batch_concordance": pl.Utf8,
+            "batch_effect_risk": pl.Utf8,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -486,6 +497,30 @@ def run_silver_quality_checks(
         invalid_gold_batch_values = gold_batch_sensitivity.filter(
             ~pl.col("support_tier").is_in(["high", "moderate", "limited"])
             | ~pl.col("sensitivity_direction").is_in(["rank_up", "rank_down", "stable"])
+        ).height
+    missing_gold_confidence_cols = _missing_columns(
+        gold_evidence_confidence,
+        [
+            "cancer_type",
+            "gene_symbol",
+            "overall_confidence",
+            "batch_sensitivity_confidence",
+            "batch_concordance",
+            "batch_effect_risk",
+        ],
+    )
+    invalid_gold_confidence_values = 0
+    if not gold_evidence_confidence.is_empty() and {
+        "batch_sensitivity_confidence",
+        "batch_concordance",
+        "batch_effect_risk",
+    }.issubset(gold_evidence_confidence.columns):
+        invalid_gold_confidence_values = gold_evidence_confidence.filter(
+            ~pl.col("batch_sensitivity_confidence").is_between(0.0, 1.0)
+            | ~pl.col("batch_concordance").is_in(
+                ["concordant", "inconclusive", "discordant", "unavailable", "not_applicable"]
+            )
+            | ~pl.col("batch_effect_risk").is_in(["high", "elevated", "not_applicable"])
         ).height
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
@@ -666,6 +701,16 @@ def run_silver_quality_checks(
             check_name="gold_batch_effect_sensitivity_values_supported",
             status="passed" if invalid_gold_batch_values == 0 else "failed",
             failed_rows=int(invalid_gold_batch_values),
+        ),
+        CheckResult(
+            check_name="gold_evidence_confidence_schema_columns_present",
+            status="passed" if (gold_evidence_confidence.is_empty() or missing_gold_confidence_cols == 0) else "failed",
+            failed_rows=int(missing_gold_confidence_cols),
+        ),
+        CheckResult(
+            check_name="gold_evidence_confidence_batch_values_supported",
+            status="passed" if invalid_gold_confidence_values == 0 else "failed",
+            failed_rows=int(invalid_gold_confidence_values),
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",

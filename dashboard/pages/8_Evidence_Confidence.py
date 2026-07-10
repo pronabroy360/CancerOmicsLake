@@ -10,23 +10,28 @@ st.caption(
     "row integrity, and source provenance."
 )
 st.warning(
-    "TCGA-GTEx expression comparisons retain high batch-effect risk until harmonized, "
-    "batch-aware expression data are available. Scores are exploratory, not clinical evidence."
+    "TCGA-GTEx comparisons retain high or elevated batch-effect risk. Directional concordance is a "
+    "sensitivity guardrail, not batch correction; scores are exploratory, not clinical evidence."
 )
 
-left, middle, right = st.columns(3)
+left, middle, right, concordance_column = st.columns(4)
 with left:
     cancer = st.selectbox("Cancer type", ["All", "TCGA-BRCA", "TCGA-LUAD", "TCGA-COAD"])
 with middle:
     tier = st.selectbox("Confidence tier", ["All", "high", "moderate", "limited", "low"])
 with right:
     gene = st.text_input("Gene contains", placeholder="TP53")
+with concordance_column:
+    concordance = st.selectbox(
+        "Batch sensitivity", ["All", "concordant", "inconclusive", "discordant", "unavailable"]
+    )
 
 minimum = st.slider("Minimum confidence", 0.0, 1.0, 0.0, 0.05)
 data = evidence_confidence_data(
     cancer_type=None if cancer == "All" else cancer,
     gene_query=gene or None,
     confidence_tier=None if tier == "All" else tier,
+    batch_concordance=None if concordance == "All" else concordance,
     min_confidence=minimum,
     limit=250,
 )
@@ -38,7 +43,7 @@ else:
     metrics[0].metric("Cancer-gene pairs", data.height)
     metrics[1].metric("Median confidence", f"{data['overall_confidence'].median():.3f}")
     metrics[2].metric("Multi-modal pairs", int(data.filter(data["mutation_evidence"] & data["expression_evidence"]).height))
-    metrics[3].metric("High batch-risk pairs", int(data.filter(data["batch_effect_risk"] == "high").height))
+    metrics[3].metric("Concordant pairs", int(data.filter(data["batch_concordance"] == "concordant").height))
 
     chart = data.select(["gene_symbol", "overall_confidence"]).head(30)
     st.bar_chart(chart, x="gene_symbol", y="overall_confidence")

@@ -150,16 +150,19 @@ SELECT
     priority_score,
     overall_confidence,
     confidence_tier,
+    batch_concordance,
+    batch_sensitivity_confidence,
     batch_effect_risk,
     caveat_summary
 FROM read_parquet('data/gold/gold_cancer_gene_evidence_confidence.parquet')
 WHERE confidence_tier IN ('high', 'moderate')
+  AND batch_concordance = 'concordant'
 ORDER BY overall_confidence DESC, priority_score DESC
 LIMIT 50;
 ```
 
-This mart deliberately separates candidate importance from evidence reliability. Cross-study
-TCGA-GTEx expression evidence remains batch-effect limited until a harmonized analysis is added.
+This mart deliberately separates candidate importance from evidence reliability. Directional
+concordance is a sensitivity guardrail, not batch correction; cross-study expression remains limited.
 
 ## Batch-Effect Sensitivity Ranking
 

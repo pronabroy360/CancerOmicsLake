@@ -7,7 +7,7 @@ import polars as pl
 from src.analytics.evidence_confidence import build_evidence_confidence, evidence_confidence
 
 
-def _write_fixture(root: Path) -> tuple[Path, Path]:
+def _write_fixture(root: Path, sensitivity_direction: str = "rank_up") -> tuple[Path, Path]:
     gold = root / "gold"
     silver = root / "silver"
     gold.mkdir()
@@ -52,6 +52,16 @@ def _write_fixture(root: Path) -> tuple[Path, Path]:
             "sample_count_normal": [2],
         }
     ).write_parquet(gold / "gold_tumor_vs_normal_expression.parquet")
+    pl.DataFrame(
+        {
+            "cancer_type": ["TCGA-BRCA"],
+            "gene_symbol": ["TP53"],
+            "sensitivity_direction": [sensitivity_direction],
+            "support_tier": ["high"],
+            "percentile_delta": [0.4 if sensitivity_direction == "rank_up" else -0.4],
+            "robust_z_delta": [1.5 if sensitivity_direction == "rank_up" else -1.5],
+        }
+    ).write_parquet(gold / "gold_batch_effect_sensitivity.parquet")
     pl.DataFrame(
         {
             "node_id": ["GENE:TP53", "GENE:EGFR"],
@@ -100,12 +110,48 @@ def test_build_evidence_confidence_penalizes_sparse_cross_study_expression(tmp_p
 
     assert summary["row_count"] == 2
     assert tp53["expression_confidence"] < 0.3
-    assert tp53["batch_effect_risk"] == "high"
+    assert tp53["batch_effect_risk"] == "elevated"
+    assert tp53["batch_concordance"] == "concordant"
+    assert tp53["batch_sensitivity_confidence"] == 1.0
     assert tp53["traceability_confidence"] == 0.75
     assert "gtex_normal_support_below_30" in tp53["caveat_summary"]
     assert "source_provenance_incomplete" in tp53["caveat_summary"]
     assert result.get_column("quality_confidence").null_count() == 0
     assert result.filter(pl.col("gene_symbol") == "EGFR").row(0, named=True)["quality_status"] == "passed"
+
+
+def test_build_evidence_confidence_penalizes_directional_discordance(tmp_path: Path) -> None:
+    concordant_root = tmp_path / "concordant"
+    discordant_root = tmp_path / "discordant"
+    concordant_root.mkdir()
+    discordant_root.mkdir()
+    concordant_gold, concordant_silver = _write_fixture(concordant_root, "rank_up")
+    discordant_gold, discordant_silver = _write_fixture(discordant_root, "rank_down")
+
+    build_evidence_confidence(
+        gold_dir=concordant_gold,
+        silver_dir=concordant_silver,
+        output_path=concordant_gold / "confidence.parquet",
+    )
+    build_evidence_confidence(
+        gold_dir=discordant_gold,
+        silver_dir=discordant_silver,
+        output_path=discordant_gold / "confidence.parquet",
+    )
+
+    concordant = pl.read_parquet(concordant_gold / "confidence.parquet").filter(
+        pl.col("gene_symbol") == "TP53"
+    ).row(0, named=True)
+    discordant = pl.read_parquet(discordant_gold / "confidence.parquet").filter(
+        pl.col("gene_symbol") == "TP53"
+    ).row(0, named=True)
+
+    assert discordant["batch_concordance"] == "discordant"
+    assert discordant["batch_effect_risk"] == "high"
+    assert discordant["batch_sensitivity_confidence"] == 0.0
+    assert discordant["expression_confidence"] < concordant["expression_confidence"]
+    assert discordant["overall_confidence"] < concordant["overall_confidence"]
+    assert "batch_sensitivity_direction_discordant" in discordant["caveat_summary"]
 
 
 def test_evidence_confidence_query_filters_and_sorts(tmp_path: Path) -> None:
@@ -115,6 +161,7 @@ def test_evidence_confidence_query_filters_and_sorts(tmp_path: Path) -> None:
     payload = evidence_confidence(
         cancer_type="TCGA-BRCA",
         gene_query="tp",
+        batch_concordance="concordant",
         min_confidence=0.1,
         limit=10,
         gold_path=output,
@@ -122,6 +169,7 @@ def test_evidence_confidence_query_filters_and_sorts(tmp_path: Path) -> None:
 
     assert payload["row_count"] == 1
     assert payload["rows"][0]["gene_symbol"] == "TP53"
+    assert payload["filters"]["batch_concordance"] == "concordant"
     assert "not clinically validated" in payload["warning"]
 
 

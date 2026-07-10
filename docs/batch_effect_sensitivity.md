@@ -15,7 +15,7 @@ For each cancer project and gene:
 
 - Compute TCGA tumor and GTEx normal median TPM from the existing tumor-vs-normal mart.
 - Convert medians to `log2(TPM + 1)`.
-- Rank genes within each cancer/reference comparison separately.
+- Rank genes within each cancer/reference comparison separately using average ranks for tied values.
 - Compute `percentile_delta = tumor_expression_percentile - normal_expression_percentile`.
 - Compute robust z-scores within each comparison using median and MAD scaling.
 - Compute `robust_z_delta = tumor_robust_z - normal_robust_z`.

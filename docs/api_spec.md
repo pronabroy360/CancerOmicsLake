@@ -104,8 +104,8 @@ Notes:
 - Reviewer-safe workflow: run `make run-demo` or `make run-demo-aggressive`, then start `make run-api`.
 
 `GET /research/evidence-confidence` accepts `cancer_type`, `gene_query`, `confidence_tier`,
-`min_confidence`, and `limit`. It returns calibrated component scores, an overall tier,
-batch-effect risk, and machine-readable caveats. Confidence measures evidence reliability;
+`batch_concordance`, `min_confidence`, and `limit`. It returns calibrated component scores, an overall tier,
+batch-sensitivity concordance, batch-effect risk, and machine-readable caveats. Confidence measures evidence reliability;
 it does not replace the separate candidate priority score and is not clinical validation.
 
 `GET /research/batch-effect-sensitivity` accepts `cancer_type`, `gene_query`, `support_tier`,

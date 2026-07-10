@@ -194,14 +194,19 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `cancer_type`, `gene_symbol`: cancer-gene pair.
 - `priority_score`, `priority_tier`: candidate importance from the upstream prioritization mart.
 - `mutation_confidence`: support calibration from profiled and mutated sample counts.
-- `expression_confidence`: tumor/normal sample support with an explicit penalty for uncorrected TCGA-GTEx batch risk.
+- `expression_confidence`: tumor/normal sample support adjusted by directional batch-sensitivity concordance, capped at `0.5`.
+- `batch_sensitivity_confidence`: support-aware score from raw fold-change versus rank/robust-z direction agreement.
 - `graph_confidence`: pair-edge presence and gene graph-degree support; this is structural evidence, not independent biological validation.
 - `quality_confidence`: row-level integrity score for frequencies, denominators, and expression counts.
 - `traceability_confidence`: fraction of contributing source rows with non-stub provenance.
 - `biological_confidence`: available-modality confidence before structural and operational signals.
 - `overall_confidence`: bounded composite confidence score from biological, graph, quality, and provenance components.
 - `confidence_tier`: `high`, `moderate`, `limited`, or `low`.
-- `batch_effect_risk`: `high` for cross-study expression comparisons, otherwise `not_applicable`.
+- `raw_expression_direction`, `sensitivity_direction`: raw fold-change and scale-reduced direction labels.
+- `sensitivity_support_tier`: sample-support tier inherited from the batch-sensitivity mart.
+- `batch_concordance`: `concordant`, `inconclusive`, `discordant`, `unavailable`, or `not_applicable`.
+- `percentile_delta`, `robust_z_delta`: sensitivity evidence used in the concordance decision.
+- `batch_effect_risk`: `high` for discordant/unassessed expression, `elevated` otherwise, or `not_applicable`.
 - `quality_status`, `traceability_status`: human-readable component outcomes.
 - `caveat_summary`: semicolon-delimited machine-readable limitations for the pair.
 

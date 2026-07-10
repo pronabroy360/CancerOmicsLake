@@ -22,12 +22,19 @@ CONFIDENCE_SCHEMA = {
     "expression_evidence": pl.Boolean,
     "mutation_confidence": pl.Float64,
     "expression_confidence": pl.Float64,
+    "batch_sensitivity_confidence": pl.Float64,
     "graph_confidence": pl.Float64,
     "quality_confidence": pl.Float64,
     "traceability_confidence": pl.Float64,
     "biological_confidence": pl.Float64,
     "overall_confidence": pl.Float64,
     "confidence_tier": pl.Utf8,
+    "raw_expression_direction": pl.Utf8,
+    "sensitivity_direction": pl.Utf8,
+    "sensitivity_support_tier": pl.Utf8,
+    "batch_concordance": pl.Utf8,
+    "percentile_delta": pl.Float64,
+    "robust_z_delta": pl.Float64,
     "batch_effect_risk": pl.Utf8,
     "quality_status": pl.Utf8,
     "traceability_status": pl.Utf8,
@@ -89,6 +96,13 @@ def _caveat_summary(row: dict[str, object]) -> str:
     caveats: list[str] = []
     if bool(row["expression_evidence"]):
         caveats.append("cross_study_batch_effect_unadjusted")
+        concordance = str(row["batch_concordance"] or "unavailable")
+        if concordance == "discordant":
+            caveats.append("batch_sensitivity_direction_discordant")
+        elif concordance == "inconclusive":
+            caveats.append("batch_sensitivity_direction_inconclusive")
+        elif concordance == "unavailable":
+            caveats.append("batch_sensitivity_unavailable")
         if int(row["sample_count_normal"] or 0) < 30:
             caveats.append("gtex_normal_support_below_30")
         if int(row["sample_count_tumor"] or 0) < 30:
@@ -120,6 +134,7 @@ def build_evidence_confidence(
         return {"path": str(out), "row_count": 0, "high_confidence_count": 0}
 
     comparison = _read_or_empty(gold_root / "gold_tumor_vs_normal_expression.parquet")
+    batch_sensitivity = _read_or_empty(gold_root / "gold_batch_effect_sensitivity.parquet")
     graph_metrics = _read_or_empty(gold_root / "gold_graph_node_metrics.parquet")
     graph_edges = _read_or_empty(gold_root / "gold_graph_edges.parquet")
     mutations = _read_or_empty(silver_root / "silver_mutations.parquet")
@@ -135,6 +150,37 @@ def build_evidence_confidence(
                 "gene_symbol": pl.Utf8,
                 "sample_count_tumor": pl.Int64,
                 "sample_count_normal": pl.Int64,
+            }
+        )
+    )
+    sensitivity_evidence = (
+        batch_sensitivity.select(
+            [
+                "cancer_type",
+                "gene_symbol",
+                "sensitivity_direction",
+                pl.col("support_tier").alias("sensitivity_support_tier"),
+                "percentile_delta",
+                "robust_z_delta",
+            ]
+        )
+        if not batch_sensitivity.is_empty()
+        and {
+            "cancer_type",
+            "gene_symbol",
+            "sensitivity_direction",
+            "support_tier",
+            "percentile_delta",
+            "robust_z_delta",
+        }.issubset(batch_sensitivity.columns)
+        else pl.DataFrame(
+            schema={
+                "cancer_type": pl.Utf8,
+                "gene_symbol": pl.Utf8,
+                "sensitivity_direction": pl.Utf8,
+                "sensitivity_support_tier": pl.Utf8,
+                "percentile_delta": pl.Float64,
+                "robust_z_delta": pl.Float64,
             }
         )
     )
@@ -174,6 +220,7 @@ def build_evidence_confidence(
 
     joined = (
         candidate.join(expression_counts, on=["cancer_type", "gene_symbol"], how="left")
+        .join(sensitivity_evidence, on=["cancer_type", "gene_symbol"], how="left")
         .join(gene_metrics, on="gene_symbol", how="left")
         .join(pair_edges, on=["cancer_type", "gene_symbol"], how="left")
         .join(mutation_provenance, on=["cancer_type", "gene_symbol"], how="left")
@@ -184,6 +231,8 @@ def build_evidence_confidence(
                 pl.col("sample_count_normal").fill_null(0).cast(pl.Int64),
                 pl.col("gene_graph_degree").fill_null(0).cast(pl.Int64),
                 pl.col("graph_pair_edge").fill_null(False),
+                pl.col("sensitivity_direction").fill_null("unavailable"),
+                pl.col("sensitivity_support_tier").fill_null("unavailable"),
             ]
         )
         .with_columns(
@@ -192,7 +241,52 @@ def build_evidence_confidence(
                 ((pl.col("sample_count_tumor") > 0) & (pl.col("sample_count_normal") > 0)).alias(
                     "expression_evidence"
                 ),
+                pl.when(pl.col("log2_fold_change") >= 1.0)
+                .then(pl.lit("raw_up"))
+                .when(pl.col("log2_fold_change") <= -1.0)
+                .then(pl.lit("raw_down"))
+                .otherwise(pl.lit("raw_stable"))
+                .alias("raw_expression_direction"),
             ]
+        )
+        .with_columns(
+            pl.when(~pl.col("expression_evidence"))
+            .then(pl.lit("not_applicable"))
+            .when(pl.col("sensitivity_direction") == "unavailable")
+            .then(pl.lit("unavailable"))
+            .when(
+                ((pl.col("raw_expression_direction") == "raw_up") & (pl.col("sensitivity_direction") == "rank_up"))
+                | ((pl.col("raw_expression_direction") == "raw_down") & (pl.col("sensitivity_direction") == "rank_down"))
+                | ((pl.col("raw_expression_direction") == "raw_stable") & (pl.col("sensitivity_direction") == "stable"))
+            )
+            .then(pl.lit("concordant"))
+            .when(
+                ((pl.col("raw_expression_direction") == "raw_up") & (pl.col("sensitivity_direction") == "rank_down"))
+                | ((pl.col("raw_expression_direction") == "raw_down") & (pl.col("sensitivity_direction") == "rank_up"))
+            )
+            .then(pl.lit("discordant"))
+            .otherwise(pl.lit("inconclusive"))
+            .alias("batch_concordance")
+        )
+        .with_columns(
+            pl.when(pl.col("batch_concordance") == "concordant")
+            .then(
+                pl.when(pl.col("sensitivity_support_tier") == "high")
+                .then(1.0)
+                .when(pl.col("sensitivity_support_tier") == "moderate")
+                .then(0.8)
+                .otherwise(0.6)
+            )
+            .when(pl.col("batch_concordance") == "inconclusive")
+            .then(
+                pl.when(pl.col("sensitivity_support_tier") == "high")
+                .then(0.5)
+                .when(pl.col("sensitivity_support_tier") == "moderate")
+                .then(0.4)
+                .otherwise(0.3)
+            )
+            .otherwise(0.0)
+            .alias("batch_sensitivity_confidence")
         )
         .with_columns(
             [
@@ -210,6 +304,7 @@ def build_evidence_confidence(
                         + 0.5 * (pl.col("sample_count_normal") / 30.0).clip(0.0, 1.0)
                     )
                     * 0.5
+                    * (0.5 + 0.5 * pl.col("batch_sensitivity_confidence"))
                 )
                 .otherwise(0.0)
                 .alias("expression_confidence"),
@@ -285,7 +380,11 @@ def build_evidence_confidence(
                 .otherwise(pl.lit("low"))
                 .alias("confidence_tier"),
                 pl.when(pl.col("expression_evidence"))
-                .then(pl.lit("high"))
+                .then(
+                    pl.when(pl.col("batch_concordance").is_in(["discordant", "unavailable"]))
+                    .then(pl.lit("high"))
+                    .otherwise(pl.lit("elevated"))
+                )
                 .otherwise(pl.lit("not_applicable"))
                 .alias("batch_effect_risk"),
                 pl.when(pl.col("quality_confidence") == 1.0)
@@ -304,6 +403,7 @@ def build_evidence_confidence(
             pl.struct(
                 [
                     "expression_evidence",
+                    "batch_concordance",
                     "mutation_evidence",
                     "sample_count_normal",
                     "sample_count_tumor",
@@ -334,6 +434,7 @@ def evidence_confidence(
     cancer_type: str | None = None,
     gene_query: str | None = None,
     confidence_tier: str | None = None,
+    batch_concordance: str | None = None,
     min_confidence: float | None = None,
     limit: int = 50,
     gold_path: str | Path = "data/gold/gold_cancer_gene_evidence_confidence.parquet",
@@ -346,6 +447,7 @@ def evidence_confidence(
                 "cancer_type": cancer_type,
                 "gene_query": gene_query,
                 "confidence_tier": confidence_tier,
+                "batch_concordance": batch_concordance,
                 "min_confidence": min_confidence,
                 "limit": limit,
             },
@@ -363,6 +465,8 @@ def evidence_confidence(
         )
     if confidence_tier:
         filtered = filtered.filter(pl.col("confidence_tier") == confidence_tier.lower())
+    if batch_concordance:
+        filtered = filtered.filter(pl.col("batch_concordance") == batch_concordance.lower())
     if min_confidence is not None:
         filtered = filtered.filter(pl.col("overall_confidence") >= float(min_confidence))
 
@@ -373,6 +477,7 @@ def evidence_confidence(
             "cancer_type": cancer_type,
             "gene_query": gene_query,
             "confidence_tier": confidence_tier,
+            "batch_concordance": batch_concordance,
             "min_confidence": min_confidence,
             "limit": limit,
         },

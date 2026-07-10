@@ -100,7 +100,7 @@ Research surface:
 - API: `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
 - Dashboard: `Candidate Gene Priority` page for filtering and exporting ranked candidate cancer-gene pairs.
 - API: `GET /research/evidence-confidence?cancer_type=TCGA-BRCA&confidence_tier=moderate&limit=20`
-- Dashboard: `Evidence Confidence` page separating sample support, graph structure, integrity, provenance, and batch-effect caveats.
+- Dashboard: `Evidence Confidence` page separating sample support, graph structure, integrity, provenance, and raw-versus-sensitivity direction concordance.
 - API: `GET /research/batch-effect-sensitivity?cancer_type=TCGA-BRCA&support_tier=high&direction=rank_up&limit=20`
 - Dashboard: `Batch-Effect Sensitivity` page for rank/robust-z TCGA-GTEx sensitivity review.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.

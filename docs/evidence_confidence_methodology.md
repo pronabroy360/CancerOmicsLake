@@ -15,8 +15,10 @@ All component scores are bounded to `[0, 1]`.
 
 - Mutation confidence combines profiled-sample support and mutated-sample support:
   `0.55 * min(profiled_samples / 100, 1) + 0.45 * min(mutated_samples / 20, 1)`.
-- Expression confidence combines tumor and normal sample support, then applies a `0.5` ceiling while
-  TCGA-GTEx batch effects remain uncorrected.
+- Batch-sensitivity confidence compares the raw fold-change direction with the within-cohort rank/robust-z
+  direction. High-support concordance scores `1.0`; directional discordance scores `0.0`.
+- Expression confidence combines tumor and normal sample support, keeps a `0.5` ceiling, and multiplies it by
+  `0.5 + 0.5 * batch_sensitivity_confidence`. Agreement can retain the ceiling; discordance halves it.
 - Graph confidence combines presence of a cancer-gene relationship edge and normalized gene degree.
   It is structural corroboration and must not be presented as independent biological validation.
 - Quality confidence verifies row-level frequency, denominator, and sample-count integrity.
@@ -40,7 +42,10 @@ Tiers are `high >= 0.75`, `moderate >= 0.50`, `limited >= 0.25`, and `low < 0.25
 
 ## Guardrails
 
-- Every TCGA-GTEx comparison is labeled `batch_effect_risk=high` until harmonized expression processing exists.
+- Every TCGA-GTEx comparison remains `high` or `elevated` batch risk until harmonized processing exists;
+  sensitivity concordance never produces a low-risk label.
+- Raw directions use `raw_up` at log2 fold change >= 1, `raw_down` at <= -1, and `raw_stable` otherwise.
+- Concordance is `concordant`, `discordant`, `inconclusive`, or `unavailable`, with machine-readable caveats.
 - Sparse tumor, normal, or mutation denominators generate machine-readable caveats.
 - Missing or stub-like provenance lowers traceability confidence.
 - Priority and confidence remain separate fields so strong effects cannot hide weak support.
@@ -71,4 +76,5 @@ prerequisite before making publication-grade biological claims.
 
 The first batch-sensitivity layer is documented in `docs/batch_effect_sensitivity.md`. It adds
 within-cohort rank and robust-z deltas as a scale-reduced sensitivity analysis, but it is still
-not equivalent to full batch correction.
+not equivalent to full batch correction. Evidence confidence now consumes its directional concordance
+as a conservative penalty, making disagreements directly auditable rather than hiding them in one risk label.

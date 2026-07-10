@@ -8,20 +8,38 @@ with base as (
     sample_count_normal
   from {{ ref('gold_tumor_vs_normal_expression') }}
 ),
-ranked as (
+rank_stats as (
   select
     *,
-    percent_rank() over (
+    rank() over (
       partition by cancer_type
       order by tumor_log2_median
-    ) as tumor_expression_percentile,
-    percent_rank() over (
+    ) as tumor_rank_min,
+    count(*) over (
+      partition by cancer_type, tumor_log2_median
+    ) as tumor_tie_count,
+    rank() over (
       partition by cancer_type
       order by normal_log2_median
-    ) as normal_expression_percentile,
+    ) as normal_rank_min,
+    count(*) over (
+      partition by cancer_type, normal_log2_median
+    ) as normal_tie_count,
+    count(*) over (partition by cancer_type) as gene_count_in_comparison,
     median(tumor_log2_median) over (partition by cancer_type) as tumor_cohort_median,
     median(normal_log2_median) over (partition by cancer_type) as normal_cohort_median
   from base
+),
+ranked as (
+  select
+    *,
+    case when gene_count_in_comparison > 1 then
+      (tumor_rank_min + (tumor_tie_count - 1) / 2.0 - 1.0) / (gene_count_in_comparison - 1.0)
+    else 0.5 end as tumor_expression_percentile,
+    case when gene_count_in_comparison > 1 then
+      (normal_rank_min + (normal_tie_count - 1) / 2.0 - 1.0) / (gene_count_in_comparison - 1.0)
+    else 0.5 end as normal_expression_percentile
+  from rank_stats
 ),
 deviations as (
   select

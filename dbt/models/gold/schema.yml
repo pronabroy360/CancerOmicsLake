@@ -109,6 +109,18 @@ models:
       - name: batch_effect_risk
         tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['high', 'elevated', 'not_applicable']
+      - name: batch_concordance
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['concordant', 'inconclusive', 'discordant', 'unavailable', 'not_applicable']
+      - name: batch_sensitivity_confidence
+        tests:
+          - not_null
 
   - name: gold_graph_nodes
     columns:

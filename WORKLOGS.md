@@ -383,3 +383,14 @@ Impact values:
 - Added API endpoint `GET /research/batch-effect-sensitivity`, Streamlit `Batch-Effect Sensitivity` page, dashboard data helper, and reviewer SQL query `08_batch_effect_sensitivity.sql`.
 - Added methodology documentation clarifying that this is sensitivity analysis, not full batch correction.
 - Expanded quality guardrails with batch-sensitivity schema and accepted-value checks, increasing silver/gold quality checks to 32.
+
+## 2026-07-10 - Batch-Sensitivity Concordance Calibration
+
+- Integrated the batch-sensitivity mart into cancer-gene evidence confidence instead of treating every expression comparison identically.
+- Added raw expression direction, sensitivity direction/support, concordance status, and a bounded sensitivity-confidence component.
+- Kept the calibration conservative: concordance can retain the existing `0.5` expression ceiling, while directional discordance halves expression confidence.
+- Added API/dashboard concordance filtering, dbt accepted-value contracts, quality checks, reviewer SQL, and regression coverage.
+- Retained explicit high/elevated batch-risk labels because concordance analysis is not equivalent to harmonized processing or full batch correction.
+- Standardized tied expression values to average-rank percentiles in Python and dbt; a dbt parity test prevents minimum-rank drift.
+- Real-data result: 81,908 concordant, 26,104 inconclusive, and 769 not-applicable pairs; high-confidence candidates reduced from 51 to 42.
+- Verified `make test` (`122 passed`), dbt run (`23 models`), dbt test (`64 tests`), quality (`34 checks`), and strict demo (`27 checks`).
