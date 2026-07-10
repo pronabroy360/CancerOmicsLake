@@ -243,6 +243,19 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `bootstrap_stability_score`, `bootstrap_stability_tier`: transparent bounded stability calibration.
 - `bootstrap_caveat`: required candidate-restricted and non-validation warning.
 
+### `silver_expression_recount3.parquet`
+
+- `source`: `TCGA` or `GTEx`.
+- `project_id`: TCGA project ID; blank for GTEx rows.
+- `sample_id`: recount3 external sample identifier.
+- `sample_type`: `Primary Tumor` for selected TCGA rows and `Normal` for GTEx rows.
+- `tissue_site`: GTEx detailed tissue label; blank for TCGA rows.
+- `gene_id`: version-stripped Ensembl gene ID.
+- `gene_symbol`: upper-case GENCODE v26 gene symbol.
+- `expression_value`: AUC-scaled coverage count at a 40-million-read target.
+- `expression_unit`: normalization unit description.
+- `external_annotation`: recount3/Monorail and annotation provenance label.
+
 ### `gold_external_expression_validation.parquet`
 
 - `cancer_type`, `gene_symbol`: externally validated cancer-gene pair.

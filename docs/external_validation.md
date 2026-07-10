@@ -47,6 +47,26 @@ Required columns:
 | `expression_value` | Non-negative normalized expression value used for validation |
 | `external_annotation` | Source/version note, e.g. `recount3_monorail_gencode_vXX` |
 
+## Live Extract
+
+Build the normalized input directly from the public recount3 S3 release:
+
+```bash
+make run-recount3-expression
+```
+
+The extractor downloads and caches tissue-level gene-sum, metadata, and QC files for TCGA BRCA/LUAD/COAD and
+GTEx breast/lung/colon. It deterministically selects 30 eligible samples per cohort, maps GENCODE v26 gene IDs,
+and applies recount3's documented AUC scaling:
+
+```text
+scaled_count = raw_coverage_count * (40,000,000 / bc_auc.all_reads_all_bases)
+```
+
+The current real extract contains 11,494,080 rows from 180 samples. Source URLs, SHA-256 hashes, selected sample
+counts, output size, and normalization provenance are recorded in
+`outputs/reports/recount3_expression_report.json`. Cached source data and the generated Parquet are excluded from Git.
+
 ## Build Command
 
 ```bash
@@ -62,8 +82,8 @@ Equivalent CLI:
   --top-k 100
 ```
 
-If no recount3 extract exists, the command writes an empty schema-valid table and a skipped report. This keeps CI and
-the main demo path deterministic while preserving the validation contract.
+If no recount3 extract exists, the validation command writes an empty schema-valid table and a skipped report. This
+keeps CI and the main demo path deterministic; use `make run-recount3-expression` for the real local research run.
 
 ## Output Metrics
 
@@ -95,3 +115,8 @@ show:
 
 This still does not establish clinical validity. It only reduces one major reproducibility risk: dependence on one
 expression processing path.
+
+Current real-data validation covers 108,012 gene-cancer pairs. It classifies 84,531 as high tier, 12,056 as moderate,
+9,610 as limited, and 1,815 as discordant. These tiers are engineering reproducibility evidence, not biological or
+clinical significance. Uniform recount3 processing reduces computational pipeline differences but does not remove
+cohort composition, tissue collection, ischemic-time, tumor-purity, or other biological confounding.

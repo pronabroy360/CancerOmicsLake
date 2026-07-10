@@ -25,6 +25,7 @@ from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_w
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.tcga_downloader import download_tcga_files
 from src.ingestion.gtex_downloader import download_gtex_files, gtex_metadata_stub
+from src.ingestion.recount3_expression import build_recount3_expression_extract
 from src.operations.demo_check import run_demo_check, write_demo_check_report
 from src.operations.dbt_runner import run_dbt_command
 from src.operations.ingestion_traceability import (
@@ -193,6 +194,13 @@ def main() -> None:
     parser_external_validation.add_argument("--config", required=True)
     parser_external_validation.add_argument("--recount3-expression-path", default="data/silver/silver_expression_recount3.parquet")
     parser_external_validation.add_argument("--top-k", type=int, default=100)
+
+    parser_recount3 = subparsers.add_parser("run-recount3-expression")
+    parser_recount3.add_argument("--config", required=True)
+    parser_recount3.add_argument("--sample-cap-per-cohort", type=int, default=30)
+    parser_recount3.add_argument(
+        "--output", default="data/silver/silver_expression_recount3.parquet"
+    )
 
     parser_dbt_run = subparsers.add_parser("run-dbt")
     parser_dbt_run.add_argument("--config", required=True)
@@ -462,6 +470,23 @@ def main() -> None:
             validation_summary["path"],
         )
         print("External expression validation build completed.")
+        return
+    if args.command == "run-recount3-expression":
+        load_config(args.config)
+        recount3_summary = build_recount3_expression_extract(
+            output_path=args.output,
+            sample_cap_per_cohort=args.sample_cap_per_cohort,
+            run_mode=run_mode,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "recount3 expression extract: cohorts=%s samples=%s rows=%s bytes=%s",
+            recount3_summary["cohort_count"],
+            recount3_summary["selected_sample_count"],
+            recount3_summary["row_count"],
+            recount3_summary["output_bytes"],
+        )
+        print("recount3 expression extraction completed.")
         return
     if args.command == "run-dbt":
         load_config(args.config)

@@ -46,6 +46,7 @@ Use this when we want to complete ingestion quickly over a few days:
 make run-download-tcga-aggressive
 make run-download-tcga-normals
 make run-bootstrap-stability
+make run-recount3-expression
 make run-external-validation
 make run-flow-aggressive
 make run-demo-aggressive
@@ -148,6 +149,10 @@ Reports include `run_mode` where available:
   atomically writes `data/silver/silver_expression_gtex.parquet`.
 - The live profile currently produces 11,240,000 rows from 200 samples. Re-running skips checksum-matching
   source files and rebuilds the harmonized Parquet reproducibly.
+- Uniform recount3 validation profile: `make run-recount3-expression` downloads public tissue-level TCGA/GTEx
+  gene-sum, metadata, QC, and GENCODE v26 files, selects 30 samples per cohort deterministically, applies 40-million
+  AUC scaling, and writes `data/silver/silver_expression_recount3.parquet` plus a provenance report.
+- The current recount3 extract contains 11,494,080 rows from 180 samples and occupies approximately 108 MB.
 - Silver parquet tables: `data/silver/**`
 - Gold parquet tables: `data/gold/**`
 - Graph exports: `outputs/graph_exports/**`
@@ -160,6 +165,7 @@ Reports include `run_mode` where available:
 - Set `tcga.require_live_gdc: true` to fail fast if live GDC query is unavailable.
 - Silver quality checks write `outputs/reports/silver_data_quality_report.json`.
 - Tumor-vs-normal comparisons are exploratory because TCGA and GTEx have cross-study and pipeline batch effects.
-- `make run-external-validation` is optional until a recount3 extract exists at `data/silver/silver_expression_recount3.parquet`.
-  Without that extract, it writes an empty schema-valid mart and a skipped report.
+- Run `make run-recount3-expression` followed by `make run-external-validation` for the real external validation.
+  CI intentionally permits a missing extract and writes an empty schema-valid mart because the public source download
+  is too large for a bounded smoke job.
 - Generated raw data, credentials, and controlled-access files must not be committed.

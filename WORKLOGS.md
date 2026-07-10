@@ -416,3 +416,15 @@ Impact values:
 - Real output contains 1,536 candidates: 677 high, 841 moderate, and 18 limited stability.
 - All 42 high-confidence candidates were evaluated: 26 high, 15 moderate, and one limited bootstrap-stability result.
 - Verified pytest (`135 tests`), quality (`39 checks`), and strict demo (`27 checks`).
+
+## 2026-07-10 - Real recount3 External Expression Validation
+
+- Added a Python-native recount3 extractor over the public S3 release, avoiding a host R/Bioconductor dependency.
+- Added resumable source caching, remote-size verification, SHA-256 provenance, deterministic sample selection, and
+  GENCODE v26 gene-symbol mapping for TCGA BRCA/LUAD/COAD and GTEx breast/lung/colon projects.
+- Reproduced recount3's documented AUC transformation at a 40-million-read target.
+- Built 11,494,080 normalized expression rows from 180 samples across six source cohorts in a 108 MB Parquet.
+- Completed external validation for 108,012 gene-cancer pairs: 84,531 high, 12,056 moderate, 9,610 limited, and
+  1,815 discordant validation-tier rows.
+- Added CLI/Make execution, unit coverage, reproducibility instructions, input data dictionary, and explicit
+  non-clinical confounding caveats.

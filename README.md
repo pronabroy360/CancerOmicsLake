@@ -66,6 +66,7 @@ make run-silver
 make run-gold
 make run-quality
 make run-graph-metrics
+make run-recount3-expression
 make run-external-validation
 make run-dbt
 make test-dbt
@@ -160,6 +161,17 @@ make run-demo-check-strict
 - Approximately 178 MB downloaded and 11.24 million harmonized rows in a 92 MB silver Parquet.
 - Raw GTEx files and generated Parquet remain excluded from Git.
 - This resolves normal-reference coverage, but does not correct TCGA-GTEx batch effects.
+
+## recount3 External Validation Profile
+
+- Run `make run-recount3-expression` to build a uniformly processed TCGA/GTEx validation extract from the public
+  recount3 S3 release, then run `make run-external-validation`.
+- The extractor uses TCGA BRCA/LUAD/COAD and GTEx breast/lung/colon, with a deterministic 30-sample cap per cohort.
+- It applies recount3's documented 40-million-read AUC scaling and records source URLs, hashes, sample counts, and
+  normalization provenance.
+- Current output: 11,494,080 expression rows from 180 samples and 108,012 validated gene-cancer comparisons.
+- Current validation tiers: 84,531 high, 12,056 moderate, 9,610 limited, and 1,815 discordant.
+- Uniform processing improves computational comparability but does not eliminate biological or collection confounding.
 
 ## Runtime Notes
 

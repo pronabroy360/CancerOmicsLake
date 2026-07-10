@@ -324,6 +324,21 @@ def run_silver_quality_checks(
             "ingested_at": pl.Utf8,
         },
     )
+    expr_recount3 = _read_or_empty(
+        root / "silver_expression_recount3.parquet",
+        {
+            "source": pl.Utf8,
+            "project_id": pl.Utf8,
+            "sample_id": pl.Utf8,
+            "sample_type": pl.Utf8,
+            "tissue_site": pl.Utf8,
+            "gene_id": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "expression_value": pl.Float64,
+            "expression_unit": pl.Utf8,
+            "external_annotation": pl.Utf8,
+        },
+    )
     mutations = _read_or_empty(
         root / "silver_mutations.parquet",
         {
@@ -473,6 +488,16 @@ def run_silver_quality_checks(
         if "expression_value" in expr_tcga.columns
         else 0
     )
+    negative_expr_recount3 = (
+        expr_recount3.filter(pl.col("expression_value").cast(pl.Float64, strict=False) < 0).height
+        if "expression_value" in expr_recount3.columns
+        else 0
+    )
+    invalid_recount3_sources = (
+        expr_recount3.filter(~pl.col("source").is_in(["TCGA", "GTEx"])).height
+        if "source" in expr_recount3.columns
+        else 0
+    )
     null_mut_gene = _count_null_or_blank(mutations, "gene_symbol")
     invalid_mut_start = _count_invalid_int(mutations, "start_position")
     invalid_mut_end = _count_invalid_int(mutations, "end_position")
@@ -511,6 +536,21 @@ def run_silver_quality_checks(
     missing_expr_tcga_cols = _missing_columns(
         expr_tcga,
         ["project_id", "case_id", "sample_id", "gene_id", "gene_symbol", "expression_value", "expression_unit"],
+    )
+    missing_expr_recount3_cols = _missing_columns(
+        expr_recount3,
+        [
+            "source",
+            "project_id",
+            "sample_id",
+            "sample_type",
+            "tissue_site",
+            "gene_id",
+            "gene_symbol",
+            "expression_value",
+            "expression_unit",
+            "external_annotation",
+        ],
     )
     missing_mut_cols = _missing_columns(
         mutations,
@@ -721,6 +761,21 @@ def run_silver_quality_checks(
             check_name="silver_expression_tcga_schema_columns_present",
             status="passed" if missing_expr_tcga_cols == 0 else "failed",
             failed_rows=int(missing_expr_tcga_cols),
+        ),
+        CheckResult(
+            check_name="silver_expression_recount3_schema_columns_present",
+            status="passed" if missing_expr_recount3_cols == 0 else "failed",
+            failed_rows=int(missing_expr_recount3_cols),
+        ),
+        CheckResult(
+            check_name="silver_expression_recount3_non_negative",
+            status="passed" if negative_expr_recount3 == 0 else "failed",
+            failed_rows=int(negative_expr_recount3),
+        ),
+        CheckResult(
+            check_name="silver_expression_recount3_source_supported",
+            status="passed" if invalid_recount3_sources == 0 else "failed",
+            failed_rows=int(invalid_recount3_sources),
         ),
         CheckResult(
             check_name="silver_mutations_schema_columns_present",
