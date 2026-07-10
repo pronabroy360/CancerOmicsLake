@@ -56,7 +56,8 @@ Tiers are `high >= 0.75`, `moderate >= 0.50`, `limited >= 0.25`, and `low < 0.25
 Before publication, the weighting and thresholds should be treated as preregistered hypotheses and tested by:
 
 1. Sensitivity analysis over component weights and support thresholds.
-2. Bootstrap stability of cancer-gene ranks across sample resamples.
+2. Bootstrap stability of cancer-gene ranks across sample resamples. The first candidate-restricted
+   implementation is now available in `gold_candidate_bootstrap_stability`.
 3. Comparison with batch-corrected recount-style TCGA-GTEx expression data.
 4. External concordance against independent cancer cohorts and curated driver-gene resources.
 5. Ablation analysis showing the contribution of mutation, expression, graph, and provenance components.

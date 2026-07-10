@@ -269,6 +269,34 @@ def test_reference_triangulation_data_returns_filtered_rows(tmp_path: Path) -> N
     assert result.row(0, named=True)["gene_symbol"] == "TP53"
 
 
+def test_bootstrap_stability_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.bootstrap_stability import BOOTSTRAP_STABILITY_SCHEMA
+    from src.analytics.dashboard_data import bootstrap_stability_data
+
+    path = tmp_path / "bootstrap.parquet"
+    row = {column: None for column in BOOTSTRAP_STABILITY_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "gene_symbol": "TP53",
+            "priority_score": 0.9,
+            "bootstrap_stability_score": 0.85,
+            "bootstrap_stability_tier": "high",
+        }
+    )
+    pl.DataFrame([row], schema=BOOTSTRAP_STABILITY_SCHEMA).write_parquet(path)
+
+    result = bootstrap_stability_data(
+        cancer_type="TCGA-BRCA",
+        stability_tier="high",
+        min_stability=0.8,
+        gold_path=path,
+    )
+
+    assert result.height == 1
+    assert result.row(0, named=True)["gene_symbol"] == "TP53"
+
+
 def test_quality_report_data_builds_status_counts(tmp_path: Path) -> None:
     report = tmp_path / "silver_data_quality_report.json"
     report.write_text(

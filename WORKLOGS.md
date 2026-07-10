@@ -406,3 +406,13 @@ Impact values:
 - Added matching dbt model/contracts, quality checks, API endpoint, Streamlit page, methodology, data dictionary, and reviewer SQL.
 - Optimized dbt to reuse `gold_tumor_vs_normal_expression`, avoiding concurrent duplicate scans that initially exceeded Docker memory.
 - Python and dbt concordance counts match exactly. Verified pytest (`129 tests`), dbt run (`24 models`), dbt test (`71 tests`), quality (`37 checks`), and strict demo (`27 checks`).
+
+## 2026-07-10 - Candidate Bootstrap Rank Stability
+
+- Added deterministic nonparametric bootstrap resampling across TCGA tumor, TCGA adjacent normal, and GTEx normal cohorts.
+- Default profile evaluates the union of top-500 priority candidates per cancer and every high-confidence candidate over 200 iterations.
+- Added direction-retention, cross-reference concordance/opposition, top-k selection, rank intervals, effect intervals, rank precision, and stability tiers.
+- Added `make run-bootstrap-stability`, JSON run report, API endpoint, Streamlit page, quality contracts, methodology, and reviewer SQL.
+- Real output contains 1,536 candidates: 677 high, 841 moderate, and 18 limited stability.
+- All 42 high-confidence candidates were evaluated: 26 high, 15 moderate, and one limited bootstrap-stability result.
+- Verified pytest (`135 tests`), quality (`39 checks`), and strict demo (`27 checks`).

@@ -204,6 +204,26 @@ LIMIT 50;
 
 This mart uses adjacent normal as a bridge reference. It does not treat adjacent normal as healthy tissue.
 
+## Bootstrap-Stable High-Confidence Candidates
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    candidate_priority_rank,
+    candidate_selection_reason,
+    bootstrap_stability_score,
+    bootstrap_stability_tier,
+    reference_concordance_rate,
+    opposite_direction_rate,
+    tcga_median_rank,
+    gtex_median_rank
+FROM read_parquet('data/gold/gold_candidate_bootstrap_stability.parquet')
+WHERE evidence_confidence_tier = 'high'
+ORDER BY bootstrap_stability_score DESC
+LIMIT 50;
+```
+
 ## Quality Checks That Need Attention
 
 ```sql

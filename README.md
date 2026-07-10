@@ -106,6 +106,9 @@ Research surface:
 - API: `GET /research/reference-triangulation?cancer_type=TCGA-BRCA&concordance=concordant_up&limit=20`
 - Dashboard: `Reference Triangulation` page comparing TCGA-adjacent and GTEx-normal reference directions.
 - Expand the TCGA adjacent-normal bridge cohort with `make run-download-tcga-normals`.
+- API: `GET /research/bootstrap-stability?cancer_type=TCGA-BRCA&stability_tier=high&limit=20`
+- Dashboard: `Bootstrap Stability` page for deterministic candidate rank and direction resampling results.
+- Run the 200-iteration candidate experiment with `make run-bootstrap-stability`.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:

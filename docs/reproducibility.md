@@ -45,6 +45,7 @@ Use this when we want to complete ingestion quickly over a few days:
 ```bash
 make run-download-tcga-aggressive
 make run-download-tcga-normals
+make run-bootstrap-stability
 make run-flow-aggressive
 make run-demo-aggressive
 ```

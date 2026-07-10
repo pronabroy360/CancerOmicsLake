@@ -16,6 +16,7 @@ Implemented endpoints:
 - `GET /research/evidence-confidence?cancer_type=TCGA-BRCA&confidence_tier=moderate&limit=20`
 - `GET /research/batch-effect-sensitivity?cancer_type=TCGA-BRCA&support_tier=high&direction=rank_up&limit=20`
 - `GET /research/reference-triangulation?cancer_type=TCGA-BRCA&concordance=concordant_up&limit=20`
+- `GET /research/bootstrap-stability?cancer_type=TCGA-BRCA&stability_tier=high&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -117,3 +118,7 @@ analysis that reduces scale dependence; it is not full batch correction.
 `GET /research/reference-triangulation` accepts `cancer_type`, `gene_query`, `concordance`,
 `support_tier`, `min_stability`, and `limit`. It compares TCGA tumor direction using TCGA
 adjacent-normal and GTEx normal references, while preserving reference-shift and support caveats.
+
+`GET /research/bootstrap-stability` accepts `cancer_type`, `gene_query`, `stability_tier`,
+`min_stability`, and `limit`. It returns deterministic candidate-level direction, rank, confidence
+interval, top-k selection, and reference-concordance stability metrics.

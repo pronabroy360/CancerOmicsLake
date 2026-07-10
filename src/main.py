@@ -13,6 +13,7 @@ from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
 from src.common.reporting import inject_report_context, resolve_run_mode
 from src.analytics.build_gold_tables import build_gold_cohort_summary
+from src.analytics.bootstrap_stability import build_bootstrap_stability
 from src.analytics.evidence_confidence import build_evidence_confidence
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
@@ -179,6 +180,13 @@ def main() -> None:
 
     parser_evidence_confidence = subparsers.add_parser("run-evidence-confidence")
     parser_evidence_confidence.add_argument("--config", required=True)
+
+    parser_bootstrap = subparsers.add_parser("run-bootstrap-stability")
+    parser_bootstrap.add_argument("--config", required=True)
+    parser_bootstrap.add_argument("--candidates-per-cancer", type=int, default=500)
+    parser_bootstrap.add_argument("--iterations", type=int, default=200)
+    parser_bootstrap.add_argument("--top-k", type=int, default=50)
+    parser_bootstrap.add_argument("--random-seed", type=int, default=20260710)
 
     parser_dbt_run = subparsers.add_parser("run-dbt")
     parser_dbt_run.add_argument("--config", required=True)
@@ -414,6 +422,24 @@ def main() -> None:
             confidence_summary["path"],
         )
         print("Evidence confidence build completed.")
+        return
+    if args.command == "run-bootstrap-stability":
+        load_config(args.config)
+        bootstrap_summary = build_bootstrap_stability(
+            candidates_per_cancer=args.candidates_per_cancer,
+            iterations=args.iterations,
+            top_k=args.top_k,
+            random_seed=args.random_seed,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Bootstrap stability: rows=%s iterations=%s tiers=%s elapsed_seconds=%s",
+            bootstrap_summary["row_count"],
+            bootstrap_summary["iterations"],
+            bootstrap_summary["tier_counts"],
+            bootstrap_summary["elapsed_seconds"],
+        )
+        print("Bootstrap stability build completed.")
         return
     if args.command == "run-dbt":
         load_config(args.config)

@@ -388,6 +388,18 @@ def run_silver_quality_checks(
             "reference_stability_score": pl.Float64,
         },
     )
+    gold_bootstrap_stability = _read_or_empty(
+        gold_root / "gold_candidate_bootstrap_stability.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "bootstrap_iterations": pl.Int64,
+            "reference_concordance_rate": pl.Float64,
+            "opposite_direction_rate": pl.Float64,
+            "bootstrap_stability_score": pl.Float64,
+            "bootstrap_stability_tier": pl.Utf8,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -561,6 +573,33 @@ def run_silver_quality_checks(
         triangulation_min_tcga_normal_support = int(
             gold_reference_triangulation.get_column("sample_count_tcga_normal").min() or 0
         )
+    missing_gold_bootstrap_cols = _missing_columns(
+        gold_bootstrap_stability,
+        [
+            "cancer_type",
+            "gene_symbol",
+            "bootstrap_iterations",
+            "reference_concordance_rate",
+            "opposite_direction_rate",
+            "bootstrap_stability_score",
+            "bootstrap_stability_tier",
+        ],
+    )
+    invalid_gold_bootstrap_values = 0
+    if not gold_bootstrap_stability.is_empty() and {
+        "bootstrap_iterations",
+        "reference_concordance_rate",
+        "opposite_direction_rate",
+        "bootstrap_stability_score",
+        "bootstrap_stability_tier",
+    }.issubset(gold_bootstrap_stability.columns):
+        invalid_gold_bootstrap_values = gold_bootstrap_stability.filter(
+            (pl.col("bootstrap_iterations") < 20)
+            | ~pl.col("reference_concordance_rate").is_between(0.0, 1.0)
+            | ~pl.col("opposite_direction_rate").is_between(0.0, 1.0)
+            | ~pl.col("bootstrap_stability_score").is_between(0.0, 1.0)
+            | ~pl.col("bootstrap_stability_tier").is_in(["high", "moderate", "limited", "unstable"])
+        ).height
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
         gold_graph_edges,
@@ -780,6 +819,16 @@ def run_silver_quality_checks(
             metric_name="minimum_tcga_adjacent_normal_samples",
             metric_value=float(triangulation_min_tcga_normal_support),
             threshold=30.0,
+        ),
+        CheckResult(
+            check_name="gold_candidate_bootstrap_stability_schema_columns_present",
+            status="passed" if (gold_bootstrap_stability.is_empty() or missing_gold_bootstrap_cols == 0) else "failed",
+            failed_rows=int(missing_gold_bootstrap_cols),
+        ),
+        CheckResult(
+            check_name="gold_candidate_bootstrap_stability_values_supported",
+            status="passed" if invalid_gold_bootstrap_values == 0 else "failed",
+            failed_rows=int(invalid_gold_bootstrap_values),
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",

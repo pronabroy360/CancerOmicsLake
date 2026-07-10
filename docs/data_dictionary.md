@@ -226,6 +226,23 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `reference_stability_score`: bounded support, direction, and effect-similarity calibration.
 - `triangulation_caveat`: required adjacent-normal and cross-study interpretation warning.
 
+### `gold_candidate_bootstrap_stability.parquet`
+
+- `cancer_type`, `gene_symbol`: candidate cancer-gene pair.
+- `candidate_priority_rank`, `priority_score`: upstream candidate rank and score.
+- `evidence_confidence_tier`, `candidate_selection_reason`: reason the candidate entered the bootstrap cohort.
+- `bootstrap_iterations`, `top_k`, `random_seed`: reproducibility parameters.
+- `tcga_direction_stability`, `gtex_direction_stability`: baseline-direction retention rates.
+- `reference_concordance_rate`, `opposite_direction_rate`: cross-reference directional behavior.
+- `tcga_top_k_selection_rate`, `gtex_top_k_selection_rate`: bootstrap top-k inclusion probabilities.
+- `tcga_median_rank`, `gtex_median_rank`: median absolute-effect ranks.
+- `tcga_rank_ci_low/high`, `gtex_rank_ci_low/high`: 95% percentile rank intervals.
+- `tcga_median_log2_fc`, `gtex_median_log2_fc`: median bootstrap effects.
+- `tcga_log2_fc_ci_low/high`, `gtex_log2_fc_ci_low/high`: 95% percentile effect intervals.
+- `rank_precision`: normalized inverse rank-interval width.
+- `bootstrap_stability_score`, `bootstrap_stability_tier`: transparent bounded stability calibration.
+- `bootstrap_caveat`: required candidate-restricted and non-validation warning.
+
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.

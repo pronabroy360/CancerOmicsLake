@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from src.analytics.batch_effect_sensitivity import batch_effect_sensitivity
+from src.analytics.bootstrap_stability import bootstrap_stability
 from src.analytics.candidate_priority import candidate_gene_priority
 from src.analytics.evidence_confidence import evidence_confidence
 from src.analytics.expression_summary import expression_by_gene
@@ -128,6 +129,23 @@ def research_reference_triangulation(
         gene_query=gene_query,
         concordance=concordance,
         support_tier=support_tier,
+        min_stability=min_stability,
+        limit=limit,
+    )
+
+
+@app.get("/research/bootstrap-stability")
+def research_bootstrap_stability(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    stability_tier: str | None = None,
+    min_stability: float | None = None,
+    limit: int = 50,
+) -> dict[str, object]:
+    return bootstrap_stability(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        stability_tier=stability_tier,
         min_stability=min_stability,
         limit=limit,
     )
