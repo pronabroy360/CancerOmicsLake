@@ -162,6 +162,7 @@ def main() -> None:
     parser_download.add_argument("--mutation-cap-per-project", type=int, default=None)
     parser_download.add_argument("--use-medium-cap-profile", action="store_true")
     parser_download.add_argument("--use-aggressive-cap-profile", action="store_true")
+    parser_download.add_argument("--download-workers", type=int, default=1)
 
     parser_gold = subparsers.add_parser("run-gold")
     parser_gold.add_argument("--config", required=True)
@@ -208,6 +209,7 @@ def main() -> None:
     parser_flow.add_argument("--use-aggressive-cap-profile", action="store_true")
     parser_flow.add_argument("--expression-cap-per-project", type=int, default=None)
     parser_flow.add_argument("--mutation-cap-per-project", type=int, default=None)
+    parser_flow.add_argument("--download-workers", type=int, default=1)
 
     args = parser.parse_args()
     configure_logging()
@@ -296,6 +298,7 @@ def main() -> None:
             allowed_data_subdirs=subdirs,
             project_modality_caps=caps,
             run_mode=run_mode,
+            download_workers=args.download_workers,
         )
         logger = get_logger("canceromicslake")
         logger.info(
@@ -471,6 +474,7 @@ def main() -> None:
             allowed_data_subdirs=subdirs,
             expression_cap_per_project=cap_expression,
             mutation_cap_per_project=cap_mutation,
+            download_workers=args.download_workers,
         )
         logger = get_logger("canceromicslake")
         logger.info("Pipeline flow completed: run_id=%s status=%s", result["pipeline_run_id"], result["status"])

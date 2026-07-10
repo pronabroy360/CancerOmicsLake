@@ -174,6 +174,7 @@ def _execute_pipeline(
     allowed_data_subdirs: set[str] | None = None,
     expression_cap_per_project: int | None = None,
     mutation_cap_per_project: int | None = None,
+    download_workers: int = 1,
 ) -> dict[str, Any]:
     run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     start = datetime.now(UTC)
@@ -205,6 +206,7 @@ def _execute_pipeline(
             allowed_data_subdirs=allowed_data_subdirs,
             project_modality_caps=caps,
             run_mode=run_mode,
+            download_workers=download_workers,
         )
         silver_summary = _silver_impl(cfg)
         gold_summary = _gold_impl()
@@ -277,6 +279,7 @@ def canceromicslake_pipeline(
     allowed_data_subdirs: set[str] | None = None,
     expression_cap_per_project: int | None = None,
     mutation_cap_per_project: int | None = None,
+    download_workers: int = 1,
 ) -> dict[str, Any]:
     return _execute_pipeline(
         config_path=config_path,
@@ -287,6 +290,7 @@ def canceromicslake_pipeline(
         allowed_data_subdirs=allowed_data_subdirs,
         expression_cap_per_project=expression_cap_per_project,
         mutation_cap_per_project=mutation_cap_per_project,
+        download_workers=download_workers,
     )
 
 
@@ -299,6 +303,7 @@ def run_pipeline_with_fallback(
     allowed_data_subdirs: set[str] | None = None,
     expression_cap_per_project: int | None = None,
     mutation_cap_per_project: int | None = None,
+    download_workers: int = 1,
 ) -> dict[str, Any]:
     try:
         return canceromicslake_pipeline(
@@ -310,6 +315,7 @@ def run_pipeline_with_fallback(
             allowed_data_subdirs=allowed_data_subdirs,
             expression_cap_per_project=expression_cap_per_project,
             mutation_cap_per_project=mutation_cap_per_project,
+            download_workers=download_workers,
         )
     except RuntimeError as exc:
         if "Unable to find an available port" not in str(exc):
@@ -323,4 +329,5 @@ def run_pipeline_with_fallback(
             allowed_data_subdirs=allowed_data_subdirs,
             expression_cap_per_project=expression_cap_per_project,
             mutation_cap_per_project=mutation_cap_per_project,
+            download_workers=download_workers,
         )

@@ -65,5 +65,6 @@ its empirical validation. Novelty must be established through a formal literatur
 The live GTEx V8 profile now contributes 50 breast, 50 lung, 50 transverse-colon, and 50 sigmoid-colon samples,
 covering 56,200 source genes per tissue. The current tumor-vs-normal mart contains 36,004 intersecting genes per
 cancer project. Normal-reference support is adequate for engineering and exploratory work, but the comparison
-remains batch-effect limited. Current TCGA tumor support is 18 BRCA, 5 LUAD, and 2 COAD samples, so expanded
-TCGA STAR-TPM ingestion and batch-aware modeling remain prerequisites for publication-grade claims.
+remains batch-effect limited. Current aggressive TCGA STAR-TPM support is 95 BRCA, 94 LUAD, and 96 COAD tumor
+samples, which is adequate for stronger exploratory evidence scoring. Batch-aware modeling remains the primary
+prerequisite before making publication-grade biological claims.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 import hashlib
 import json
@@ -121,6 +122,81 @@ def _build_project_subdir_key(project_id: str, subdir: str) -> str:
     return f"{project_id}|{subdir}"
 
 
+def _download_one_row(
+    row: dict[str, str],
+    destination: Path,
+    base_url: str,
+    retry_count: int,
+    retry_backoff_sec: float,
+    timeout_sec: int,
+) -> dict[str, Any]:
+    project_id = row["project_id"]
+    file_id = row["file_id"]
+    file_name = row["file_name"]
+    data_subdir = _infer_data_subdir(row.get("data_category", ""))
+    key = _build_project_subdir_key(project_id, data_subdir)
+    md5sum = row.get("md5sum", "").strip()
+    url = f"{base_url.rstrip('/')}/data/{file_id}"
+
+    error = _download_with_retry(
+        url=url,
+        destination=destination,
+        retry_count=retry_count,
+        retry_backoff_sec=retry_backoff_sec,
+        timeout_sec=timeout_sec,
+    )
+    if error:
+        return {
+            "status": "failed",
+            "key": key,
+            "project_id": project_id,
+            "file_id": file_id,
+            "file_name": file_name,
+            "error": error,
+            "bytes": 0,
+            "checksum_mismatch": False,
+        }
+
+    if not destination.exists():
+        return {
+            "status": "failed",
+            "key": key,
+            "project_id": project_id,
+            "file_id": file_id,
+            "file_name": file_name,
+            "error": "download_completed_but_file_missing",
+            "bytes": 0,
+            "checksum_mismatch": False,
+        }
+
+    file_size = destination.stat().st_size
+    if md5sum:
+        downloaded_md5 = _md5_file(destination)
+        if downloaded_md5 != md5sum:
+            destination.unlink(missing_ok=True)
+            return {
+                "status": "failed",
+                "key": key,
+                "project_id": project_id,
+                "file_id": file_id,
+                "file_name": file_name,
+                "error": "checksum_mismatch",
+                "bytes": 0,
+                "checksum_mismatch": True,
+            }
+
+    return {
+        "status": "downloaded",
+        "key": key,
+        "project_id": project_id,
+        "file_id": file_id,
+        "file_name": file_name,
+        "error": "",
+        "bytes": file_size,
+        "checksum_mismatch": False,
+    }
+
+
 def download_tcga_files(
     config: AppConfig,
     metadata_csv_path: str | Path | None = None,
@@ -133,6 +209,7 @@ def download_tcga_files(
     allowed_data_subdirs: set[str] | None = None,
     project_modality_caps: dict[str, dict[str, int]] | None = None,
     run_mode: str = "manual",
+    download_workers: int = 1,
 ) -> dict[str, Any]:
     run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     if config.tcga.metadata_only and not force_download:
@@ -217,11 +294,11 @@ def download_tcga_files(
     failed_counts: dict[str, int] = {}
 
     root = Path(bronze_tcga_root)
+    tasks: list[tuple[dict[str, str], Path]] = []
     for row in selected_rows:
         if max_downloads is not None and attempted_downloads >= max_downloads:
             break
         project_id = row["project_id"]
-        file_id = row["file_id"]
         file_name = row["file_name"]
         md5sum = row.get("md5sum", "").strip()
         data_subdir = _infer_data_subdir(row.get("data_category", ""))
@@ -236,63 +313,73 @@ def download_tcga_files(
                 continue
 
         attempted_downloads += 1
-        url = f"{config.gdc_api.base_url.rstrip('/')}/data/{file_id}"
-        error = _download_with_retry(
-            url=url,
-            destination=destination,
-            retry_count=config.gdc_api.retry_count,
-            retry_backoff_sec=config.gdc_api.retry_backoff_sec,
-            timeout_sec=config.gdc_api.request_timeout_sec,
-        )
-        if error:
-            failed_count += 1
-            _count_inc(failed_counts, key)
-            failures.append(
-                {
-                    "project_id": project_id,
-                    "file_id": file_id,
-                    "file_name": file_name,
-                    "error": error,
-                }
-            )
-            continue
+        tasks.append((row, destination))
 
-        if not destination.exists():
-            failed_count += 1
-            _count_inc(failed_counts, key)
-            failures.append(
-                {
-                    "project_id": project_id,
-                    "file_id": file_id,
-                    "file_name": file_name,
-                    "error": "download_completed_but_file_missing",
-                }
-            )
-            continue
-
-        file_size = destination.stat().st_size
-        total_bytes_downloaded += file_size
-        if md5sum:
-            downloaded_md5 = _md5_file(destination)
-            if downloaded_md5 != md5sum:
-                checksum_mismatch_count += 1
-                failed_count += 1
-                _count_inc(failed_counts, key)
-                failures.append(
-                    {
-                        "project_id": project_id,
-                        "file_id": file_id,
-                        "file_name": file_name,
-                        "error": "checksum_mismatch",
-                    }
+    worker_count = max(1, int(download_workers or 1))
+    results: list[dict[str, Any]] = []
+    if worker_count == 1:
+        for row, destination in tasks:
+            results.append(
+                _download_one_row(
+                    row=row,
+                    destination=destination,
+                    base_url=config.gdc_api.base_url,
+                    retry_count=config.gdc_api.retry_count,
+                    retry_backoff_sec=config.gdc_api.retry_backoff_sec,
+                    timeout_sec=config.gdc_api.request_timeout_sec,
                 )
-                destination.unlink(missing_ok=True)
-                continue
+            )
+    else:
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            future_map = {
+                executor.submit(
+                    _download_one_row,
+                    row,
+                    destination,
+                    config.gdc_api.base_url,
+                    config.gdc_api.retry_count,
+                    config.gdc_api.retry_backoff_sec,
+                    config.gdc_api.request_timeout_sec,
+                ): row
+                for row, destination in tasks
+            }
+            for future in as_completed(future_map):
+                results.append(future.result())
+
+    for result in results:
+        key = str(result["key"])
+        if result["status"] == "failed":
+            failed_count += 1
+            _count_inc(failed_counts, key)
+            if result.get("checksum_mismatch"):
+                checksum_mismatch_count += 1
+            failures.append(
+                {
+                    "project_id": str(result["project_id"]),
+                    "file_id": str(result["file_id"]),
+                    "file_name": str(result["file_name"]),
+                    "error": str(result["error"]),
+                }
+            )
+            continue
         downloaded_count += 1
+        total_bytes_downloaded += int(result.get("bytes") or 0)
         _count_inc(downloaded_counts, key)
 
     status = "completed_with_failures" if failures else "completed"
     cap_applied = len(selected_rows) < len(candidate_rows)
+    selected_files = [
+        {
+            "project_id": row.get("project_id", ""),
+            "file_id": row.get("file_id", ""),
+            "file_name": row.get("file_name", ""),
+            "data_subdir": _infer_data_subdir(row.get("data_category", "")),
+            "data_category": row.get("data_category", ""),
+            "data_type": row.get("data_type", ""),
+            "md5sum": row.get("md5sum", ""),
+        }
+        for row in selected_rows
+    ]
     summary = {
         "pipeline_run_id": run_id,
         "run_mode": run_mode,
@@ -301,9 +388,11 @@ def download_tcga_files(
         "total_candidates": len(candidate_rows),
         "selected_candidates": len(selected_rows),
         "max_downloads": max_downloads,
+        "download_workers": worker_count,
         "allowed_data_subdirs": sorted(list(allowed_data_subdirs)) if allowed_data_subdirs else [],
         "project_modality_caps": effective_caps,
         "cap_applied": cap_applied,
+        "selected_files": selected_files,
         "candidate_counts_by_project_subdir": candidate_counts,
         "selected_counts_by_project_subdir": selected_counts,
         "downloaded_counts_by_project_subdir": downloaded_counts,

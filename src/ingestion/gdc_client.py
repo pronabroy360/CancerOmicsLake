@@ -44,6 +44,16 @@ class LiveGdcRequiredError(RuntimeError):
         self.audit = audit
 
 
+@dataclass(frozen=True)
+class GdcQuerySlice:
+    name: str
+    data_categories: list[str] | None = None
+    data_types: list[str] | None = None
+    experimental_strategies: list[str] | None = None
+    workflow_types: list[str] | None = None
+    size: int | None = None
+
+
 def query_tcga_metadata_stub(config: AppConfig) -> list[GdcFileRecord]:
     records: list[GdcFileRecord] = []
     for project in config.tcga.projects:
@@ -71,7 +81,21 @@ def query_tcga_metadata_stub(config: AppConfig) -> list[GdcFileRecord]:
     return records
 
 
-def build_files_payload(config: AppConfig, project_id: str) -> dict[str, Any]:
+def build_files_payload(
+    config: AppConfig,
+    project_id: str,
+    query_slice: GdcQuerySlice | None = None,
+) -> dict[str, Any]:
+    data_categories = query_slice.data_categories if query_slice and query_slice.data_categories else config.tcga.data_categories
+    data_types = query_slice.data_types if query_slice and query_slice.data_types else config.tcga.data_types
+    experimental_strategies = (
+        query_slice.experimental_strategies
+        if query_slice and query_slice.experimental_strategies
+        else config.tcga.experimental_strategies
+    )
+    workflow_types = query_slice.workflow_types if query_slice and query_slice.workflow_types else config.tcga.workflow_types
+    size = query_slice.size if query_slice and query_slice.size else config.tcga.max_files_per_project
+
     filters_content: list[dict[str, Any]] = [
         {
             "op": "in",
@@ -83,29 +107,29 @@ def build_files_payload(config: AppConfig, project_id: str) -> dict[str, Any]:
         },
         {
             "op": "in",
-            "content": {"field": "files.data_category", "value": config.tcga.data_categories},
+            "content": {"field": "files.data_category", "value": data_categories},
         },
     ]
 
-    if config.tcga.data_types:
+    if data_types:
         filters_content.append(
-            {"op": "in", "content": {"field": "files.data_type", "value": config.tcga.data_types}}
+            {"op": "in", "content": {"field": "files.data_type", "value": data_types}}
         )
-    if config.tcga.experimental_strategies:
+    if experimental_strategies:
         filters_content.append(
             {
                 "op": "in",
                 "content": {
                     "field": "files.experimental_strategy",
-                    "value": config.tcga.experimental_strategies,
+                    "value": experimental_strategies,
                 },
             }
         )
-    if config.tcga.workflow_types:
+    if workflow_types:
         filters_content.append(
             {
                 "op": "in",
-                "content": {"field": "files.analysis.workflow_type", "value": config.tcga.workflow_types},
+                "content": {"field": "files.analysis.workflow_type", "value": workflow_types},
             }
         )
 
@@ -134,8 +158,39 @@ def build_files_payload(config: AppConfig, project_id: str) -> dict[str, Any]:
         "filters": {"op": "and", "content": filters_content},
         "format": "JSON",
         "fields": fields,
-        "size": str(config.tcga.max_files_per_project),
+        "size": str(size),
+        "sort": "file_id:asc",
     }
+
+
+def build_project_query_slices(config: AppConfig) -> list[GdcQuerySlice]:
+    metadata_size = max(config.tcga.max_files_per_project, 1)
+    expression_cap = max(
+        (int(caps.get("expression", 0)) for caps in config.tcga.download_caps_by_project.values()),
+        default=0,
+    )
+    mutation_cap = max(
+        (int(caps.get("mutations", 0)) for caps in config.tcga.download_caps_by_project.values()),
+        default=0,
+    )
+    targeted_size = max(metadata_size, expression_cap, mutation_cap, 200)
+    return [
+        GdcQuerySlice(name="broad", size=metadata_size),
+        GdcQuerySlice(
+            name="expression_star_counts",
+            data_categories=["Transcriptome Profiling"],
+            data_types=["Gene Expression Quantification"],
+            experimental_strategies=["RNA-Seq"],
+            workflow_types=["STAR - Counts"],
+            size=targeted_size,
+        ),
+        GdcQuerySlice(
+            name="masked_somatic_mutation",
+            data_categories=["Simple Nucleotide Variation"],
+            data_types=["Masked Somatic Mutation"],
+            size=targeted_size,
+        ),
+    ]
 
 
 def _coerce_to_text(value: Any, default: str = "Unknown") -> str:
@@ -209,8 +264,12 @@ def _post_json(url: str, payload: dict[str, Any], timeout_sec: int) -> dict[str,
     return parsed
 
 
-def _query_project_files(config: AppConfig, project_id: str) -> tuple[list[GdcFileRecord], int]:
-    payload = build_files_payload(config, project_id)
+def _query_project_files_slice(
+    config: AppConfig,
+    project_id: str,
+    query_slice: GdcQuerySlice,
+) -> tuple[list[GdcFileRecord], int]:
+    payload = build_files_payload(config, project_id, query_slice=query_slice)
     url = f"{config.gdc_api.base_url.rstrip('/')}{config.gdc_api.files_endpoint}"
 
     last_error: Exception | None = None
@@ -232,6 +291,43 @@ def _query_project_files(config: AppConfig, project_id: str) -> tuple[list[GdcFi
         attempts=attempts,
         message=f"GDC query failed for {project_id}: {last_error}",
     ) from last_error
+
+
+def _query_project_files(config: AppConfig, project_id: str) -> tuple[list[GdcFileRecord], int, list[dict[str, Any]]]:
+    records_by_file_id: dict[str, GdcFileRecord] = {}
+    total_attempts = 0
+    slice_audits: list[dict[str, Any]] = []
+
+    for query_slice in build_project_query_slices(config):
+        slice_records, attempts = _query_project_files_slice(config, project_id, query_slice)
+        total_attempts += attempts
+        duplicate_count = 0
+        for record in slice_records:
+            if record.file_id in records_by_file_id:
+                duplicate_count += 1
+                continue
+            records_by_file_id[record.file_id] = record
+        slice_audits.append(
+            {
+                "slice": query_slice.name,
+                "attempts": attempts,
+                "record_count": len(slice_records),
+                "duplicate_count": duplicate_count,
+                "size": query_slice.size,
+            }
+        )
+
+    records = sorted(
+        records_by_file_id.values(),
+        key=lambda record: (
+            record.project_id,
+            record.data_category,
+            record.data_type,
+            record.file_id,
+            record.file_name,
+        ),
+    )
+    return records, total_attempts, slice_audits
 
 
 def query_tcga_metadata_with_audit(
@@ -266,7 +362,7 @@ def query_tcga_metadata_with_audit(
     try:
         records: list[GdcFileRecord] = []
         for project_id in config.tcga.projects:
-            project_records, attempts = _query_project_files(config, project_id)
+            project_records, attempts, slice_audits = _query_project_files(config, project_id)
             records.extend(project_records)
             project_audits.append(
                 {
@@ -274,6 +370,7 @@ def query_tcga_metadata_with_audit(
                     "status": "live",
                     "attempts": attempts,
                     "record_count": len(project_records),
+                    "query_slices": slice_audits,
                     "error": "",
                 }
             )

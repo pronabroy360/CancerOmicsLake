@@ -137,6 +137,8 @@ make run-demo-check-strict
   - `make run-demo-aggressive` for pipeline + traceability + demo checks
 - This profile is intended for fast manual completion and uses `--force-download`.
 - Flow/demo targets focus download scope on `expression,mutations` for higher success rates.
+- Download and flow targets use bounded parallel workers (`8` for aggressive, `4` for medium) while preserving checksum skip/retry behavior.
+- The latest aggressive local run selected 420 files, checksum-skipped 420 already-present files on rerun, and produced 18.3 million TCGA expression rows plus 45,588 mutation records.
 
 ## GTEx V8 Live Profile
 

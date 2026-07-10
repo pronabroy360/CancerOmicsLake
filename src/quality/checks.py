@@ -214,6 +214,17 @@ def _download_integrity_counts(
         for x in allowed_data_subdirs_raw
         if isinstance(x, str) and str(x).strip()
     }
+    selected_files_raw = payload.get("selected_files", [])
+    selected_file_keys: set[tuple[str, str, str]] = set()
+    if isinstance(selected_files_raw, list):
+        for item in selected_files_raw:
+            if not isinstance(item, dict):
+                continue
+            project_id = str(item.get("project_id", "")).strip()
+            file_name = str(item.get("file_name", "")).strip()
+            data_subdir = str(item.get("data_subdir", "")).strip().lower()
+            if project_id and file_name and data_subdir:
+                selected_file_keys.add((project_id, data_subdir, file_name))
 
     missing = 0
     checksum_mismatch = 0
@@ -230,6 +241,8 @@ def _download_integrity_counts(
 
         data_subdir = _infer_data_subdir(data_category)
         if allowed_data_subdirs and data_subdir not in allowed_data_subdirs:
+            continue
+        if selected_file_keys and (project_id, data_subdir, file_name) not in selected_file_keys:
             continue
         path = bronze_tcga_root / project_id / data_subdir / file_name
         if not path.exists():

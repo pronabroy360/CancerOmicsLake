@@ -37,10 +37,10 @@ run-download-tcga-ci-smoke:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --expression-cap-per-project 1 --mutation-cap-per-project 1 --max-downloads 6 --data-subdirs expression,mutations
 
 run-download-tcga-medium:
-	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations
+	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations --download-workers 4
 
 run-download-tcga-aggressive:
-	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations
+	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations --download-workers 8
 
 run-download-tcga-force-smoke:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --max-downloads 3 --data-subdirs expression,mutations
@@ -64,12 +64,12 @@ run-ingestion-traceability:
 	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml
 
 run-demo:
-	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations --download-workers 4
 	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml
 	$(PYTHON) -m src.main run-demo-check --config configs/project_config.yml
 
 run-demo-aggressive:
-	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations --download-workers 8
 	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml
 	$(PYTHON) -m src.main run-demo-check --config configs/project_config.yml
 
@@ -83,10 +83,10 @@ run-flow:
 	$(PYTHON) -m src.main run-flow --config configs/project_config.yml
 
 run-flow-medium:
-	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-medium-cap-profile --data-subdirs expression,mutations --download-workers 4
 
 run-flow-aggressive:
-	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations
+	$(PYTHON) -m src.main run-flow --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations --download-workers 8
 
 run-dbt:
 	$(PYTHON) -m src.main run-dbt --config configs/project_config.yml

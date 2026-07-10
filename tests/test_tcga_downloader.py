@@ -334,6 +334,8 @@ def test_download_tcga_files_respects_project_modality_caps_deterministically(tm
     assert summary["cap_applied"] is True
     assert summary["selected_counts_by_project_subdir"]["TCGA-BRCA|expression"] == 2
     assert summary["selected_counts_by_project_subdir"]["TCGA-BRCA|mutations"] == 1
+    assert len(summary["selected_files"]) == 3
+    assert {item["data_subdir"] for item in summary["selected_files"]} == {"expression", "mutations"}
     assert summary["downloaded_count"] == 3
     assert (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "expression" / "expr-1.tsv").exists()
     assert (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "expression" / "expr-2.tsv").exists()

@@ -54,9 +54,12 @@ Aggressive cap:
 - Expression files: `100/project`
 - Mutation files: `40/project`
 - Access mode: open-access only
+- Download workers: `8` for aggressive Make targets
 
 Aggressive flow and demo targets force downloads (`--force-download`) so runs do not silently skip file pulling when `tcga.metadata_only: true`.
 Aggressive flow and demo targets also scope downloads to `expression,mutations` via `--data-subdirs` so clinical/biospecimen categories do not create avoidable failures during rapid completion.
+The downloader persists the exact selected file list in `outputs/reports/tcga_download_report.json`; quality checks validate those selected files rather than treating unselected capped candidates as missing data.
+The latest aggressive local run produced 18,319,320 TCGA expression rows, 45,588 mutation records, and 95/96/94 tumor samples for BRCA/COAD/LUAD tumor-vs-normal support.
 
 ## Reviewer Demo Check
 

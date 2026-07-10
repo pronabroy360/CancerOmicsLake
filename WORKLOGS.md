@@ -362,3 +362,15 @@ Impact values:
 - Tightened TCGA expression selection and fixed source-file metadata binding so retained expression rows are STAR TPM gene expression.
 - Expanded graph gene nodes to include the GTEx expression universe, resolving 208,296 edge/node integrity failures.
 - Rebuilt 108,012 tumor-vs-normal rows and restored quality status to `passed_with_warnings`.
+
+## 2026-07-10 - Aggressive TCGA STAR Expansion And Parallel Downloader
+
+- Added modality-aware live GDC metadata slices so each TCGA project now queries broad metadata plus targeted `STAR - Counts` gene expression and masked somatic mutation files.
+- Increased live metadata coverage to 1,696 rows with 200 STAR expression candidates and 200 masked mutation candidates per BRCA/LUAD/COAD project.
+- Added bounded parallel TCGA downloads (`--download-workers`) and wired Make/flow/demo aggressive targets to use 8 workers while preserving open-access, checksum, retry, and deterministic cap behavior.
+- Extended TCGA download reports with the exact `selected_files` list and updated quality checks to validate selected capped files instead of flagging unselected candidates as missing.
+- Completed aggressive download profile: 420 selected files, 394 downloaded, 26 checksum-skipped, 0 failed, approximately 1.19 GB newly downloaded.
+- Rebuilt silver/gold outputs: 18,319,320 TCGA expression rows, 11,240,000 GTEx expression rows, 45,588 mutation records, 108,012 tumor-vs-normal rows, 57,599 graph nodes, and 243,834 graph edges.
+- Improved tumor-vs-normal support to 95 BRCA, 94 LUAD, and 96 COAD TCGA tumor samples with 50/50/100 matched GTEx normal samples.
+- Evidence confidence now contains 108,781 cancer-gene rows with 51 high-confidence rows after stronger TCGA coverage.
+- Verified gates: silver quality `passed` across 30 checks, ingestion traceability `passed`, strict demo check `passed` (27 checks), dbt run (22 models), dbt test (50 tests), project completion 9/9, and pytest (`116 passed`).
