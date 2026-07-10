@@ -340,3 +340,49 @@ def test_download_tcga_files_respects_project_modality_caps_deterministically(tm
     assert not (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "expression" / "expr-3.tsv").exists()
     assert (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "mutations" / "mut-1.maf").exists()
     assert not (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "mutations" / "mut-2.maf").exists()
+
+
+def test_download_tcga_files_excludes_mirna_from_gene_expression_cap(tmp_path: Path, monkeypatch) -> None:
+    cfg = load_config("configs/project_config.yml")
+    cfg.tcga.metadata_only = False
+    cfg.gdc_api.retry_count = 0
+    metadata = tmp_path / "metadata.csv"
+    base = {
+        "project_id": "TCGA-BRCA",
+        "case_id": "case-1",
+        "submitter_id": "sub-1",
+        "sample_id": "sample-1",
+        "sample_type": "Primary Tumor",
+        "primary_site": "Breast",
+        "disease_type": "Adeno",
+        "data_category": "Transcriptome Profiling",
+        "experimental_strategy": "RNA-Seq",
+        "access": "open",
+        "file_size": "2",
+        "md5sum": "444bcb3a3fcf8389296c49467f27e1d6",
+    }
+    _write_metadata_csv(
+        metadata,
+        [
+            {**base, "file_id": "mirna", "file_name": "mirna.txt", "data_type": "miRNA Expression Quantification", "workflow_type": "BCGSC miRNA Profiling"},
+            {**base, "file_id": "gene", "file_name": "gene.tsv", "data_type": "Gene Expression Quantification", "workflow_type": "STAR - Counts"},
+        ],
+    )
+
+    def fake_fetch(url: str, destination: Path, timeout_sec: int) -> None:  # noqa: ARG001
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(b"ok")
+
+    monkeypatch.setattr(tcga_downloader, "_fetch_to_path", fake_fetch)
+    summary = tcga_downloader.download_tcga_files(
+        cfg,
+        metadata_csv_path=metadata,
+        bronze_tcga_root=tmp_path / "bronze",
+        report_path=tmp_path / "report.json",
+        retry_log_path=tmp_path / "retry.json",
+        allowed_data_subdirs={"expression"},
+    )
+
+    assert summary["total_candidates"] == 1
+    assert (tmp_path / "bronze" / "TCGA-BRCA" / "expression" / "gene.tsv").exists()
+    assert not (tmp_path / "bronze" / "TCGA-BRCA" / "expression" / "mirna.txt").exists()

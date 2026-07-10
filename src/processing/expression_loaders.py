@@ -57,6 +57,7 @@ def _empty_gtex_expression_df() -> pl.DataFrame:
     return pl.DataFrame(
         schema={
             "gtex_sample_id": pl.Utf8,
+            "donor_id": pl.Utf8,
             "tissue_site": pl.Utf8,
             "tissue_detail": pl.Utf8,
             "gene_id": pl.Utf8,
@@ -194,7 +195,16 @@ def _parse_tcga_expression_file(path: Path, metadata_df: pl.DataFrame) -> pl.Dat
             ]
         )
 
-    if "sample_id" in metadata_df.columns:
+    if not metadata_for_file.is_empty():
+        base = base.with_columns(
+            [
+                pl.lit(str(metadata_for_file["project_id"][0])).alias("project_id"),
+                pl.lit(str(metadata_for_file["case_id"][0])).alias("case_id"),
+                pl.lit(str(metadata_for_file["sample_type"][0])).alias("sample_type"),
+                pl.lit(str(metadata_for_file["workflow_type"][0])).alias("workflow_type"),
+            ]
+        )
+    elif "sample_id" in metadata_df.columns:
         meta = metadata_df.select(
             [
                 pl.col("project_id"),
@@ -267,10 +277,7 @@ def _resolve_tcga_expression_files_from_manifest(root: Path, metadata_df: pl.Dat
 
     expression_manifest = manifest.filter(
         pl.col("data_category").str.to_lowercase().str.contains("transcriptome profiling")
-        & (
-            pl.col("data_type").str.to_lowercase().str.contains("gene expression")
-            | pl.col("data_type").str.to_lowercase().str.contains("isoform expression")
-        )
+        & (pl.col("data_type").str.to_lowercase() == "gene expression quantification")
         & (pl.col("access").str.to_lowercase() == "open")
     )
 
@@ -348,6 +355,11 @@ def _parse_gtex_expression_file(path: Path, config: AppConfig) -> pl.DataFrame:
     base = raw.select(
         [
             pl.col(sample_col).cast(pl.Utf8).alias("gtex_sample_id"),
+            pl.col(sample_col)
+            .cast(pl.Utf8)
+            .str.extract(r"^(GTEX-[^-]+)", 1)
+            .fill_null("Unknown")
+            .alias("donor_id"),
             pl.col(tissue_site_col).cast(pl.Utf8).alias("tissue_site"),
             (
                 pl.col(tissue_detail_col).cast(pl.Utf8)
@@ -379,6 +391,7 @@ def _parse_gtex_expression_file(path: Path, config: AppConfig) -> pl.DataFrame:
     return base.select(
         [
             pl.col("gtex_sample_id"),
+            pl.col("donor_id"),
             pl.col("tissue_site"),
             pl.col("tissue_detail"),
             pl.col("gene_id"),
@@ -401,6 +414,7 @@ def _gtex_stub_frame(config: AppConfig) -> pl.DataFrame:
         mapped_rows.append(
             {
                 "gtex_sample_id": row["gtex_sample_id"],
+                "donor_id": row["gtex_sample_id"].rsplit("-", 2)[0],
                 "tissue_site": row["tissue_site"],
                 "tissue_detail": row["tissue_detail"],
                 "gene_id": mapped["gene_id_normalized"],

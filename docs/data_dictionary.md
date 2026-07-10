@@ -57,6 +57,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 ### `silver_expression_gtex.parquet`
 
 - `gtex_sample_id`: GTEx sample identifier.
+- `donor_id`: donor identifier derived from the public GTEx sample identifier.
 - `tissue_site`: GTEx tissue site.
 - `tissue_detail`: GTEx tissue detail.
 - `gene_id`: normalized Ensembl gene ID without version suffix.
@@ -65,7 +66,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `expression_unit`: expression unit, usually `TPM` for GTEx public expression matrices.
 - `log2_expression`: `log2(expression_value + 1)`.
 - `source_version`: GTEx version label.
-- `data_origin`: source filepath when parsed from bronze expression files, otherwise demo source.
+- `data_origin`: exact open-access GTEx source GCT filepath, otherwise demo source.
 - `ingested_at`: processing timestamp.
 
 ### `silver_mutations.parquet`

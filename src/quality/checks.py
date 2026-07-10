@@ -409,6 +409,28 @@ def run_silver_quality_checks(
     invalid_tcga_units = _count_invalid_expression_unit(expr_tcga, "expression_unit", {"TPM", "FPKM", "COUNT"})
     tcga_workflow_unit_mismatch = _count_tcga_workflow_unit_mismatch(expr_tcga)
     invalid_gtex_units = _count_invalid_expression_unit(expr_gtex, "expression_unit", {"TPM"})
+    gtex_stub_rows = (
+        expr_gtex.filter(
+            pl.col("data_origin")
+            .cast(pl.Utf8, strict=False)
+            .fill_null("")
+            .str.to_lowercase()
+            .str.contains("stub|placeholder|demo")
+        ).height
+        if "data_origin" in expr_gtex.columns
+        else expr_gtex.height
+    )
+    gtex_min_tissue_samples = (
+        int(
+            expr_gtex.group_by("tissue_site")
+            .agg(pl.col("gtex_sample_id").n_unique().alias("sample_count"))
+            .get_column("sample_count")
+            .min()
+            or 0
+        )
+        if not expr_gtex.is_empty() and {"tissue_site", "gtex_sample_id"}.issubset(expr_gtex.columns)
+        else 0
+    )
     missing_downloaded_files, checksum_mismatches, download_check_applicable, download_partial_mode = _download_integrity_counts(
         manifest=manifest,
         bronze_tcga_root=Path(bronze_tcga_root),
@@ -554,6 +576,19 @@ def run_silver_quality_checks(
             check_name="silver_expression_gtex_unit_supported",
             status="passed" if invalid_gtex_units == 0 else "failed",
             failed_rows=int(invalid_gtex_units),
+        ),
+        CheckResult(
+            check_name="silver_expression_gtex_public_provenance",
+            status="passed" if gtex_stub_rows == 0 else "warning",
+            failed_rows=int(gtex_stub_rows),
+        ),
+        CheckResult(
+            check_name="silver_expression_gtex_min_tissue_sample_support",
+            status="passed" if gtex_min_tissue_samples >= 30 else "warning",
+            failed_rows=0 if gtex_min_tissue_samples >= 30 else 30 - gtex_min_tissue_samples,
+            metric_name="minimum_unique_samples_per_tissue",
+            metric_value=float(gtex_min_tissue_samples),
+            threshold=30.0,
         ),
         CheckResult(
             check_name="silver_mutations_null_gene_symbol",

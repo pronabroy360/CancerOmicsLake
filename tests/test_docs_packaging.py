@@ -26,6 +26,7 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "open-access-only" in readme
     assert "make run-demo-check" in readme
     assert "make run-ingestion-traceability" in readme
+    assert "make run-gtex-live" in readme
     assert "Manual Ingestion" in readme
 
 

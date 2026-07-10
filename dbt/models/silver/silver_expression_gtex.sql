@@ -1,5 +1,6 @@
 select
   cast(gtex_sample_id as varchar) as gtex_sample_id,
+  cast(donor_id as varchar) as donor_id,
   cast(tissue_site as varchar) as tissue_site,
   cast(tissue_detail as varchar) as tissue_detail,
   cast(gene_id as varchar) as gene_id,

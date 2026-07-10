@@ -64,6 +64,15 @@ def _build_tumor_vs_normal_table(expr_tcga: pl.DataFrame, expr_gtex: pl.DataFram
 
     tumor = expr_tcga.filter(
         pl.col("sample_type").cast(pl.Utf8, strict=False).str.to_lowercase().str.contains("tumor")
+        & (pl.col("expression_unit").cast(pl.Utf8, strict=False).str.to_uppercase() == "TPM")
+        & pl.col("gene_id").cast(pl.Utf8, strict=False).str.starts_with("ENSG")
+        & (
+            pl.col("pipeline_workflow").cast(pl.Utf8, strict=False).str.to_lowercase().str.contains("star", literal=True)
+            | pl.col("data_origin")
+            .cast(pl.Utf8, strict=False)
+            .str.to_lowercase()
+            .str.contains("rna_seq.augmented_star_gene_counts", literal=True)
+        )
     )
     if tumor.is_empty():
         return _empty_tumor_vs_normal()

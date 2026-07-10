@@ -83,6 +83,18 @@ make run-dashboard
 make run-graph-export
 ```
 
+Live GTEx V8 normal-reference build:
+
+```bash
+make run-gtex-live
+make run-gold
+make run-quality
+make run-graph-export
+```
+
+This verifies official object size/MD5 metadata, validates sample-to-tissue assignments against the open
+sample annotation file, strips Ensembl version suffixes, and atomically writes the silver Parquet.
+
 Research surface:
 
 - API: `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
@@ -125,6 +137,15 @@ make run-demo-check-strict
   - `make run-demo-aggressive` for pipeline + traceability + demo checks
 - This profile is intended for fast manual completion and uses `--force-download`.
 - Flow/demo targets focus download scope on `expression,mutations` for higher success rates.
+
+## GTEx V8 Live Profile
+
+- Four official tissue-specific TPM GCT files plus open sample annotations.
+- Breast mammary, lung, transverse colon, and sigmoid colon.
+- Deterministic cap of 50 samples per tissue.
+- Approximately 178 MB downloaded and 11.24 million harmonized rows in a 92 MB silver Parquet.
+- Raw GTEx files and generated Parquet remain excluded from Git.
+- This resolves normal-reference coverage, but does not correct TCGA-GTEx batch effects.
 
 ## Runtime Notes
 

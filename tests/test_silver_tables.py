@@ -39,6 +39,7 @@ def test_build_silver_tables_from_bronze(tmp_path: Path) -> None:
         config=config,
         bronze_metadata_dir=bronze_dir,
         silver_dir=silver_dir,
+        gtex_expression_dir=tmp_path / "gtex" / "expression",
     )
 
     assert summary["projects_count"] == 1

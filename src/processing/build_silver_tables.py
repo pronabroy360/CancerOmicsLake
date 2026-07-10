@@ -8,6 +8,7 @@ import polars as pl
 from src.common.config import AppConfig
 from src.processing.build_mutation_table import load_tcga_mutation_table
 from src.processing.expression_loaders import load_gtex_expression_table, load_tcga_expression_table
+from src.processing.gtex_harmonizer import harmonize_gtex_gct_files
 
 
 def _latest_tcga_metadata_csv(metadata_dir: str | Path) -> Path:
@@ -88,10 +89,16 @@ def build_silver_tables_from_bronze(
         metadata_df=raw,
         tcga_expression_dir=tcga_expr_root,
     )
-    expression_gtex = load_gtex_expression_table(
-        config=config,
-        ingest_time=ingest_time,
-        gtex_expression_dir=gtex_expression_dir,
+    gtex_root = Path(gtex_expression_dir)
+    has_gtex_gct = bool(list(gtex_root.glob("*.gct.gz"))) if config is not None else False
+    expression_gtex = (
+        None
+        if has_gtex_gct
+        else load_gtex_expression_table(
+            config=config,
+            ingest_time=ingest_time,
+            gtex_expression_dir=gtex_expression_dir,
+        )
     )
     mutations_tcga = load_tcga_mutation_table(
         config=config,
@@ -105,7 +112,19 @@ def build_silver_tables_from_bronze(
     out_samples = _write_parquet(samples, silver_root / "silver_samples.parquet")
     out_manifest = _write_parquet(file_manifest, silver_root / "silver_file_manifest.parquet")
     out_expr_tcga = _write_parquet(expression_tcga, silver_root / "silver_expression_tcga.parquet")
-    out_expr_gtex = _write_parquet(expression_gtex, silver_root / "silver_expression_gtex.parquet")
+    out_expr_gtex = silver_root / "silver_expression_gtex.parquet"
+    if has_gtex_gct and config is not None:
+        gtex_summary = harmonize_gtex_gct_files(
+            config=config,
+            input_dir=gtex_root,
+            output_path=out_expr_gtex,
+        )
+        expression_gtex_count = int(gtex_summary["total_rows"])
+    else:
+        if expression_gtex is None:
+            raise RuntimeError("GTEx expression loader returned no table")
+        _write_parquet(expression_gtex, out_expr_gtex)
+        expression_gtex_count = expression_gtex.height
     out_mutations = _write_parquet(mutations_tcga, silver_root / "silver_mutations.parquet")
 
     return {
@@ -122,6 +141,6 @@ def build_silver_tables_from_bronze(
         "samples_count": samples.height,
         "file_manifest_count": file_manifest.height,
         "expression_tcga_count": expression_tcga.height,
-        "expression_gtex_count": expression_gtex.height,
+        "expression_gtex_count": expression_gtex_count,
         "mutations_count": mutations_tcga.height,
     }

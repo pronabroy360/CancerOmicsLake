@@ -35,11 +35,20 @@ tcga:
 
 gtex:
   version: v8
+  metadata_only: true
+  sample_cap_per_tissue: 50
+  download_base_url: https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/tpms-by-tissue
+  sample_attributes_url: https://storage.googleapis.com/adult-gtex/annotations/v8/metadata-files/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
   tissues:
     - Breast - Mammary Tissue
     - Lung
     - Colon - Transverse
     - Colon - Sigmoid
+  tissue_files:
+    Breast - Mammary Tissue: gene_tpm_2017-06-05_v8_breast_mammary_tissue.gct.gz
+    Lung: gene_tpm_2017-06-05_v8_lung.gct.gz
+    Colon - Transverse: gene_tpm_2017-06-05_v8_colon_transverse.gct.gz
+    Colon - Sigmoid: gene_tpm_2017-06-05_v8_colon_sigmoid.gct.gz
 
 storage:
   format: parquet

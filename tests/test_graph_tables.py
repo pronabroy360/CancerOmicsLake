@@ -39,8 +39,8 @@ def test_build_graph_nodes_and_edges_from_silver_gold(tmp_path: Path) -> None:
             "gtex_sample_id": ["GTEX-1"],
             "tissue_site": ["Breast - Mammary Tissue"],
             "tissue_detail": ["Breast - Mammary Tissue"],
-            "gene_id": ["ENSG1"],
-            "gene_symbol": ["TP53"],
+            "gene_id": ["ENSG2"],
+            "gene_symbol": ["EGFR"],
             "expression_value": [1.0],
             "expression_unit": ["TPM"],
             "log2_expression": [1.0],
@@ -77,7 +77,9 @@ def test_build_graph_nodes_and_edges_from_silver_gold(tmp_path: Path) -> None:
     nodes = load_graph_nodes(gold_dir / "gold_graph_nodes.parquet")
     edges = load_graph_edges(gold_dir / "gold_graph_edges.parquet")
     assert any(row["node_label"] == "CancerType" for row in nodes)
+    assert any(row["node_id"] == "GENE:EGFR" for row in nodes)
     assert any(row["edge_type"] == "MUTATED_IN_CANCER" for row in edges)
+    assert any(row["edge_type"] == "EXPRESSED_IN_TISSUE" for row in edges)
 
 
 def test_load_graph_tables_fallback_to_stub(tmp_path: Path) -> None:

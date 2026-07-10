@@ -59,3 +59,11 @@ Before publication, the weighting and thresholds should be treated as preregiste
 
 The potentially publishable contribution is the provenance-aware, modality-separated evaluation framework and
 its empirical validation. Novelty must be established through a formal literature review before making a novelty claim.
+
+## Current Data Readiness
+
+The live GTEx V8 profile now contributes 50 breast, 50 lung, 50 transverse-colon, and 50 sigmoid-colon samples,
+covering 56,200 source genes per tissue. The current tumor-vs-normal mart contains 36,004 intersecting genes per
+cancer project. Normal-reference support is adequate for engineering and exploratory work, but the comparison
+remains batch-effect limited. Current TCGA tumor support is 18 BRCA, 5 LUAD, and 2 COAD samples, so expanded
+TCGA STAR-TPM ingestion and batch-aware modeling remain prerequisites for publication-grade claims.

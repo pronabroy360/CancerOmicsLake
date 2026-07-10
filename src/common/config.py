@@ -43,6 +43,14 @@ class GdcApiConfig(BaseModel):
 class GtexConfig(BaseModel):
     version: str
     tissues: list[str]
+    metadata_only: bool = True
+    sample_cap_per_tissue: int = 50
+    download_base_url: str = "https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/tpms-by-tissue"
+    sample_attributes_url: str = (
+        "https://storage.googleapis.com/adult-gtex/annotations/v8/metadata-files/"
+        "GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt"
+    )
+    tissue_files: dict[str, str] = Field(default_factory=dict)
 
 
 class StorageConfig(BaseModel):

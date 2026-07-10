@@ -34,6 +34,16 @@ def _infer_data_subdir(data_category: str) -> str:
     return "other"
 
 
+def _is_supported_modality_file(row: dict[str, str]) -> bool:
+    subdir = _infer_data_subdir(row.get("data_category", ""))
+    data_type = row.get("data_type", "").strip().lower()
+    if subdir == "expression":
+        return data_type == "gene expression quantification"
+    if subdir == "mutations":
+        return data_type == "masked somatic mutation"
+    return True
+
+
 def _md5_file(path: Path) -> str:
     hasher = hashlib.md5()
     with path.open("rb") as f:
@@ -159,6 +169,7 @@ def download_tcga_files(
         and row.get("project_id", "") in config.tcga.projects
         and bool(row.get("file_id"))
         and bool(row.get("file_name"))
+        and _is_supported_modality_file(row)
     ]
 
     candidate_rows = sorted(

@@ -198,6 +198,36 @@ def test_load_tcga_expression_table_supports_gdc_single_sample_gene_counts(tmp_p
     assert row["expression_unit"] == "TPM"
 
 
+def test_tcga_expression_metadata_is_bound_to_exact_source_file(tmp_path: Path) -> None:
+    config = load_config("configs/project_config.yml")
+    root = tmp_path / "tcga"
+    expression_dir = root / "TCGA-BRCA" / "expression"
+    expression_dir.mkdir(parents=True)
+    file_name = "sample.rna_seq.augmented_star_gene_counts.tsv"
+    (expression_dir / file_name).write_text(
+        "gene_id\tgene_name\ttpm_unstranded\nENSG00000141510.17\tTP53\t5.0\n",
+        encoding="utf-8",
+    )
+    metadata = pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA", "TCGA-BRCA"],
+            "case_id": ["case-1", "case-1"],
+            "sample_id": ["sample-1", "sample-1"],
+            "sample_type": ["Primary Tumor", "Primary Tumor"],
+            "workflow_type": ["BCGSC miRNA Profiling", "STAR - Counts"],
+            "file_name": ["sample.mirnas.quantification.txt", file_name],
+            "data_category": ["Transcriptome Profiling", "Transcriptome Profiling"],
+            "data_type": ["miRNA Expression Quantification", "Gene Expression Quantification"],
+            "access": ["open", "open"],
+        }
+    )
+
+    result = load_tcga_expression_table(config, "now", metadata, root)
+
+    assert result.height == 1
+    assert result.row(0, named=True)["pipeline_workflow"] == "STAR - Counts"
+
+
 def test_load_tcga_expression_table_filters_star_summary_rows(tmp_path: Path) -> None:
     config = load_config("configs/project_config.yml")
     ingest_time = "2026-05-28T00:00:00Z"

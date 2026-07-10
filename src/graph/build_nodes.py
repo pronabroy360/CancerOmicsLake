@@ -80,18 +80,21 @@ def build_graph_nodes_table(
         else pl.DataFrame(schema={"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8})
     )
 
-    gene_nodes = (
-        genes.select(
-            [
-                pl.concat_str([pl.lit("GENE:"), pl.col("gene_symbol")]).alias("node_id"),
-                pl.lit("Gene").alias("node_label"),
-                pl.col("gene_symbol").alias("name"),
-                pl.lit("Unknown").alias("primary_site"),
-                pl.lit("TCGA").alias("source"),
-            ]
-        ).unique(subset=["node_id"])
-        if not genes.is_empty()
-        else pl.DataFrame(schema={"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8})
+    gene_symbols = pl.concat(
+        [
+            genes.select(pl.col("gene_symbol").cast(pl.Utf8)) if not genes.is_empty() else pl.DataFrame(schema={"gene_symbol": pl.Utf8}),
+            gtex.select(pl.col("gene_symbol").cast(pl.Utf8)) if not gtex.is_empty() else pl.DataFrame(schema={"gene_symbol": pl.Utf8}),
+        ],
+        how="vertical",
+    ).filter(pl.col("gene_symbol").is_not_null() & (pl.col("gene_symbol") != "")).unique()
+    gene_nodes = gene_symbols.select(
+        [
+            pl.concat_str([pl.lit("GENE:"), pl.col("gene_symbol")]).alias("node_id"),
+            pl.lit("Gene").alias("node_label"),
+            pl.col("gene_symbol").alias("name"),
+            pl.lit("Unknown").alias("primary_site"),
+            pl.lit("TCGA/GTEx").alias("source"),
+        ]
     )
 
     sample_nodes = (

@@ -22,7 +22,7 @@ from src.graph.graph_metrics import build_graph_node_metrics
 from src.ingestion.gdc_client import LiveGdcRequiredError, query_tcga_metadata_with_audit
 from src.ingestion.gdc_manifest_builder import write_manifest
 from src.ingestion.tcga_downloader import download_tcga_files
-from src.ingestion.gtex_downloader import gtex_metadata_stub
+from src.ingestion.gtex_downloader import download_gtex_files, gtex_metadata_stub
 from src.operations.demo_check import run_demo_check, write_demo_check_report
 from src.operations.dbt_runner import run_dbt_command
 from src.operations.ingestion_traceability import (
@@ -34,6 +34,7 @@ from src.operations.project_completion import (
     write_project_completion_report,
 )
 from src.processing.build_expression_table import with_log2_expression
+from src.processing.gtex_harmonizer import harmonize_gtex_gct_files
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
 from src.processing.normalize_gtex_expression import normalize_gtex_rows
 from src.quality.checks import (
@@ -147,6 +148,11 @@ def main() -> None:
     parser_silver = subparsers.add_parser("run-silver")
     parser_silver.add_argument("--config", required=True)
 
+    parser_gtex = subparsers.add_parser("run-gtex")
+    parser_gtex.add_argument("--config", required=True)
+    parser_gtex.add_argument("--force-download", action="store_true")
+    parser_gtex.add_argument("--sample-cap-per-tissue", type=int, default=None)
+
     parser_download = subparsers.add_parser("run-download-tcga")
     parser_download.add_argument("--config", required=True)
     parser_download.add_argument("--force-download", action="store_true")
@@ -236,6 +242,32 @@ def main() -> None:
             summary["mutations_count"],
         )
         print("Silver table build completed.")
+        return
+    if args.command == "run-gtex":
+        cfg = load_config(args.config)
+        download_summary = download_gtex_files(
+            config=cfg,
+            force_download=args.force_download,
+            run_mode=run_mode,
+        )
+        if download_summary["status"] == "skipped_metadata_only":
+            print("GTEx download skipped because metadata-only mode is enabled.")
+            return
+        if int(download_summary["failed_count"]) > 0:
+            raise RuntimeError(f"GTEx download failed for {download_summary['failed_count']} files")
+        harmonization = harmonize_gtex_gct_files(
+            config=cfg,
+            sample_cap_per_tissue=args.sample_cap_per_tissue,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "GTEx harmonized: tissues=%s samples=%s rows=%s output_bytes=%s",
+            harmonization["tissue_count"],
+            harmonization["selected_sample_count"],
+            harmonization["total_rows"],
+            harmonization["output_bytes"],
+        )
+        print("GTEx download and harmonization completed.")
         return
     if args.command == "run-download-tcga":
         cfg = load_config(args.config)

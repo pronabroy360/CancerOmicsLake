@@ -15,6 +15,12 @@ tcga_tumor as (
     count(distinct sample_id) as sample_count_tumor
   from {{ ref('silver_expression_tcga') }}
   where lower(sample_type) like '%tumor%'
+    and upper(expression_unit) = 'TPM'
+    and gene_id like 'ENSG%'
+    and (
+      lower(pipeline_workflow) like '%star%'
+      or lower(data_origin) like '%rna_seq.augmented_star_gene_counts%'
+    )
   group by 1, 2
 ),
 gtex_normal as (

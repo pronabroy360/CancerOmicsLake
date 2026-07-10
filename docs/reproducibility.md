@@ -136,6 +136,11 @@ Reports include `run_mode` where available:
 - TCGA files: `data/bronze/tcga/**/expression/*.tsv|*.csv|*.txt`
 - TCGA mutation files: `data/bronze/tcga/**/mutations/*.maf|*.tsv|*.csv|*.txt`
 - GTEx expression files: `data/bronze/gtex/expression/*.tsv|*.csv|*.txt`
+- Live GTEx V8 profile: `make run-gtex-live` downloads official tissue GCT files and open sample annotations,
+  verifies object size/MD5, selects 50 samples per tissue deterministically, validates tissue labels, and
+  atomically writes `data/silver/silver_expression_gtex.parquet`.
+- The live profile currently produces 11,240,000 rows from 200 samples. Re-running skips checksum-matching
+  source files and rebuilds the harmonized Parquet reproducibly.
 - Silver parquet tables: `data/silver/**`
 - Gold parquet tables: `data/gold/**`
 - Graph exports: `outputs/graph_exports/**`

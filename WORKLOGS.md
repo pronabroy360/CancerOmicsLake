@@ -352,3 +352,13 @@ Impact values:
 - Added graph-structure, row-integrity, and source-provenance components plus machine-readable caveats.
 - Added matching dbt model, independent CLI/Make target, API endpoint, Streamlit page, reviewer SQL, and demo-gate coverage.
 - Kept the model deliberately conservative: sparse GTEx normal coverage cannot produce high expression confidence.
+
+## 2026-07-10 - Live GTEx V8 Expansion And Harmonization
+
+- Added a config-driven open-access GTEx downloader with resumable streaming, remote size/MD5 verification, retry behavior, and audit reporting.
+- Downloaded official V8 TPM GCT files for breast, lung, transverse colon, and sigmoid colon plus the open sample-annotation file (approximately 178 MB).
+- Added streaming GCT-to-Parquet harmonization with deterministic 50-sample-per-tissue selection, tissue validation, Ensembl normalization, donor derivation, and atomic output replacement.
+- Built 11,240,000 real GTEx rows from 200 samples and 56,200 source genes per tissue in a 92 MB silver Parquet.
+- Tightened TCGA expression selection and fixed source-file metadata binding so retained expression rows are STAR TPM gene expression.
+- Expanded graph gene nodes to include the GTEx expression universe, resolving 208,296 edge/node integrity failures.
+- Rebuilt 108,012 tumor-vs-normal rows and restored quality status to `passed_with_warnings`.
