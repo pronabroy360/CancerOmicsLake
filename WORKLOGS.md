@@ -344,3 +344,11 @@ Impact values:
 - Added top graph hub nodes to the Knowledge Graph dashboard page.
 - Added reviewer SQL query `06_graph_node_metrics.sql` and updated graph/data-dictionary docs.
 - Verified `make run-graph-export`, `make run-demo-check`, and `make test` (`102 passed`).
+
+## 2026-07-10 - Provenance-Aware Evidence Confidence Layer
+
+- Added `gold_cancer_gene_evidence_confidence` to distinguish candidate importance from evidence reliability.
+- Calibrated mutation and expression support from contributing sample counts, with an explicit penalty and high-risk label for uncorrected TCGA-GTEx batch effects.
+- Added graph-structure, row-integrity, and source-provenance components plus machine-readable caveats.
+- Added matching dbt model, independent CLI/Make target, API endpoint, Streamlit page, reviewer SQL, and demo-gate coverage.
+- Kept the model deliberately conservative: sparse GTEx normal coverage cannot produce high expression confidence.

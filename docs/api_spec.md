@@ -13,6 +13,7 @@ Implemented endpoints:
 - `GET /mutations/gene/{gene_symbol}`
 - `GET /mutations/cancer/{project_id}`
 - `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
+- `GET /research/evidence-confidence?cancer_type=TCGA-BRCA&confidence_tier=moderate&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -100,3 +101,8 @@ Notes:
 - Endpoints read silver/gold parquet outputs and report files produced by the pipeline.
 - Fallback behavior exists for demo safety, but `make run-demo-check-strict` rejects stub/demo-origin rows.
 - Reviewer-safe workflow: run `make run-demo` or `make run-demo-aggressive`, then start `make run-api`.
+
+`GET /research/evidence-confidence` accepts `cancer_type`, `gene_query`, `confidence_tier`,
+`min_confidence`, and `limit`. It returns calibrated component scores, an overall tier,
+batch-effect risk, and machine-readable caveats. Confidence measures evidence reliability;
+it does not replace the separate candidate priority score and is not clinical validation.

@@ -59,6 +59,27 @@ models:
         tests:
           - not_null
 
+  - name: gold_cancer_gene_evidence_confidence
+    columns:
+      - name: cancer_type
+        tests:
+          - not_null
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: overall_confidence
+        tests:
+          - not_null
+      - name: confidence_tier
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['high', 'moderate', 'limited', 'low']
+      - name: batch_effect_risk
+        tests:
+          - not_null
+
   - name: gold_graph_nodes
     columns:
       - name: node_id

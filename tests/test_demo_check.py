@@ -133,6 +133,14 @@ def _write_demo_fixture(root: Path, *, tcga_origin: str = "data/bronze/tcga/TCGA
             "degree_rank": [1, 2],
         }
     ).write_parquet(gold / "gold_graph_node_metrics.parquet")
+    pl.DataFrame(
+        {
+            "cancer_type": ["TCGA-BRCA"],
+            "gene_symbol": ["TP53"],
+            "overall_confidence": [0.5],
+            "confidence_tier": ["moderate"],
+        }
+    ).write_parquet(gold / "gold_cancer_gene_evidence_confidence.parquet")
 
     quality = {
         "status": "passed_with_warnings",

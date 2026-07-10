@@ -13,6 +13,7 @@ from src.common.logging import configure_logging, get_logger
 from src.common.paths import ensure_base_dirs
 from src.common.reporting import inject_report_context, resolve_run_mode
 from src.analytics.build_gold_tables import build_gold_cohort_summary
+from src.analytics.evidence_confidence import build_evidence_confidence
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
@@ -168,6 +169,9 @@ def main() -> None:
     parser_graph_metrics = subparsers.add_parser("run-graph-metrics")
     parser_graph_metrics.add_argument("--config", required=True)
 
+    parser_evidence_confidence = subparsers.add_parser("run-evidence-confidence")
+    parser_evidence_confidence.add_argument("--config", required=True)
+
     parser_dbt_run = subparsers.add_parser("run-dbt")
     parser_dbt_run.add_argument("--config", required=True)
     parser_dbt_run.add_argument("--mode", choices=["auto", "local", "docker"], default="auto")
@@ -311,6 +315,7 @@ def main() -> None:
         neo4j_summary = export_neo4j_from_gold_graph_tables()
         graphify_summary = export_graphify_from_gold_graph_tables()
         metrics_summary = build_graph_node_metrics()
+        confidence_summary = build_evidence_confidence()
         logger = get_logger("canceromicslake")
         logger.info(
             "Neo4j export: nodes=%s edges=%s dir=outputs/graph_exports/neo4j",
@@ -333,18 +338,38 @@ def main() -> None:
             metrics_summary["metric_rows"],
             metrics_summary["report_path"],
         )
+        logger.info(
+            "Evidence confidence: rows=%s high_confidence=%s path=%s",
+            confidence_summary["row_count"],
+            confidence_summary["high_confidence_count"],
+            confidence_summary["path"],
+        )
         print("Graph export completed.")
         return
     if args.command == "run-graph-metrics":
         load_config(args.config)
         metrics_summary = build_graph_node_metrics()
+        confidence_summary = build_evidence_confidence()
         logger = get_logger("canceromicslake")
         logger.info(
             "Graph metrics written: rows=%s report=%s",
             metrics_summary["metric_rows"],
             metrics_summary["report_path"],
         )
+        logger.info("Evidence confidence rows=%s", confidence_summary["row_count"])
         print("Graph metrics completed.")
+        return
+    if args.command == "run-evidence-confidence":
+        load_config(args.config)
+        confidence_summary = build_evidence_confidence()
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Evidence confidence written: rows=%s high_confidence=%s path=%s",
+            confidence_summary["row_count"],
+            confidence_summary["high_confidence_count"],
+            confidence_summary["path"],
+        )
+        print("Evidence confidence build completed.")
         return
     if args.command == "run-dbt":
         load_config(args.config)

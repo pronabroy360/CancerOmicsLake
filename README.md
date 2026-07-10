@@ -14,7 +14,7 @@ Implemented so far:
 - File-based TCGA/GTEx expression loaders with fallback behavior
 - Silver parquet outputs for projects, patients, samples, file manifest, and expression tables
 - Mutation MAF parsing and mutation-frequency gold marts
-- Gold cohort, expression, tumor-vs-normal, mutation, candidate gene-priority, and graph marts
+- Gold cohort, expression, tumor-vs-normal, mutation, candidate-priority, evidence-confidence, and graph marts
 - Quality report generation
 - Graphify and Neo4j CSV graph exports
 - Graph node-degree metrics and graph metrics report
@@ -87,6 +87,9 @@ Research surface:
 
 - API: `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
 - Dashboard: `Candidate Gene Priority` page for filtering and exporting ranked candidate cancer-gene pairs.
+- API: `GET /research/evidence-confidence?cancer_type=TCGA-BRCA&confidence_tier=moderate&limit=20`
+- Dashboard: `Evidence Confidence` page separating sample support, graph structure, integrity, provenance, and batch-effect caveats.
+- Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:
 
@@ -140,8 +143,10 @@ make run-demo-check-strict
 - Which genes are commonly mutated in TCGA-LUAD?
 - Which cancer-gene relationships are exported to the graph layer?
 - What percentage of source files and table rows passed quality checks?
+- Which high-priority cancer-gene candidates are supported by sufficiently reliable and traceable evidence?
 
 See `docs/sample_queries.md` and `outputs/sample_queries/` for reviewer-friendly SQL examples.
+The confidence model and pre-publication validation plan are documented in `docs/evidence_confidence_methodology.md`.
 
 ## Ingestion Traceability
 

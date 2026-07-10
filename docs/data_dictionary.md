@@ -169,6 +169,22 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `priority_tier`: `high`, `medium`, or `low`.
 - `evidence_summary`: compact score provenance string.
 
+### `gold_cancer_gene_evidence_confidence.parquet`
+
+- `cancer_type`, `gene_symbol`: cancer-gene pair.
+- `priority_score`, `priority_tier`: candidate importance from the upstream prioritization mart.
+- `mutation_confidence`: support calibration from profiled and mutated sample counts.
+- `expression_confidence`: tumor/normal sample support with an explicit penalty for uncorrected TCGA-GTEx batch risk.
+- `graph_confidence`: pair-edge presence and gene graph-degree support; this is structural evidence, not independent biological validation.
+- `quality_confidence`: row-level integrity score for frequencies, denominators, and expression counts.
+- `traceability_confidence`: fraction of contributing source rows with non-stub provenance.
+- `biological_confidence`: available-modality confidence before structural and operational signals.
+- `overall_confidence`: bounded composite confidence score from biological, graph, quality, and provenance components.
+- `confidence_tier`: `high`, `moderate`, `limited`, or `low`.
+- `batch_effect_risk`: `high` for cross-study expression comparisons, otherwise `not_applicable`.
+- `quality_status`, `traceability_status`: human-readable component outcomes.
+- `caveat_summary`: semicolon-delimited machine-readable limitations for the pair.
+
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.

@@ -10,6 +10,7 @@ from typing import Any
 from prefect import flow, task
 
 from src.analytics.build_gold_tables import build_gold_cohort_summary
+from src.analytics.evidence_confidence import build_evidence_confidence
 from src.common.config import AppConfig, load_config
 from src.common.reporting import append_run_history, inject_report_context
 from src.ingestion.gdc_client import query_tcga_metadata_with_audit
@@ -125,7 +126,8 @@ def _graph_export_impl() -> dict[str, object]:
     neo4j = export_neo4j_from_gold_graph_tables()
     graphify = export_graphify_from_gold_graph_tables()
     metrics = build_graph_node_metrics()
-    return {"neo4j": neo4j, "graphify": graphify, "metrics": metrics}
+    confidence = build_evidence_confidence()
+    return {"neo4j": neo4j, "graphify": graphify, "metrics": metrics, "confidence": confidence}
 
 
 @task

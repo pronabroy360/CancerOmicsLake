@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from src.analytics.candidate_priority import candidate_gene_priority
+from src.analytics.evidence_confidence import evidence_confidence
 from src.analytics.expression_summary import expression_by_gene
 from src.analytics.gene_search import search_genes
 from src.analytics.metadata import metadata_projects as metadata_projects_data
@@ -69,6 +70,23 @@ def research_candidate_genes(
         gene_query=gene_query,
         tier=tier,
         min_priority_score=min_priority_score,
+        limit=limit,
+    )
+
+
+@app.get("/research/evidence-confidence")
+def research_evidence_confidence(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    confidence_tier: str | None = None,
+    min_confidence: float | None = None,
+    limit: int = 50,
+) -> dict[str, object]:
+    return evidence_confidence(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        confidence_tier=confidence_tier,
+        min_confidence=min_confidence,
         limit=limit,
     )
 

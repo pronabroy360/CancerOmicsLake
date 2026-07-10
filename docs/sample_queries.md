@@ -141,6 +141,26 @@ ORDER BY total_degree DESC, weighted_degree DESC
 LIMIT 25;
 ```
 
+## Evidence-Calibrated Candidate Genes
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    priority_score,
+    overall_confidence,
+    confidence_tier,
+    batch_effect_risk,
+    caveat_summary
+FROM read_parquet('data/gold/gold_cancer_gene_evidence_confidence.parquet')
+WHERE confidence_tier IN ('high', 'moderate')
+ORDER BY overall_confidence DESC, priority_score DESC
+LIMIT 50;
+```
+
+This mart deliberately separates candidate importance from evidence reliability. Cross-study
+TCGA-GTEx expression evidence remains batch-effect limited until a harmonized analysis is added.
+
 ## Quality Checks That Need Attention
 
 ```sql

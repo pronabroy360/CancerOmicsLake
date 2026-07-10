@@ -19,6 +19,7 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "make run-dashboard" in readme
     assert "make run-graph-metrics" in readme
     assert "/research/candidate-genes" in readme
+    assert "/research/evidence-confidence" in readme
     assert "Candidate Gene Priority" in readme
     assert "daily" in readme.lower()
     assert "Graphify and Neo4j" in readme
@@ -51,6 +52,7 @@ def test_sample_queries_cover_core_marts() -> None:
     assert "gold_graph_edges" in sample_queries
     assert "gold_candidate_gene_priority" in sample_queries
     assert "gold_graph_node_metrics" in sample_queries
+    assert "gold_cancer_gene_evidence_confidence" in sample_queries
 
 
 def test_publish_safe_sql_query_files_exist() -> None:
@@ -62,10 +64,14 @@ def test_publish_safe_sql_query_files_exist() -> None:
     assert (query_dir / "04_graph_edges.sql").exists()
     assert (query_dir / "05_candidate_gene_priority.sql").exists()
     assert (query_dir / "06_graph_node_metrics.sql").exists()
+    assert (query_dir / "07_evidence_confidence.sql").exists()
 
 
 def test_research_api_and_dashboard_docs_are_packaged() -> None:
     api_spec = read_text("docs/api_spec.md")
 
     assert "/research/candidate-genes" in api_spec
+    assert "/research/evidence-confidence" in api_spec
     assert (ROOT / "dashboard" / "pages" / "7_Candidate_Gene_Priority.py").exists()
+    assert (ROOT / "dashboard" / "pages" / "8_Evidence_Confidence.py").exists()
+    assert (ROOT / "docs" / "evidence_confidence_methodology.md").exists()

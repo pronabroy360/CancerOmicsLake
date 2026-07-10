@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-ci-smoke run-download-tcga-medium run-download-tcga-aggressive run-silver run-gold run-quality run-graph-export run-graph-metrics run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-ci-smoke run-download-tcga-medium run-download-tcga-aggressive run-silver run-gold run-quality run-graph-export run-graph-metrics run-evidence-confidence run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -53,6 +53,9 @@ run-graph-export:
 
 run-graph-metrics:
 	$(PYTHON) -m src.main run-graph-metrics --config configs/project_config.yml
+
+run-evidence-confidence:
+	$(PYTHON) -m src.main run-evidence-confidence --config configs/project_config.yml
 
 run-ingestion-traceability:
 	$(PYTHON) -m src.main run-ingestion-traceability --config configs/project_config.yml

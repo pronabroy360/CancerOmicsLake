@@ -234,6 +234,10 @@ def run_demo_check(
         _parquet_rows_check(Path("data/gold/gold_graph_nodes.parquet"), "gold_graph_nodes_nonzero"),
         _parquet_rows_check(Path("data/gold/gold_graph_edges.parquet"), "gold_graph_edges_nonzero"),
         _parquet_rows_check(Path("data/gold/gold_graph_node_metrics.parquet"), "gold_graph_node_metrics_nonzero"),
+        _parquet_rows_check(
+            Path("data/gold/gold_cancer_gene_evidence_confidence.parquet"),
+            "gold_evidence_confidence_nonzero",
+        ),
         _json_report_check(Path("outputs/reports/silver_data_quality_report.json"), "silver_quality_report_passing"),
         _json_report_check(Path("outputs/reports/graph_metrics_report.json"), "graph_metrics_report_passing", {"passed"}),
         _csv_rows_check(Path("outputs/graph_exports/neo4j/nodes.csv"), "neo4j_nodes_export_nonzero"),

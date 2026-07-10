@@ -8,6 +8,7 @@ import polars as pl
 from src.analytics.dashboard_data import (
     candidate_priority_data,
     cohort_distribution_data,
+    evidence_confidence_data,
     graph_explorer_data,
     graph_node_metrics_data,
     overview_metrics,
@@ -186,6 +187,28 @@ def test_graph_node_metrics_data_returns_top_nodes(tmp_path: Path) -> None:
 
     assert df.height == 1
     assert df.row(0, named=True)["node_id"] == "GENE:TP53"
+
+
+def test_evidence_confidence_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.evidence_confidence import CONFIDENCE_SCHEMA
+
+    path = tmp_path / "confidence.parquet"
+    row = {column: None for column in CONFIDENCE_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "gene_symbol": "TP53",
+            "overall_confidence": 0.8,
+            "priority_score": 0.7,
+            "confidence_tier": "high",
+        }
+    )
+    pl.DataFrame([row], schema=CONFIDENCE_SCHEMA).write_parquet(path)
+
+    result = evidence_confidence_data(cancer_type="TCGA-BRCA", confidence_tier="high", gold_path=path)
+
+    assert result.height == 1
+    assert result.row(0, named=True)["gene_symbol"] == "TP53"
 
 
 def test_quality_report_data_builds_status_counts(tmp_path: Path) -> None:
