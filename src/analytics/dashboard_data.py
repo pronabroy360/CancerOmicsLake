@@ -11,6 +11,7 @@ from src.analytics.batch_effect_sensitivity import (
 )
 from src.analytics.candidate_priority import candidate_priority_dataframe
 from src.analytics.evidence_confidence import CONFIDENCE_SCHEMA, evidence_confidence
+from src.analytics.reference_triangulation import REFERENCE_TRIANGULATION_SCHEMA, reference_triangulation
 from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene
 from src.analytics.tumor_vs_normal import tumor_vs_normal_by_gene
@@ -240,6 +241,28 @@ def batch_effect_sensitivity_data(
     )
     rows = payload.get("rows", [])
     return pl.DataFrame(rows) if rows else pl.DataFrame(schema=BATCH_EFFECT_SENSITIVITY_SCHEMA)
+
+
+def reference_triangulation_data(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    concordance: str | None = None,
+    support_tier: str | None = None,
+    min_stability: float | None = None,
+    limit: int = 50,
+    gold_path: str | Path = "data/gold/gold_reference_triangulation.parquet",
+) -> pl.DataFrame:
+    payload = reference_triangulation(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        concordance=concordance,
+        support_tier=support_tier,
+        min_stability=min_stability,
+        limit=limit,
+        gold_path=gold_path,
+    )
+    rows = payload.get("rows", [])
+    return pl.DataFrame(rows) if rows else pl.DataFrame(schema=REFERENCE_TRIANGULATION_SCHEMA)
 
 
 def graph_explorer_data(

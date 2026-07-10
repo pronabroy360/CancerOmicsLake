@@ -21,6 +21,8 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "/research/candidate-genes" in readme
     assert "/research/evidence-confidence" in readme
     assert "/research/batch-effect-sensitivity" in readme
+    assert "/research/reference-triangulation" in readme
+    assert "make run-download-tcga-normals" in readme
     assert "Candidate Gene Priority" in readme
     assert "Batch-Effect Sensitivity" in readme
     assert "daily" in readme.lower()
@@ -57,6 +59,7 @@ def test_sample_queries_cover_core_marts() -> None:
     assert "gold_graph_node_metrics" in sample_queries
     assert "gold_cancer_gene_evidence_confidence" in sample_queries
     assert "gold_batch_effect_sensitivity" in sample_queries
+    assert "gold_reference_triangulation" in sample_queries
 
 
 def test_publish_safe_sql_query_files_exist() -> None:
@@ -70,6 +73,7 @@ def test_publish_safe_sql_query_files_exist() -> None:
     assert (query_dir / "06_graph_node_metrics.sql").exists()
     assert (query_dir / "07_evidence_confidence.sql").exists()
     assert (query_dir / "08_batch_effect_sensitivity.sql").exists()
+    assert (query_dir / "09_reference_triangulation.sql").exists()
 
 
 def test_research_api_and_dashboard_docs_are_packaged() -> None:
@@ -78,8 +82,11 @@ def test_research_api_and_dashboard_docs_are_packaged() -> None:
     assert "/research/candidate-genes" in api_spec
     assert "/research/evidence-confidence" in api_spec
     assert "/research/batch-effect-sensitivity" in api_spec
+    assert "/research/reference-triangulation" in api_spec
     assert (ROOT / "dashboard" / "pages" / "7_Candidate_Gene_Priority.py").exists()
     assert (ROOT / "dashboard" / "pages" / "8_Evidence_Confidence.py").exists()
     assert (ROOT / "dashboard" / "pages" / "9_Batch_Effect_Sensitivity.py").exists()
+    assert (ROOT / "dashboard" / "pages" / "10_Reference_Triangulation.py").exists()
     assert (ROOT / "docs" / "evidence_confidence_methodology.md").exists()
     assert (ROOT / "docs" / "batch_effect_sensitivity.md").exists()
+    assert (ROOT / "docs" / "reference_triangulation.md").exists()

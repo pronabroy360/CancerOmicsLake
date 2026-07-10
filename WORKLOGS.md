@@ -394,3 +394,15 @@ Impact values:
 - Standardized tied expression values to average-rank percentiles in Python and dbt; a dbt parity test prevents minimum-rank drift.
 - Real-data result: 81,908 concordant, 26,104 inconclusive, and 769 not-applicable pairs; high-confidence candidates reduced from 51 to 42.
 - Verified `make test` (`122 passed`), dbt run (`23 models`), dbt test (`64 tests`), quality (`34 checks`), and strict demo (`27 checks`).
+
+## 2026-07-10 - Adjacent-Normal Reference Triangulation
+
+- Added a dedicated GDC STAR expression query slice for `Solid Tissue Normal` and an independent deterministic `expression_normal` download cap.
+- Added `make run-download-tcga-normals`, preserving open-access enforcement, retries, checksums, and existing-file skips.
+- Ingested high-support adjacent-normal bridge cohorts: 60 BRCA, 59 LUAD, and 41 COAD samples; TCGA expression expanded to 27,054,360 silver rows.
+- Added `gold_reference_triangulation` across TCGA tumor, TCGA adjacent normal, and GTEx healthy normal references.
+- Added direction concordance, normal-reference shift, sample-support tiers, and a conservative reference-stability calibration.
+- Real-data classifications across 108,012 rows: 85,965 concordant stable, 2,569 concordant down, 2,238 concordant up, 16,589 reference sensitive, and 651 directionally discordant.
+- Added matching dbt model/contracts, quality checks, API endpoint, Streamlit page, methodology, data dictionary, and reviewer SQL.
+- Optimized dbt to reuse `gold_tumor_vs_normal_expression`, avoiding concurrent duplicate scans that initially exceeded Docker memory.
+- Python and dbt concordance counts match exactly. Verified pytest (`129 tests`), dbt run (`24 models`), dbt test (`71 tests`), quality (`37 checks`), and strict demo (`27 checks`).

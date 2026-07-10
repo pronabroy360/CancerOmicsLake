@@ -74,6 +74,30 @@ models:
         tests:
           - not_null
 
+  - name: gold_reference_triangulation
+    columns:
+      - name: cancer_type
+        tests:
+          - not_null
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: reference_concordance
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['concordant_up', 'concordant_down', 'concordant_stable', 'reference_sensitive', 'discordant']
+      - name: tcga_normal_support_tier
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['high', 'moderate', 'limited']
+      - name: reference_stability_score
+        tests:
+          - not_null
+
   - name: gold_candidate_gene_priority
     columns:
       - name: cancer_type

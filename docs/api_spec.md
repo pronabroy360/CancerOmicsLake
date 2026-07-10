@@ -15,6 +15,7 @@ Implemented endpoints:
 - `GET /research/candidate-genes?cancer_type=TCGA-BRCA&tier=high&limit=20`
 - `GET /research/evidence-confidence?cancer_type=TCGA-BRCA&confidence_tier=moderate&limit=20`
 - `GET /research/batch-effect-sensitivity?cancer_type=TCGA-BRCA&support_tier=high&direction=rank_up&limit=20`
+- `GET /research/reference-triangulation?cancer_type=TCGA-BRCA&concordance=concordant_up&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -112,3 +113,7 @@ it does not replace the separate candidate priority score and is not clinical va
 `direction`, `min_abs_percentile_delta`, and `limit`. It returns within-cohort percentile
 and robust z-score deltas for TCGA tumor versus GTEx normal expression. This is a sensitivity
 analysis that reduces scale dependence; it is not full batch correction.
+
+`GET /research/reference-triangulation` accepts `cancer_type`, `gene_query`, `concordance`,
+`support_tier`, `min_stability`, and `limit`. It compares TCGA tumor direction using TCGA
+adjacent-normal and GTEx normal references, while preserving reference-shift and support caveats.

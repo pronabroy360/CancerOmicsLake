@@ -184,6 +184,26 @@ LIMIT 50;
 This mart compares within-cohort expression ranks and robust z-scores. It is a sensitivity analysis,
 not a substitute for full batch correction.
 
+## Reference-Triangulated Candidate Stability
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    log2_fc_tumor_vs_tcga_normal,
+    log2_fc_tumor_vs_gtex,
+    log2_fc_tcga_normal_vs_gtex,
+    reference_concordance,
+    tcga_normal_support_tier,
+    reference_stability_score
+FROM read_parquet('data/gold/gold_reference_triangulation.parquet')
+WHERE reference_concordance IN ('concordant_up', 'concordant_down')
+ORDER BY reference_stability_score DESC, reference_effect_delta ASC
+LIMIT 50;
+```
+
+This mart uses adjacent normal as a bridge reference. It does not treat adjacent normal as healthy tissue.
+
 ## Quality Checks That Need Attention
 
 ```sql

@@ -100,7 +100,7 @@ def _canonicalize_caps(raw_caps: dict[str, dict[str, int]] | None) -> dict[str, 
         entry: dict[str, int] = {}
         for modality, cap in cap_map.items():
             key = str(modality).strip().lower()
-            if key not in {"expression", "mutations"}:
+            if key not in {"expression", "expression_normal", "mutations"}:
                 continue
             try:
                 parsed = int(cap)
@@ -120,6 +120,15 @@ def _count_inc(store: dict[str, int], key: str) -> None:
 
 def _build_project_subdir_key(project_id: str, subdir: str) -> str:
     return f"{project_id}|{subdir}"
+
+
+def _selection_bucket(row: dict[str, str], caps: dict[str, dict[str, int]]) -> str:
+    subdir = _infer_data_subdir(row.get("data_category", ""))
+    project_caps = caps.get(row.get("project_id", ""), {})
+    sample_type = row.get("sample_type", "").strip().lower()
+    if subdir == "expression" and "expression_normal" in project_caps and sample_type == "solid tissue normal":
+        return "expression_normal"
+    return subdir
 
 
 def _download_one_row(
@@ -272,11 +281,11 @@ def download_tcga_files(
     selected_rows: list[dict[str, str]] = []
     for row in candidate_rows:
         project_id = row.get("project_id", "")
-        subdir = _infer_data_subdir(row.get("data_category", ""))
-        key = _build_project_subdir_key(project_id, subdir)
+        bucket = _selection_bucket(row, effective_caps)
+        key = _build_project_subdir_key(project_id, bucket)
         _count_inc(candidate_counts, key)
 
-        cap_for_modality = effective_caps.get(project_id, {}).get(subdir)
+        cap_for_modality = effective_caps.get(project_id, {}).get(bucket)
         if cap_for_modality is not None and selected_counts.get(key, 0) >= cap_for_modality:
             continue
         _count_inc(selected_counts, key)
@@ -374,6 +383,8 @@ def download_tcga_files(
             "file_id": row.get("file_id", ""),
             "file_name": row.get("file_name", ""),
             "data_subdir": _infer_data_subdir(row.get("data_category", "")),
+            "selection_bucket": _selection_bucket(row, effective_caps),
+            "sample_type": row.get("sample_type", ""),
             "data_category": row.get("data_category", ""),
             "data_type": row.get("data_type", ""),
             "md5sum": row.get("md5sum", ""),

@@ -377,6 +377,17 @@ def run_silver_quality_checks(
             "batch_effect_risk": pl.Utf8,
         },
     )
+    gold_reference_triangulation = _read_or_empty(
+        gold_root / "gold_reference_triangulation.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "sample_count_tcga_normal": pl.Int64,
+            "reference_concordance": pl.Utf8,
+            "tcga_normal_support_tier": pl.Utf8,
+            "reference_stability_score": pl.Float64,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -522,6 +533,34 @@ def run_silver_quality_checks(
             )
             | ~pl.col("batch_effect_risk").is_in(["high", "elevated", "not_applicable"])
         ).height
+    missing_gold_triangulation_cols = _missing_columns(
+        gold_reference_triangulation,
+        [
+            "cancer_type",
+            "gene_symbol",
+            "sample_count_tcga_normal",
+            "reference_concordance",
+            "tcga_normal_support_tier",
+            "reference_stability_score",
+        ],
+    )
+    invalid_gold_triangulation_values = 0
+    triangulation_min_tcga_normal_support = 0
+    if not gold_reference_triangulation.is_empty() and {
+        "reference_concordance",
+        "tcga_normal_support_tier",
+        "reference_stability_score",
+    }.issubset(gold_reference_triangulation.columns):
+        invalid_gold_triangulation_values = gold_reference_triangulation.filter(
+            ~pl.col("reference_concordance").is_in(
+                ["concordant_up", "concordant_down", "concordant_stable", "reference_sensitive", "discordant"]
+            )
+            | ~pl.col("tcga_normal_support_tier").is_in(["high", "moderate", "limited"])
+            | ~pl.col("reference_stability_score").is_between(0.0, 1.0)
+        ).height
+        triangulation_min_tcga_normal_support = int(
+            gold_reference_triangulation.get_column("sample_count_tcga_normal").min() or 0
+        )
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
         gold_graph_edges,
@@ -711,6 +750,36 @@ def run_silver_quality_checks(
             check_name="gold_evidence_confidence_batch_values_supported",
             status="passed" if invalid_gold_confidence_values == 0 else "failed",
             failed_rows=int(invalid_gold_confidence_values),
+        ),
+        CheckResult(
+            check_name="gold_reference_triangulation_schema_columns_present",
+            status=(
+                "passed"
+                if (gold_reference_triangulation.is_empty() or missing_gold_triangulation_cols == 0)
+                else "failed"
+            ),
+            failed_rows=int(missing_gold_triangulation_cols),
+        ),
+        CheckResult(
+            check_name="gold_reference_triangulation_values_supported",
+            status="passed" if invalid_gold_triangulation_values == 0 else "failed",
+            failed_rows=int(invalid_gold_triangulation_values),
+        ),
+        CheckResult(
+            check_name="gold_reference_triangulation_min_tcga_normal_support",
+            status=(
+                "passed"
+                if gold_reference_triangulation.is_empty() or triangulation_min_tcga_normal_support >= 30
+                else "warning"
+            ),
+            failed_rows=(
+                0
+                if gold_reference_triangulation.is_empty() or triangulation_min_tcga_normal_support >= 30
+                else 30 - triangulation_min_tcga_normal_support
+            ),
+            metric_name="minimum_tcga_adjacent_normal_samples",
+            metric_value=float(triangulation_min_tcga_normal_support),
+            threshold=30.0,
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",

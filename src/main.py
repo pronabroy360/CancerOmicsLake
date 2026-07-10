@@ -160,6 +160,7 @@ def main() -> None:
     parser_download.add_argument("--data-subdirs", default=None, help="comma-separated: expression,mutations,clinical,biospecimen,other")
     parser_download.add_argument("--expression-cap-per-project", type=int, default=None)
     parser_download.add_argument("--mutation-cap-per-project", type=int, default=None)
+    parser_download.add_argument("--normal-expression-cap-per-project", type=int, default=None)
     parser_download.add_argument("--use-medium-cap-profile", action="store_true")
     parser_download.add_argument("--use-aggressive-cap-profile", action="store_true")
     parser_download.add_argument("--download-workers", type=int, default=1)
@@ -278,15 +279,21 @@ def main() -> None:
             subdirs = {x.strip().lower() for x in args.data_subdirs.split(",") if x.strip()}
         cap_expression = args.expression_cap_per_project
         cap_mutation = args.mutation_cap_per_project
+        cap_normal_expression = args.normal_expression_cap_per_project
         if args.use_medium_cap_profile:
             cap_expression, cap_mutation = resolve_cap_profile("medium")
         if args.use_aggressive_cap_profile:
             cap_expression, cap_mutation = resolve_cap_profile("aggressive")
         caps = None
-        if cap_expression is not None or cap_mutation is not None:
+        if cap_expression is not None or cap_mutation is not None or cap_normal_expression is not None:
             caps = {
                 project_id: {
                     **({"expression": cap_expression} if cap_expression is not None else {}),
+                    **(
+                        {"expression_normal": cap_normal_expression}
+                        if cap_normal_expression is not None
+                        else {}
+                    ),
                     **({"mutations": cap_mutation} if cap_mutation is not None else {}),
                 }
                 for project_id in cfg.tcga.projects
@@ -320,7 +327,7 @@ def main() -> None:
         logger = get_logger("canceromicslake")
         logger.info("Gold cohort summary written to %s", summary["gold_cohort_summary_path"])
         logger.info(
-            "Gold summary counts: projects=%s patients=%s samples=%s files=%s gtex_expr_samples=%s mutation_records=%s mutation_gene_rows=%s tumor_vs_normal_rows=%s batch_effect_sensitivity_rows=%s candidate_priority_rows=%s",
+            "Gold summary counts: projects=%s patients=%s samples=%s files=%s gtex_expr_samples=%s mutation_records=%s mutation_gene_rows=%s tumor_vs_normal_rows=%s batch_effect_sensitivity_rows=%s reference_triangulation_rows=%s candidate_priority_rows=%s",
             summary["tcga_project_count"],
             summary["tcga_patient_count"],
             summary["tcga_sample_count"],
@@ -330,6 +337,7 @@ def main() -> None:
             summary["mutation_gene_rows"],
             summary["tumor_vs_normal_rows"],
             summary["batch_effect_sensitivity_rows"],
+            summary["reference_triangulation_rows"],
             summary["candidate_gene_priority_rows"],
         )
         logger.info("Graph tables: nodes=%s (%s) edges=%s (%s)", node_summary["count"], node_summary["path"], edge_summary["count"], edge_summary["path"])

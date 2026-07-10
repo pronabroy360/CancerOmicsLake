@@ -10,6 +10,7 @@ from src.analytics.gene_search import search_genes
 from src.analytics.metadata import metadata_projects as metadata_projects_data
 from src.analytics.metadata import metadata_samples as metadata_samples_data
 from src.analytics.mutation_frequency import mutation_frequency_by_cancer, mutation_frequency_by_gene
+from src.analytics.reference_triangulation import reference_triangulation
 from src.analytics.quality_latest import quality_latest as quality_latest_payload
 from src.analytics.tumor_vs_normal import tumor_vs_normal_by_gene
 from src.graph.build_edges import load_graph_edges
@@ -109,6 +110,25 @@ def research_batch_effect_sensitivity(
         support_tier=support_tier,
         direction=direction,
         min_abs_percentile_delta=min_abs_percentile_delta,
+        limit=limit,
+    )
+
+
+@app.get("/research/reference-triangulation")
+def research_reference_triangulation(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    concordance: str | None = None,
+    support_tier: str | None = None,
+    min_stability: float | None = None,
+    limit: int = 50,
+) -> dict[str, object]:
+    return reference_triangulation(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        concordance=concordance,
+        support_tier=support_tier,
+        min_stability=min_stability,
         limit=limit,
     )
 

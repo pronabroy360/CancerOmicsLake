@@ -344,6 +344,70 @@ def test_download_tcga_files_respects_project_modality_caps_deterministically(tm
     assert not (tmp_path / "bronze" / "tcga" / "TCGA-BRCA" / "mutations" / "mut-2.maf").exists()
 
 
+def test_download_tcga_files_reserves_independent_adjacent_normal_cap(tmp_path: Path, monkeypatch) -> None:
+    cfg = load_config("configs/project_config.yml")
+    cfg.tcga.metadata_only = False
+    cfg.gdc_api.retry_count = 0
+    metadata = tmp_path / "tcga_metadata_live.csv"
+    payload = b"ok"
+    md5 = "444bcb3a3fcf8389296c49467f27e1d6"
+    base = {
+        "project_id": "TCGA-BRCA",
+        "case_id": "case-1",
+        "submitter_id": "sub-1",
+        "primary_site": "Breast",
+        "disease_type": "Adeno",
+        "data_category": "Transcriptome Profiling",
+        "data_type": "Gene Expression Quantification",
+        "experimental_strategy": "RNA-Seq",
+        "workflow_type": "STAR - Counts",
+        "access": "open",
+        "file_size": str(len(payload)),
+        "md5sum": md5,
+    }
+    rows = [
+        {
+            **base,
+            "sample_id": f"tumor-{idx}",
+            "sample_type": "Primary Tumor",
+            "file_id": f"tumor-{idx}",
+            "file_name": f"tumor-{idx}.tsv",
+        }
+        for idx in range(3)
+    ] + [
+        {
+            **base,
+            "sample_id": f"normal-{idx}",
+            "sample_type": "Solid Tissue Normal",
+            "file_id": f"normal-{idx}",
+            "file_name": f"normal-{idx}.tsv",
+        }
+        for idx in range(3)
+    ]
+    _write_metadata_csv(metadata, rows)
+
+    def fake_fetch(url: str, destination: Path, timeout_sec: int) -> None:  # noqa: ARG001
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(payload)
+
+    monkeypatch.setattr(tcga_downloader, "_fetch_to_path", fake_fetch)
+    summary = tcga_downloader.download_tcga_files(
+        config=cfg,
+        metadata_csv_path=metadata,
+        bronze_tcga_root=tmp_path / "bronze" / "tcga",
+        report_path=tmp_path / "report.json",
+        retry_log_path=tmp_path / "retry.json",
+        project_modality_caps={"TCGA-BRCA": {"expression": 1, "expression_normal": 2}},
+    )
+
+    assert summary["selected_candidates"] == 3
+    assert summary["selected_counts_by_project_subdir"]["TCGA-BRCA|expression"] == 1
+    assert summary["selected_counts_by_project_subdir"]["TCGA-BRCA|expression_normal"] == 2
+    normal_files = [item for item in summary["selected_files"] if item["selection_bucket"] == "expression_normal"]
+    assert len(normal_files) == 2
+    assert all(item["sample_type"] == "Solid Tissue Normal" for item in normal_files)
+
+
 def test_download_tcga_files_excludes_mirna_from_gene_expression_cap(tmp_path: Path, monkeypatch) -> None:
     cfg = load_config("configs/project_config.yml")
     cfg.tcga.metadata_only = False

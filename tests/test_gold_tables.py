@@ -112,6 +112,7 @@ def test_build_gold_cohort_summary_from_silver(tmp_path: Path) -> None:
     assert (gold_dir / "gold_mutation_frequency_by_cancer.parquet").exists()
     assert (gold_dir / "gold_tumor_vs_normal_expression.parquet").exists()
     assert (gold_dir / "gold_batch_effect_sensitivity.parquet").exists()
+    assert (gold_dir / "gold_reference_triangulation.parquet").exists()
     assert (gold_dir / "gold_candidate_gene_priority.parquet").exists()
 
 

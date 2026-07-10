@@ -210,6 +210,22 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `quality_status`, `traceability_status`: human-readable component outcomes.
 - `caveat_summary`: semicolon-delimited machine-readable limitations for the pair.
 
+### `gold_reference_triangulation.parquet`
+
+- `cancer_type`, `gene_symbol`: cancer-gene pair.
+- `median_tcga_tumor_expression`: TCGA primary-tumor median TPM.
+- `median_tcga_normal_expression`: TCGA solid-tissue adjacent-normal median TPM.
+- `median_gtex_normal_expression`: mapped GTEx healthy-tissue median TPM.
+- `sample_count_tumor`, `sample_count_tcga_normal`, `sample_count_gtex_normal`: unique sample support.
+- `log2_fc_tumor_vs_tcga_normal`, `log2_fc_tumor_vs_gtex`: tumor effect under each reference.
+- `log2_fc_tcga_normal_vs_gtex`: normal-reference shift for audit, not a pure technical batch estimate.
+- `reference_effect_delta`: absolute difference between the two tumor effect estimates.
+- `tcga_reference_direction`, `gtex_reference_direction`: thresholded `up`, `down`, or `stable` directions.
+- `reference_concordance`: concordant, reference-sensitive, or directionally discordant classification.
+- `tcga_normal_support_tier`: `high`, `moderate`, or `limited` adjacent-normal support.
+- `reference_stability_score`: bounded support, direction, and effect-similarity calibration.
+- `triangulation_caveat`: required adjacent-normal and cross-study interpretation warning.
+
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.

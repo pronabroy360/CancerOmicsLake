@@ -51,6 +51,7 @@ class GdcQuerySlice:
     data_types: list[str] | None = None
     experimental_strategies: list[str] | None = None
     workflow_types: list[str] | None = None
+    sample_types: list[str] | None = None
     size: int | None = None
 
 
@@ -132,6 +133,13 @@ def build_files_payload(
                 "content": {"field": "files.analysis.workflow_type", "value": workflow_types},
             }
         )
+    if query_slice and query_slice.sample_types:
+        filters_content.append(
+            {
+                "op": "in",
+                "content": {"field": "cases.samples.sample_type", "value": query_slice.sample_types},
+            }
+        )
 
     fields = ",".join(
         [
@@ -182,6 +190,15 @@ def build_project_query_slices(config: AppConfig) -> list[GdcQuerySlice]:
             data_types=["Gene Expression Quantification"],
             experimental_strategies=["RNA-Seq"],
             workflow_types=["STAR - Counts"],
+            size=targeted_size,
+        ),
+        GdcQuerySlice(
+            name="expression_star_counts_normal",
+            data_categories=["Transcriptome Profiling"],
+            data_types=["Gene Expression Quantification"],
+            experimental_strategies=["RNA-Seq"],
+            workflow_types=["STAR - Counts"],
+            sample_types=["Solid Tissue Normal"],
             size=targeted_size,
         ),
         GdcQuerySlice(

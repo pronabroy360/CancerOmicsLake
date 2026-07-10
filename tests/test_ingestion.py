@@ -52,6 +52,26 @@ def test_build_files_payload_supports_targeted_star_expression_slice() -> None:
     assert payload["size"] == "500"
 
 
+def test_build_files_payload_supports_adjacent_normal_expression_slice() -> None:
+    config = load_config("configs/project_config.yml")
+    payload = build_files_payload(
+        config,
+        "TCGA-BRCA",
+        query_slice=GdcQuerySlice(
+            name="expression_star_counts_normal",
+            data_categories=["Transcriptome Profiling"],
+            data_types=["Gene Expression Quantification"],
+            experimental_strategies=["RNA-Seq"],
+            workflow_types=["STAR - Counts"],
+            sample_types=["Solid Tissue Normal"],
+            size=100,
+        ),
+    )
+    filters = payload["filters"]["content"]
+    values_by_field = {item["content"]["field"]: item["content"]["value"] for item in filters}
+    assert values_by_field["cases.samples.sample_type"] == ["Solid Tissue Normal"]
+
+
 def test_map_hit_to_record_extracts_nested_fields() -> None:
     hit = {
         "id": "file-123",
@@ -170,10 +190,11 @@ def test_query_tcga_metadata_live_uses_targeted_slices_and_deduplicates(monkeypa
     records, source_mode, audit = query_tcga_metadata_with_audit(config)
     assert source_mode == "live"
     assert {record.file_id for record in records} == {"expr-1", "mut-1"}
-    assert audit["project_audits"][0]["attempts"] == 3
+    assert audit["project_audits"][0]["attempts"] == 4
     assert [item["slice"] for item in audit["project_audits"][0]["query_slices"]] == [
         "broad",
         "expression_star_counts",
+        "expression_star_counts_normal",
         "masked_somatic_mutation",
     ]
 

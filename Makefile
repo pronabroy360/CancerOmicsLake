@@ -2,7 +2,7 @@ VENV ?= .venv
 PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-ci-smoke run-download-tcga-medium run-download-tcga-aggressive run-gtex-live run-silver run-gold run-quality run-graph-export run-graph-metrics run-evidence-confidence run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-ci-smoke run-download-tcga-medium run-download-tcga-aggressive run-download-tcga-normals run-gtex-live run-silver run-gold run-quality run-graph-export run-graph-metrics run-evidence-confidence run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -41,6 +41,9 @@ run-download-tcga-medium:
 
 run-download-tcga-aggressive:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --use-aggressive-cap-profile --data-subdirs expression,mutations --download-workers 8
+
+run-download-tcga-normals:
+	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --expression-cap-per-project 0 --normal-expression-cap-per-project 60 --data-subdirs expression --download-workers 8
 
 run-download-tcga-force-smoke:
 	$(PYTHON) -m src.main run-download-tcga --config configs/project_config.yml --force-download --max-downloads 3 --data-subdirs expression,mutations

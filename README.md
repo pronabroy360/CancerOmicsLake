@@ -103,6 +103,9 @@ Research surface:
 - Dashboard: `Evidence Confidence` page separating sample support, graph structure, integrity, provenance, and raw-versus-sensitivity direction concordance.
 - API: `GET /research/batch-effect-sensitivity?cancer_type=TCGA-BRCA&support_tier=high&direction=rank_up&limit=20`
 - Dashboard: `Batch-Effect Sensitivity` page for rank/robust-z TCGA-GTEx sensitivity review.
+- API: `GET /research/reference-triangulation?cancer_type=TCGA-BRCA&concordance=concordant_up&limit=20`
+- Dashboard: `Reference Triangulation` page comparing TCGA-adjacent and GTEx-normal reference directions.
+- Expand the TCGA adjacent-normal bridge cohort with `make run-download-tcga-normals`.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:
@@ -140,7 +143,7 @@ make run-demo-check-strict
 - This profile is intended for fast manual completion and uses `--force-download`.
 - Flow/demo targets focus download scope on `expression,mutations` for higher success rates.
 - Download and flow targets use bounded parallel workers (`8` for aggressive, `4` for medium) while preserving checksum skip/retry behavior.
-- The latest aggressive local run selected 420 files, checksum-skipped 420 already-present files on rerun, and produced 18.3 million TCGA expression rows plus 45,588 mutation records.
+- The expanded local profile now produces 27.1 million TCGA expression rows, including 60 BRCA, 59 LUAD, and 41 COAD adjacent-normal samples, plus 45,588 mutation records.
 
 ## GTEx V8 Live Profile
 

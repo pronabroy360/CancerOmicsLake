@@ -6,6 +6,8 @@ import time
 
 import polars as pl
 
+from src.analytics.reference_triangulation import build_reference_triangulation_table
+
 
 def _read_or_empty(path: Path, schema: dict[str, pl.DataType]) -> pl.DataFrame:
     if path.exists():
@@ -650,18 +652,21 @@ def build_gold_cohort_summary(
     output_mut_by_cancer = gold_root / "gold_mutation_frequency_by_cancer.parquet"
     output_tumor_vs_normal = gold_root / "gold_tumor_vs_normal_expression.parquet"
     tumor_vs_normal = _build_tumor_vs_normal_table(expr_tcga=expr_tcga, expr_gtex=expr_gtex)
+    reference_triangulation = build_reference_triangulation_table(expr_tcga, expr_gtex)
     batch_effect_sensitivity = _build_batch_effect_sensitivity_table(tumor_vs_normal)
     candidate_priority = _build_candidate_gene_priority_table(
         mutation_by_gene=mutation_by_gene,
         tumor_vs_normal=tumor_vs_normal,
     )
     output_batch_effect_sensitivity = gold_root / "gold_batch_effect_sensitivity.parquet"
+    output_reference_triangulation = gold_root / "gold_reference_triangulation.parquet"
     output_candidate_priority = gold_root / "gold_candidate_gene_priority.parquet"
     summary.write_parquet(output_path)
     mutation_by_gene.write_parquet(output_mut_by_gene)
     mutation_by_cancer.write_parquet(output_mut_by_cancer)
     tumor_vs_normal.write_parquet(output_tumor_vs_normal)
     batch_effect_sensitivity.write_parquet(output_batch_effect_sensitivity)
+    reference_triangulation.write_parquet(output_reference_triangulation)
     candidate_priority.write_parquet(output_candidate_priority)
 
     return {
@@ -670,6 +675,7 @@ def build_gold_cohort_summary(
         "gold_mutation_frequency_by_cancer_path": str(output_mut_by_cancer),
         "gold_tumor_vs_normal_expression_path": str(output_tumor_vs_normal),
         "gold_batch_effect_sensitivity_path": str(output_batch_effect_sensitivity),
+        "gold_reference_triangulation_path": str(output_reference_triangulation),
         "gold_candidate_gene_priority_path": str(output_candidate_priority),
         "tcga_project_count": int(summary["tcga_project_count"][0]),
         "tcga_patient_count": int(summary["tcga_patient_count"][0]),
@@ -683,5 +689,6 @@ def build_gold_cohort_summary(
         "mutation_cancer_rows": int(mutation_by_cancer.height),
         "tumor_vs_normal_rows": int(tumor_vs_normal.height),
         "batch_effect_sensitivity_rows": int(batch_effect_sensitivity.height),
+        "reference_triangulation_rows": int(reference_triangulation.height),
         "candidate_gene_priority_rows": int(candidate_priority.height),
     }

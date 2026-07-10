@@ -44,6 +44,7 @@ Use this when we want to complete ingestion quickly over a few days:
 
 ```bash
 make run-download-tcga-aggressive
+make run-download-tcga-normals
 make run-flow-aggressive
 make run-demo-aggressive
 ```
@@ -59,7 +60,8 @@ Aggressive cap:
 Aggressive flow and demo targets force downloads (`--force-download`) so runs do not silently skip file pulling when `tcga.metadata_only: true`.
 Aggressive flow and demo targets also scope downloads to `expression,mutations` via `--data-subdirs` so clinical/biospecimen categories do not create avoidable failures during rapid completion.
 The downloader persists the exact selected file list in `outputs/reports/tcga_download_report.json`; quality checks validate those selected files rather than treating unselected capped candidates as missing data.
-The latest aggressive local run produced 18,319,320 TCGA expression rows, 45,588 mutation records, and 95/96/94 tumor samples for BRCA/COAD/LUAD tumor-vs-normal support.
+The expanded local run produces 27,054,360 TCGA expression rows and 45,588 mutation records. Reference
+triangulation has 60 BRCA, 59 LUAD, and 41 COAD adjacent-normal samples alongside 95/94/96 primary tumors.
 
 ## Reviewer Demo Check
 

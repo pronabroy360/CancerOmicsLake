@@ -240,6 +240,35 @@ def test_batch_effect_sensitivity_data_returns_filtered_rows(tmp_path: Path) -> 
     assert result.row(0, named=True)["gene_symbol"] == "TP53"
 
 
+def test_reference_triangulation_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.dashboard_data import reference_triangulation_data
+    from src.analytics.reference_triangulation import REFERENCE_TRIANGULATION_SCHEMA
+
+    path = tmp_path / "triangulation.parquet"
+    row = {column: None for column in REFERENCE_TRIANGULATION_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "gene_symbol": "TP53",
+            "reference_concordance": "concordant_up",
+            "tcga_normal_support_tier": "high",
+            "reference_stability_score": 0.9,
+            "reference_effect_delta": 0.1,
+        }
+    )
+    pl.DataFrame([row], schema=REFERENCE_TRIANGULATION_SCHEMA).write_parquet(path)
+
+    result = reference_triangulation_data(
+        cancer_type="TCGA-BRCA",
+        concordance="concordant_up",
+        support_tier="high",
+        gold_path=path,
+    )
+
+    assert result.height == 1
+    assert result.row(0, named=True)["gene_symbol"] == "TP53"
+
+
 def test_quality_report_data_builds_status_counts(tmp_path: Path) -> None:
     report = tmp_path / "silver_data_quality_report.json"
     report.write_text(
