@@ -4,6 +4,12 @@ from pathlib import Path
 
 import polars as pl
 
+from src.graph.pathway_projection import (
+    DEFAULT_MAX_PATHWAYS_PER_CANCER,
+    select_enriched_pathways,
+    selected_pathway_memberships,
+)
+
 
 def build_graph_nodes_stub() -> list[dict[str, str]]:
     return [
@@ -22,6 +28,8 @@ def build_graph_nodes_table(
     silver_dir: str | Path = "data/silver",
     gold_dir: str | Path = "data/gold",
     output_path: str | Path = "data/gold/gold_graph_nodes.parquet",
+    pathway_gmt_path: str | Path = "data/bronze/reference/pathways/reactome_pathways.gmt",
+    max_pathways_per_cancer: int = DEFAULT_MAX_PATHWAYS_PER_CANCER,
 ) -> dict[str, object]:
     silver_root = Path(silver_dir)
     gold_root = Path(gold_dir)
@@ -65,6 +73,14 @@ def build_graph_nodes_table(
             "ingested_at": pl.Utf8,
         },
     )
+    selected_pathways = select_enriched_pathways(
+        gold_root / "gold_pathway_enrichment.parquet",
+        max_pathways_per_cancer=max_pathways_per_cancer,
+    )
+    pathway_memberships = selected_pathway_memberships(
+        selected_pathways,
+        pathway_gmt_path=pathway_gmt_path,
+    )
 
     cancer_nodes = (
         projects.select(
@@ -82,19 +98,59 @@ def build_graph_nodes_table(
 
     gene_symbols = pl.concat(
         [
-            genes.select(pl.col("gene_symbol").cast(pl.Utf8)) if not genes.is_empty() else pl.DataFrame(schema={"gene_symbol": pl.Utf8}),
-            gtex.select(pl.col("gene_symbol").cast(pl.Utf8)) if not gtex.is_empty() else pl.DataFrame(schema={"gene_symbol": pl.Utf8}),
+            (
+                genes.select([pl.col("gene_symbol").cast(pl.Utf8), pl.lit("TCGA").alias("gene_source")])
+                if not genes.is_empty()
+                else pl.DataFrame(schema={"gene_symbol": pl.Utf8, "gene_source": pl.Utf8})
+            ),
+            (
+                gtex.select([pl.col("gene_symbol").cast(pl.Utf8), pl.lit("GTEx").alias("gene_source")])
+                if not gtex.is_empty()
+                else pl.DataFrame(schema={"gene_symbol": pl.Utf8, "gene_source": pl.Utf8})
+            ),
+            (
+                pathway_memberships.select(
+                    [pl.col("gene_symbol").cast(pl.Utf8), pl.lit("Reactome").alias("gene_source")]
+                )
+                if not pathway_memberships.is_empty()
+                else pl.DataFrame(schema={"gene_symbol": pl.Utf8, "gene_source": pl.Utf8})
+            ),
         ],
         how="vertical",
-    ).filter(pl.col("gene_symbol").is_not_null() & (pl.col("gene_symbol") != "")).unique()
+    ).filter(pl.col("gene_symbol").is_not_null() & (pl.col("gene_symbol") != ""))
+    gene_symbols = gene_symbols.group_by("gene_symbol").agg(
+        pl.col("gene_source").unique().sort().str.join("/").alias("gene_source")
+    )
     gene_nodes = gene_symbols.select(
         [
             pl.concat_str([pl.lit("GENE:"), pl.col("gene_symbol")]).alias("node_id"),
             pl.lit("Gene").alias("node_label"),
             pl.col("gene_symbol").alias("name"),
             pl.lit("Unknown").alias("primary_site"),
-            pl.lit("TCGA/GTEx").alias("source"),
+            pl.col("gene_source").alias("source"),
         ]
+    )
+
+    pathway_nodes = (
+        selected_pathways.select(
+            [
+                pl.concat_str([pl.lit("PATHWAY:"), pl.col("pathway_id")]).alias("node_id"),
+                pl.lit("Pathway").alias("node_label"),
+                pl.col("pathway_name").alias("name"),
+                pl.lit("Multi").alias("primary_site"),
+                pl.col("pathway_source").alias("source"),
+            ]
+        ).unique(subset=["node_id"])
+        if not selected_pathways.is_empty()
+        else pl.DataFrame(
+            schema={
+                "node_id": pl.Utf8,
+                "node_label": pl.Utf8,
+                "name": pl.Utf8,
+                "primary_site": pl.Utf8,
+                "source": pl.Utf8,
+            }
+        )
     )
 
     sample_nodes = (
@@ -146,9 +202,10 @@ def build_graph_nodes_table(
         ]
     )
 
-    nodes = pl.concat([cancer_nodes, gene_nodes, sample_nodes, patient_nodes, tissue_nodes, dataset_nodes], how="vertical").unique(
-        subset=["node_id", "node_label"]
-    )
+    nodes = pl.concat(
+        [cancer_nodes, gene_nodes, pathway_nodes, sample_nodes, patient_nodes, tissue_nodes, dataset_nodes],
+        how="vertical",
+    ).unique(subset=["node_id", "node_label"])
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)

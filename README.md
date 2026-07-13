@@ -125,6 +125,7 @@ Research surface:
 - Build sample-level association support with `make run-expression-statistics`, then rebuild publication triage with `make run-consensus-candidates`.
 - Build matched cases with `make run-metadata-strict`, `make run-download-tcga-paired`, `make run-silver`, and `make run-paired-expression`.
 - Build pathway hypotheses with `make run-pathway-enrichment`. The first run fetches pinned Reactome release 97 into `data/bronze/reference/pathways/reactome_pathways.gmt` via `make fetch-reactome-gmt` (idempotent; set `SKIP_GMT_FETCH=1` to opt out in CI).
+- Rebuild graph tables with `make run-gold`, then export Reactome `Pathway` nodes plus `MEMBER_OF_PATHWAY` and capped `ENRICHED_IN_CANCER` relationships with `make run-graph-export`.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:
@@ -209,6 +210,7 @@ make run-demo-check-strict
 - The release-97 GMT is fetched automatically by `make fetch-reactome-gmt` (idempotent; skip with `SKIP_GMT_FETCH=1`, force refresh with `REFRESH_GMT=1`). Acquisition provenance and checksums are written to `outputs/reports/reactome_gmt_acquisition_report.json`.
 - Outputs: `data/gold/gold_pathway_enrichment.parquet` and `outputs/reports/pathway_enrichment_report.json`.
 - This layer supports biological hypothesis generation only; it does not prove mechanism, causality, or clinical actionability.
+- Graph projection retains at most 50 FDR-enriched pathways per cancer and deterministically collapses duplicate candidate-set evidence.
 
 ## Runtime Notes
 

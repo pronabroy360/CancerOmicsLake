@@ -360,7 +360,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.
-- `node_label`: node type, for example `CancerType`, `Gene`, `Sample`, `Patient`, `Tissue`, or `Dataset`.
+- `node_label`: node type, for example `CancerType`, `Gene`, `Sample`, `Patient`, `Tissue`, `Dataset`, or `Pathway`.
 - `name`: display name.
 - `primary_site`: primary site where available.
 - `source`: source system or mart.
@@ -373,6 +373,12 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `edge_type`: graph relationship type.
 - `weight`: relationship score/count/frequency.
 - `evidence_source`: source table or rule that produced the edge.
+
+Pathway graph relationships:
+
+- `MEMBER_OF_PATHWAY`: curated Reactome gene membership for pathways retained by graph projection.
+- `ENRICHED_IN_CANCER`: strongest FDR-supported pathway-cancer association after deterministic
+  candidate-set de-duplication and a 50-pathway-per-cancer cap.
 
 ### `gold_graph_node_metrics.parquet`
 

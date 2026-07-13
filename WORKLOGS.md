@@ -501,3 +501,19 @@ Impact values:
 - Live release-97 acceptance produced 2,868 pathways and 6,806 enrichment rows across three cancers;
   2,440 rows met the engineering FDR-enriched tier and remain hypothesis-generation results.
 - Verified pytest (`173 passed`), quality (`50 checks`), and strict demo readiness (`27 checks`).
+
+## 2026-07-14 - Reactome Pathway Knowledge Graph Projection
+
+- Added deterministic projection of FDR-enriched Reactome pathways into the biomedical graph.
+- Added `Pathway` nodes, complete Reactome `MEMBER_OF_PATHWAY` gene edges for retained pathways,
+  and `ENRICHED_IN_CANCER` edges weighted by the bounded enrichment score.
+- Restricted projection to FDR <= 0.05, collapsed duplicate candidate-set hits by strongest evidence,
+  and capped pathways at 50 per cancer to control graph density.
+- Preserved the existing node/edge table contracts, Neo4j/Graphify exporters, API, and dashboard filters.
+- Added regression coverage for selection caps, deterministic de-duplication, pathway memberships,
+  graph node/edge construction, and endpoint integrity through existing quality checks.
+- Real projection produced 104 pathway nodes, 17,725 gene-membership edges, and the configured
+  150 pathway-cancer edges (50 per cancer) with zero orphan edges.
+- Verified pytest (`175 passed`), quality (`50 checks`), and strict demo readiness (`27 checks`).
+- Kept interpretation narrow: graph relationships support hypothesis navigation and do not establish
+  pathway activation, mechanism, causality, or clinical actionability.

@@ -33,6 +33,7 @@ Current labels:
 - `Patient`
 - `Tissue`
 - `Dataset`
+- `Pathway`
 
 ## Edge Types
 
@@ -51,6 +52,19 @@ Current edge types:
 - `BELONGS_TO_CANCER`
 - `EXPRESSED_IN_TISSUE`
 - `MUTATED_IN_CANCER`
+- `MEMBER_OF_PATHWAY`
+- `ENRICHED_IN_CANCER`
+
+## Pathway Projection Guardrails
+
+- `Pathway` nodes come from Reactome pathways retained by the enrichment projection.
+- `MEMBER_OF_PATHWAY` links Reactome member genes to projected pathways and has weight `1.0`.
+- `ENRICHED_IN_CANCER` links a pathway to a TCGA cancer and uses the bounded enrichment score as weight.
+- Only `fdr_enriched` rows with `fdr_q_value <= 0.05` are eligible.
+- Duplicate candidate-set hits are reduced deterministically to the lowest-FDR row per cancer and pathway.
+- At most 50 pathways per cancer are projected, limiting graph density and reviewer selection bias.
+- These relationships encode pathway membership and statistical over-representation, not mechanism, causality,
+  clinical utility, or pathway activation.
 
 ## Neo4j Import (No APOC Required)
 
@@ -110,4 +124,12 @@ MATCH (g:Gene)-[r:EXPRESSED_IN_TISSUE]->(t:Tissue)
 RETURN t.name AS tissue, g.name AS gene, r.weight AS mean_log2_expression
 ORDER BY mean_log2_expression DESC
 LIMIT 20;
+```
+
+```cypher
+MATCH (g:Gene)-[:MEMBER_OF_PATHWAY]->(p:Pathway)-[r:ENRICHED_IN_CANCER]->(c:CancerType)
+RETURN c.node_id AS cancer, p.name AS pathway, count(DISTINCT g) AS member_genes,
+       r.weight AS enrichment_score, r.evidence_source AS evidence
+ORDER BY enrichment_score DESC
+LIMIT 25;
 ```

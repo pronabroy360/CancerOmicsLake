@@ -4,6 +4,12 @@ from pathlib import Path
 
 import polars as pl
 
+from src.graph.pathway_projection import (
+    DEFAULT_MAX_PATHWAYS_PER_CANCER,
+    select_enriched_pathways,
+    selected_pathway_memberships,
+)
+
 
 def build_graph_edges_stub() -> list[dict[str, str]]:
     return [
@@ -28,6 +34,8 @@ def build_graph_edges_table(
     silver_dir: str | Path = "data/silver",
     gold_dir: str | Path = "data/gold",
     output_path: str | Path = "data/gold/gold_graph_edges.parquet",
+    pathway_gmt_path: str | Path = "data/bronze/reference/pathways/reactome_pathways.gmt",
+    max_pathways_per_cancer: int = DEFAULT_MAX_PATHWAYS_PER_CANCER,
 ) -> dict[str, object]:
     silver_root = Path(silver_dir)
     gold_root = Path(gold_dir)
@@ -62,6 +70,14 @@ def build_graph_edges_table(
             "mutation_frequency": pl.Float64,
             "top_variant_classification": pl.Utf8,
         },
+    )
+    selected_pathways = select_enriched_pathways(
+        gold_root / "gold_pathway_enrichment.parquet",
+        max_pathways_per_cancer=max_pathways_per_cancer,
+    )
+    pathway_memberships = selected_pathway_memberships(
+        selected_pathways,
+        pathway_gmt_path=pathway_gmt_path,
     )
 
     has_sample = (
@@ -135,9 +151,58 @@ def build_graph_edges_table(
         else has_sample.head(0)
     )
 
-    edges = pl.concat([has_sample, belongs_to_cancer, expressed_in_tissue, mutated_in_cancer], how="vertical").unique(
-        subset=["edge_id"]
+    enriched_in_cancer = (
+        selected_pathways.select(
+            [
+                pl.concat_str(
+                    [
+                        pl.lit("ENRICHED_IN_CANCER:"),
+                        pl.col("pathway_id"),
+                        pl.lit(":"),
+                        pl.col("cancer_type"),
+                    ]
+                ).alias("edge_id"),
+                pl.concat_str([pl.lit("PATHWAY:"), pl.col("pathway_id")]).alias("source_node_id"),
+                pl.col("cancer_type").alias("target_node_id"),
+                pl.lit("ENRICHED_IN_CANCER").alias("edge_type"),
+                pl.col("enrichment_score").cast(pl.Float64).alias("weight"),
+                pl.concat_str(
+                    [pl.col("pathway_source"), pl.lit(":ORA:"), pl.col("candidate_set")]
+                ).alias("evidence_source"),
+            ]
+        )
+        if not selected_pathways.is_empty()
+        else has_sample.head(0)
     )
+
+    member_of_pathway = (
+        pathway_memberships.select(
+            [
+                pl.concat_str(
+                    [pl.lit("MEMBER_OF_PATHWAY:"), pl.col("gene_symbol"), pl.lit(":"), pl.col("pathway_id")]
+                ).alias("edge_id"),
+                pl.concat_str([pl.lit("GENE:"), pl.col("gene_symbol")]).alias("source_node_id"),
+                pl.concat_str([pl.lit("PATHWAY:"), pl.col("pathway_id")]).alias("target_node_id"),
+                pl.lit("MEMBER_OF_PATHWAY").alias("edge_type"),
+                pl.lit(1.0).alias("weight"),
+                pl.col("pathway_source").alias("evidence_source"),
+            ]
+        )
+        if not pathway_memberships.is_empty()
+        else has_sample.head(0)
+    )
+
+    edges = pl.concat(
+        [
+            has_sample,
+            belongs_to_cancer,
+            expressed_in_tissue,
+            mutated_in_cancer,
+            enriched_in_cancer,
+            member_of_pathway,
+        ],
+        how="vertical",
+    ).unique(subset=["edge_id"])
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
