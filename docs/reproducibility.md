@@ -175,7 +175,7 @@ Reports include `run_mode` where available:
 - Run `make run-recount3-expression` followed by `make run-external-validation` for the real external validation.
 - Run `make run-expression-statistics` before rebuilding consensus candidates to add sample-level effect sizes and FDR support.
 - Run `make run-metadata-strict`, `make run-download-tcga-paired`, and `make run-silver` to maximize matched cases before `make run-paired-expression`.
-- Run `make run-pathway-enrichment` after consensus candidates and a local GMT file are available at `data/bronze/reference/pathways/reactome_pathways.gmt`.
-  CI intentionally permits a missing extract and writes an empty schema-valid mart because the public source download
-  is too large for a bounded smoke job.
+- Run `make fetch-reactome-gmt` to acquire pinned Reactome release 97 with checksums and provenance, then run `make run-pathway-enrichment`. The enrichment target performs the fetch automatically unless `SKIP_GMT_FETCH=1` is set.
+- CI tests pathway analytics with synthetic GMT fixtures and does not require network acquisition. Offline runs may use
+  `SKIP_GMT_FETCH=1`; the analytics layer then retains its empty, schema-valid missing-input contract.
 - Generated raw data, credentials, and controlled-access files must not be committed.

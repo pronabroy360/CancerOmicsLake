@@ -471,3 +471,33 @@ Impact values:
 - Added candidate sets for `prioritized`, `watchlist_plus_prioritized`, and `research_candidate_plus` genes using the cancer-specific tested background.
 - Added CLI/Make execution, API endpoint, Streamlit page, quality contracts, data dictionary, reviewer SQL, and regression tests.
 - Kept pathway interpretation narrow: enrichment summarizes candidate-set biology for follow-up, not mechanism, causality, or clinical actionability.
+
+## 2026-07-14 - Reactome GMT Acquisition Layer
+
+- Added `scripts/fetch_reactome_gmt.sh` — an idempotent downloader that fetches pinned
+  Reactome release 97 `ReactomePathways.gmt` (CC0 1.0, 2,868 pathways at acquisition) into
+  `data/bronze/reference/pathways/reactome_pathways.gmt` (the path already expected by
+  `src/analytics/pathway_enrichment.py`).
+- Idempotency: reuses a cache only when its release and SHA-256 match the provenance sidecar; supports
+  `REFRESH_GMT=1` to force a re-download and `SKIP_GMT_FETCH=1` for CI / offline sandboxes.
+- Validates every GMT row, rejects duplicate pathway IDs and truncated files, extracts into a
+  same-filesystem temporary directory, and atomically replaces the cache only after validation.
+- Writes release, URL, timestamps, license, pathway count, file size, and compressed/uncompressed
+  SHA-256 values to the bronze provenance sidecar and acquisition report.
+- Added `make fetch-reactome-gmt` and wired it as a dependency of `make run-pathway-enrichment`
+  via a `GMT_DEP` conditional, so the first enrichment run auto-fetches the GMT and subsequent
+  runs reuse the cached file. CI can bypass with `SKIP_GMT_FETCH=1`.
+- Verified the existing parser (`load_gmt_pathways`) already handles the official Reactome
+  layout (col1 = name, col2 = R-HSA-XXXXX, col3+ = HGNC symbols); also tolerates MSigDB-style
+  and mixed layouts.
+- Added `tests/test_pathway_enrichment_gmt.py` with regression tests covering:
+  parser correctness on the official Reactome layout, MIN/MAX pathway-size filtering,
+  per-cancer BH-FDR independence, hypergeometric p-value sanity check against `scipy.stats.hypergeom`,
+  fetch-script idempotency, `SKIP_GMT_FETCH=1`, truncated-cache rejection, and atomic refresh fallback.
+- Added `docs/pathway_enrichment.md` methodology (GMT layout, candidate sets, statistical test,
+  FDR scope, tiering, guardrails, reproducibility, atomic refresh fallback, and truncated-cache rejection).
+- Added `outputs/sample_queries/12_pathway_enrichment.sql` reviewer SQL.
+- Updated README to reference `make fetch-reactome-gmt` and the `SKIP_GMT_FETCH` / `REFRESH_GMT` env knobs.
+- Live release-97 acceptance produced 2,868 pathways and 6,806 enrichment rows across three cancers;
+  2,440 rows met the engineering FDR-enriched tier and remain hypothesis-generation results.
+- Verified pytest (`173 passed`), quality (`50 checks`), and strict demo readiness (`27 checks`).

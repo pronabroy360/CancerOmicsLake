@@ -124,7 +124,7 @@ Research surface:
 - API: `GET /research/pathway-enrichment?cancer_type=TCGA-BRCA&candidate_set=prioritized&max_fdr=0.05&limit=20`
 - Build sample-level association support with `make run-expression-statistics`, then rebuild publication triage with `make run-consensus-candidates`.
 - Build matched cases with `make run-metadata-strict`, `make run-download-tcga-paired`, `make run-silver`, and `make run-paired-expression`.
-- Build pathway hypotheses with `make run-pathway-enrichment` after placing a GMT file at `data/bronze/reference/pathways/reactome_pathways.gmt`.
+- Build pathway hypotheses with `make run-pathway-enrichment`. The first run fetches pinned Reactome release 97 into `data/bronze/reference/pathways/reactome_pathways.gmt` via `make fetch-reactome-gmt` (idempotent; set `SKIP_GMT_FETCH=1` to opt out in CI).
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:
@@ -206,6 +206,7 @@ make run-demo-check-strict
 
 - `make run-pathway-enrichment` performs hypergeometric over-representation analysis over consensus candidate sets.
 - Default input path: `data/bronze/reference/pathways/reactome_pathways.gmt`.
+- The release-97 GMT is fetched automatically by `make fetch-reactome-gmt` (idempotent; skip with `SKIP_GMT_FETCH=1`, force refresh with `REFRESH_GMT=1`). Acquisition provenance and checksums are written to `outputs/reports/reactome_gmt_acquisition_report.json`.
 - Outputs: `data/gold/gold_pathway_enrichment.parquet` and `outputs/reports/pathway_enrichment_report.json`.
 - This layer supports biological hypothesis generation only; it does not prove mechanism, causality, or clinical actionability.
 

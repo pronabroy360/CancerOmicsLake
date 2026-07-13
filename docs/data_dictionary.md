@@ -346,6 +346,17 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `enrichment_tier`: `fdr_enriched`, `nominal`, or `limited`.
 - `pathway_caveat`: required hypothesis-generation warning.
 
+### `reactome_gmt_acquisition_report.json`
+
+- `status`: `downloaded`, `cached`, or `cached_fallback`.
+- `source`, `source_version`, `source_url`: Reactome source identity, pinned release, and download URL.
+- `license`: Reactome annotation-data license (`CC0-1.0`).
+- `output_path`: bronze GMT location.
+- `pathway_count`, `file_size_bytes`: validated file cardinality and size.
+- `gmt_sha256`, `archive_sha256`: uncompressed GMT and source-archive checksums.
+- `retrieved_at`, `checked_at`: UTC acquisition and latest validation timestamps.
+- `detail`: fallback reason when a refresh cannot replace the validated cache.
+
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.
