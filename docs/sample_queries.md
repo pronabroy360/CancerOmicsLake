@@ -287,6 +287,27 @@ LIMIT 50;
 
 This table provides FDR-controlled association support. It does not remove source/disease confounding or establish causality.
 
+## Matched TCGA Tumor-Normal Support
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    matched_case_count,
+    paired_log2_fold_change,
+    paired_fdr_q_value,
+    paired_rank_biserial,
+    paired_direction_agreement,
+    paired_support_score
+FROM read_parquet('data/gold/gold_paired_tcga_expression_support.parquet')
+WHERE paired_support_tier = 'paired_replicated'
+ORDER BY paired_support_score DESC, paired_fdr_q_value ASC
+LIMIT 50;
+```
+
+This table uses exact TCGA case matching between primary tumor and adjacent normal samples. It reduces source
+confounding but still should not be treated as a clinical or causal result.
+
 ## Quality Checks That Need Attention
 
 ```sql

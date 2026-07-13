@@ -133,6 +133,28 @@ def _write_fixture(gold: Path) -> None:
             },
         ]
     ).write_parquet(gold / "gold_expression_statistical_support.parquet")
+    pl.DataFrame(
+        [
+            {
+                "cancer_type": "TCGA-BRCA",
+                "gene_symbol": "STRONG",
+                "matched_case_count": 40,
+                "paired_fdr_q_value": 0.001,
+                "paired_rank_biserial": 0.85,
+                "paired_support_score": 0.95,
+                "paired_support_tier": "paired_replicated",
+            },
+            {
+                "cancer_type": "TCGA-BRCA",
+                "gene_symbol": "BADREF",
+                "matched_case_count": 40,
+                "paired_fdr_q_value": 0.001,
+                "paired_rank_biserial": -0.80,
+                "paired_support_score": 0.0,
+                "paired_support_tier": "paired_discordant",
+            },
+        ]
+    ).write_parquet(gold / "gold_paired_tcga_expression_support.parquet")
 
 
 def test_build_consensus_candidates_prioritizes_only_concordant_evidence(tmp_path: Path) -> None:
@@ -158,7 +180,9 @@ def test_build_consensus_candidates_prioritizes_only_concordant_evidence(tmp_pat
     assert "external_validation_discordant" in rows["BADREF"]["rejection_reasons"]
     assert "reference_sensitive_or_discordant" in rows["BADREF"]["rejection_reasons"]
     assert "statistical_support_discordant" in rows["BADREF"]["rejection_reasons"]
+    assert "paired_support_discordant" in rows["BADREF"]["rejection_reasons"]
     assert rows["BADREF"]["statistical_component"] == 0.0
+    assert rows["BADREF"]["paired_component"] == 0.0
 
 
 def test_consensus_candidates_query_filters_rows(tmp_path: Path) -> None:

@@ -190,11 +190,12 @@ def test_query_tcga_metadata_live_uses_targeted_slices_and_deduplicates(monkeypa
     records, source_mode, audit = query_tcga_metadata_with_audit(config)
     assert source_mode == "live"
     assert {record.file_id for record in records} == {"expr-1", "mut-1"}
-    assert audit["project_audits"][0]["attempts"] == 4
+    assert audit["project_audits"][0]["attempts"] == 5
     assert [item["slice"] for item in audit["project_audits"][0]["query_slices"]] == [
         "broad",
         "expression_star_counts",
         "expression_star_counts_normal",
+        "expression_star_counts_primary_tumor",
         "masked_somatic_mutation",
     ]
 

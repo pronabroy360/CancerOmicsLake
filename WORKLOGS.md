@@ -449,3 +449,17 @@ Impact values:
 - Integrated statistical support as a seventh consensus-ranking component with an explicit discordance rejection reason.
 - Added CLI/Make execution, API and dashboard access, data contracts, reviewer SQL, and regression tests.
 - Preserved the caveat that source and disease status remain confounded; these are association tests, not causal, clinical, or batch-corrected differential-expression claims.
+
+## 2026-07-10 - Matched TCGA Tumor-Normal Validation
+
+- Audited initial matched-case coverage and found acquisition-limited overlap despite strong adjacent-normal coverage.
+- Added a dedicated GDC primary-tumor metadata slice and deterministic paired acquisition restricted to cases with downloaded adjacent normals.
+- Added case-level tumor/normal aggregation, Wilcoxon signed-rank tests, paired rank-biserial effects, and cancer-wise Benjamini-Hochberg FDR.
+- Added recount3 direction replication, paired support tiers, hard consensus rejection for material paired discordance, and an eighth consensus evidence component.
+- Added CLI/Make execution, API, Streamlit page, quality contracts, documentation, reviewer SQL, and regression tests.
+- Real paired acquisition selected 178 primary-tumor files for cases with adjacent-normal coverage; 150 downloaded, 28 already existed, and zero failed.
+- Rebuilt silver/gold on the paired real-data profile: 37,002,600 TCGA expression rows, 11,240,000 GTEx expression rows, 45,588 mutation rows, and 108,012 tumor-vs-normal rows.
+- Real paired output contains 178,281 tested cancer-gene rows with matched cases: BRCA 60, COAD 41, and LUAD 58.
+- Paired support tiers: 25,544 paired-replicated, 33,912 paired-internal-FDR, 114,938 limited, and 3,887 paired-discordant rows.
+- Consensus triage after paired evidence: 301 prioritized, 5,890 watchlist, and 102,590 deprioritized rows.
+- Verified pytest (`159 passed`), quality (`48 checks`), and strict demo (`27 checks`). Local dbt remains CI/Docker-gated because this shell is Python 3.14 and the Docker daemon is not running.

@@ -202,6 +202,15 @@ def build_project_query_slices(config: AppConfig) -> list[GdcQuerySlice]:
             size=targeted_size,
         ),
         GdcQuerySlice(
+            name="expression_star_counts_primary_tumor",
+            data_categories=["Transcriptome Profiling"],
+            data_types=["Gene Expression Quantification"],
+            experimental_strategies=["RNA-Seq"],
+            workflow_types=["STAR - Counts"],
+            sample_types=["Primary Tumor"],
+            size=max(targeted_size, 2000),
+        ),
+        GdcQuerySlice(
             name="masked_somatic_mutation",
             data_categories=["Simple Nucleotide Variation"],
             data_types=["Masked Somatic Mutation"],

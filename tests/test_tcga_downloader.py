@@ -452,3 +452,62 @@ def test_download_tcga_files_excludes_mirna_from_gene_expression_cap(tmp_path: P
     assert summary["total_candidates"] == 1
     assert (tmp_path / "bronze" / "TCGA-BRCA" / "expression" / "gene.tsv").exists()
     assert not (tmp_path / "bronze" / "TCGA-BRCA" / "expression" / "mirna.txt").exists()
+
+
+def test_download_tcga_files_selects_primary_tumors_for_normal_cases(tmp_path: Path, monkeypatch) -> None:
+    cfg = load_config("configs/project_config.yml")
+    cfg.tcga.metadata_only = False
+    cfg.gdc_api.retry_count = 0
+    metadata = tmp_path / "metadata.csv"
+    payload = b"ok"
+    base = {
+        "project_id": "TCGA-BRCA",
+        "submitter_id": "submitter",
+        "primary_site": "Breast",
+        "disease_type": "Adeno",
+        "data_category": "Transcriptome Profiling",
+        "data_type": "Gene Expression Quantification",
+        "experimental_strategy": "RNA-Seq",
+        "workflow_type": "STAR - Counts",
+        "access": "open",
+        "file_size": str(len(payload)),
+        "md5sum": "444bcb3a3fcf8389296c49467f27e1d6",
+    }
+    rows = [
+        {
+            **base,
+            "case_id": case_id,
+            "sample_id": f"sample-{case_id}",
+            "sample_type": sample_type,
+            "file_id": f"file-{case_id}-{index}",
+            "file_name": f"{case_id}-{index}.tsv",
+        }
+        for index, (case_id, sample_type) in enumerate(
+            [("case-a", "Primary Tumor"), ("case-b", "Primary Tumor"), ("case-a", "Solid Tissue Normal")]
+        )
+    ]
+    _write_metadata_csv(metadata, rows)
+
+    def fake_fetch(url: str, destination: Path, timeout_sec: int) -> None:  # noqa: ARG001
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(payload)
+
+    monkeypatch.setattr(tcga_downloader, "_fetch_to_path", fake_fetch)
+    summary = tcga_downloader.download_tcga_files(
+        cfg,
+        metadata_csv_path=metadata,
+        bronze_tcga_root=tmp_path / "bronze",
+        report_path=tmp_path / "report.json",
+        retry_log_path=tmp_path / "retry.json",
+        force_download=True,
+        allowed_data_subdirs={"expression"},
+        project_modality_caps={"TCGA-BRCA": {"expression": 10}},
+        paired_expression_case_ids_by_project={"TCGA-BRCA": {"case-a"}},
+    )
+
+    assert summary["selection_policy"] == "paired_primary_tumor"
+    assert summary["paired_expression_target_case_counts"] == {"TCGA-BRCA": 1}
+    assert summary["paired_expression_candidate_case_counts"] == {"TCGA-BRCA": 1}
+    assert summary["selected_candidates"] == 1
+    assert summary["selected_files"][0]["case_id"] == "case-a"
+    assert summary["selected_files"][0]["sample_type"] == "Primary Tumor"

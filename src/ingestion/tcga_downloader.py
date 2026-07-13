@@ -219,6 +219,7 @@ def download_tcga_files(
     project_modality_caps: dict[str, dict[str, int]] | None = None,
     run_mode: str = "manual",
     download_workers: int = 1,
+    paired_expression_case_ids_by_project: dict[str, set[str]] | None = None,
 ) -> dict[str, Any]:
     run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     if config.tcga.metadata_only and not force_download:
@@ -271,6 +272,19 @@ def download_tcga_files(
         normalized_allowed = {x.strip().lower() for x in allowed_data_subdirs if x.strip()}
         candidate_rows = [
             row for row in candidate_rows if _infer_data_subdir(row.get("data_category", "")) in normalized_allowed
+        ]
+
+    paired_targets = {
+        str(project_id): {str(case_id) for case_id in case_ids if str(case_id).strip()}
+        for project_id, case_ids in (paired_expression_case_ids_by_project or {}).items()
+    }
+    if paired_targets:
+        candidate_rows = [
+            row
+            for row in candidate_rows
+            if _infer_data_subdir(row.get("data_category", "")) == "expression"
+            and row.get("sample_type", "").strip().lower() == "primary tumor"
+            and row.get("case_id", "") in paired_targets.get(row.get("project_id", ""), set())
         ]
 
     effective_caps = _canonicalize_caps(project_modality_caps) if project_modality_caps is not None else _canonicalize_caps(
@@ -385,6 +399,7 @@ def download_tcga_files(
             "data_subdir": _infer_data_subdir(row.get("data_category", "")),
             "selection_bucket": _selection_bucket(row, effective_caps),
             "sample_type": row.get("sample_type", ""),
+            "case_id": row.get("case_id", ""),
             "data_category": row.get("data_category", ""),
             "data_type": row.get("data_type", ""),
             "md5sum": row.get("md5sum", ""),
@@ -402,6 +417,20 @@ def download_tcga_files(
         "download_workers": worker_count,
         "allowed_data_subdirs": sorted(list(allowed_data_subdirs)) if allowed_data_subdirs else [],
         "project_modality_caps": effective_caps,
+        "selection_policy": "paired_primary_tumor" if paired_targets else "deterministic_cap",
+        "paired_expression_target_case_counts": {
+            project_id: len(case_ids) for project_id, case_ids in sorted(paired_targets.items())
+        },
+        "paired_expression_candidate_case_counts": {
+            project_id: len(
+                {
+                    row.get("case_id", "")
+                    for row in candidate_rows
+                    if row.get("project_id", "") == project_id and row.get("case_id", "")
+                }
+            )
+            for project_id in sorted(paired_targets)
+        },
         "cap_applied": cap_applied,
         "selected_files": selected_files,
         "candidate_counts_by_project_subdir": candidate_counts,

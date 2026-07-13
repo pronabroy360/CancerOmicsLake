@@ -15,6 +15,7 @@ from src.analytics.consensus_candidates import CONSENSUS_CANDIDATE_SCHEMA, conse
 from src.analytics.evidence_confidence import CONFIDENCE_SCHEMA, evidence_confidence
 from src.analytics.external_validation import EXTERNAL_VALIDATION_SCHEMA, external_expression_validation
 from src.analytics.expression_statistics import EXPRESSION_STATISTICS_SCHEMA, expression_statistical_support
+from src.analytics.paired_expression import PAIRED_EXPRESSION_SCHEMA, paired_expression_support
 from src.analytics.reference_triangulation import REFERENCE_TRIANGULATION_SCHEMA, reference_triangulation
 from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene
@@ -353,6 +354,28 @@ def expression_statistical_support_data(
     )
     rows = payload.get("rows", [])
     return pl.DataFrame(rows) if rows else pl.DataFrame(schema=EXPRESSION_STATISTICS_SCHEMA)
+
+
+def paired_expression_support_data(
+    cancer_type: str | None = None,
+    gene_query: str | None = None,
+    support_tier: str | None = None,
+    max_fdr: float | None = None,
+    min_support_score: float | None = None,
+    limit: int = 50,
+    gold_path: str | Path = "data/gold/gold_paired_tcga_expression_support.parquet",
+) -> pl.DataFrame:
+    payload = paired_expression_support(
+        cancer_type=cancer_type,
+        gene_query=gene_query,
+        support_tier=support_tier,
+        max_fdr=max_fdr,
+        min_support_score=min_support_score,
+        limit=limit,
+        gold_path=gold_path,
+    )
+    rows = payload.get("rows", [])
+    return pl.DataFrame(rows) if rows else pl.DataFrame(schema=PAIRED_EXPRESSION_SCHEMA)
 
 
 def graph_explorer_data(

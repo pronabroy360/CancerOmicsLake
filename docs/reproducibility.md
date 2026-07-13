@@ -45,10 +45,14 @@ Use this when we want to complete ingestion quickly over a few days:
 ```bash
 make run-download-tcga-aggressive
 make run-download-tcga-normals
+make run-metadata-strict
+make run-download-tcga-paired
+make run-silver
 make run-bootstrap-stability
 make run-recount3-expression
 make run-external-validation
 make run-expression-statistics
+make run-paired-expression
 make run-consensus-candidates
 make run-flow-aggressive
 make run-demo-aggressive
@@ -169,6 +173,7 @@ Reports include `run_mode` where available:
 - Tumor-vs-normal comparisons are exploratory because TCGA and GTEx have cross-study and pipeline batch effects.
 - Run `make run-recount3-expression` followed by `make run-external-validation` for the real external validation.
 - Run `make run-expression-statistics` before rebuilding consensus candidates to add sample-level effect sizes and FDR support.
+- Run `make run-metadata-strict`, `make run-download-tcga-paired`, and `make run-silver` to maximize matched cases before `make run-paired-expression`.
   CI intentionally permits a missing extract and writes an empty schema-valid mart because the public source download
   is too large for a bounded smoke job.
 - Generated raw data, credentials, and controlled-access files must not be committed.

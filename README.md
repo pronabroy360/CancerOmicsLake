@@ -69,6 +69,7 @@ make run-graph-metrics
 make run-recount3-expression
 make run-external-validation
 make run-expression-statistics
+make run-paired-expression
 make run-consensus-candidates
 make run-dbt
 make test-dbt
@@ -118,7 +119,9 @@ Research surface:
 - Run the recount3 validation contract with `make run-external-validation` after exporting `data/silver/silver_expression_recount3.parquet`.
 - API: `GET /research/consensus-candidates?cancer_type=TCGA-BRCA&decision=prioritized&limit=20`
 - API: `GET /research/expression-statistical-support?cancer_type=TCGA-BRCA&support_tier=replicated_fdr&max_fdr=0.05&limit=20`
+- API: `GET /research/paired-expression-support?cancer_type=TCGA-BRCA&support_tier=paired_replicated&max_fdr=0.05&limit=20`
 - Build sample-level association support with `make run-expression-statistics`, then rebuild publication triage with `make run-consensus-candidates`.
+- Build matched cases with `make run-metadata-strict`, `make run-download-tcga-paired`, `make run-silver`, and `make run-paired-expression`.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:
@@ -181,12 +184,20 @@ make run-demo-check-strict
 ## Consensus Candidate Profile
 
 - Run `make run-expression-statistics` after native and recount3 silver expression are available.
-- Run `make run-consensus-candidates` after evidence confidence, bootstrap stability, external validation, and expression statistics.
+- Run `make run-consensus-candidates` after evidence confidence, bootstrap stability, external validation, expression statistics, and paired expression support.
 - Output: `data/gold/gold_consensus_candidate_genes.parquet` plus `outputs/reports/consensus_candidate_report.json`.
 - The score combines candidate priority, evidence confidence, adjacent-normal triangulation, bootstrap stability, recount3 validation, replicated statistical support, and mutation support.
 - Discordant external validation, reference sensitivity, weak bootstrap support, or weak evidence confidence explicitly deprioritizes a gene.
 - Statistical support uses Mann-Whitney effect sizes and cancer-wise Benjamini-Hochberg FDR, but source and disease status remain confounded.
 - This is a publication-triage layer, not a batch-corrected differential-expression result or clinical biomarker claim.
+
+## Matched TCGA Tumor-Normal Profile
+
+- `make run-metadata-strict` enumerates open-access primary-tumor STAR files independently of capped acquisition.
+- `make run-download-tcga-paired` selects primary tumors only for cases represented by downloaded adjacent normals.
+- `make run-paired-expression` applies case-level Wilcoxon signed-rank tests, paired rank-biserial effects, and cancer-wise Benjamini-Hochberg FDR.
+- The paired mart classifies `paired_replicated`, `paired_internal_fdr`, `limited`, and `paired_discordant` evidence against recount3 direction.
+- Pairing reduces cross-source confounding, but adjacent-normal field effects and residual biological confounding remain.
 
 ## Runtime Notes
 

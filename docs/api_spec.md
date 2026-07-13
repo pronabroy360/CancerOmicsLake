@@ -20,6 +20,7 @@ Implemented endpoints:
 - `GET /research/external-expression-validation?cancer_type=TCGA-BRCA&validation_tier=high&limit=20`
 - `GET /research/consensus-candidates?cancer_type=TCGA-BRCA&decision=prioritized&limit=20`
 - `GET /research/expression-statistical-support?cancer_type=TCGA-BRCA&support_tier=replicated_fdr&max_fdr=0.05&limit=20`
+- `GET /research/paired-expression-support?cancer_type=TCGA-BRCA&support_tier=paired_replicated&max_fdr=0.05&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -138,3 +139,7 @@ ranking and explicit rejection reasons from the combined evidence layers.
 `max_fdr`, `min_support_score`, and `limit`. It returns native and recount3 Mann-Whitney tests,
 rank-biserial effects, cancer-wise Benjamini-Hochberg FDR, and replication tiers. Source and disease
 status remain confounded, so the endpoint does not represent causal or clinical differential expression.
+
+`GET /research/paired-expression-support` accepts `cancer_type`, `gene_query`, `support_tier`,
+`max_fdr`, `min_support_score`, and `limit`. It returns matched-case Wilcoxon tests, paired rank-biserial
+effects, cancer-wise FDR, and recount3 direction concordance. Adjacent-normal field effects remain.

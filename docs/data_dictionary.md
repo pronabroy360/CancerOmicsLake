@@ -290,8 +290,10 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `statistical_support_score`, `statistical_support_tier`: replicated sample-level association support.
 - `native_fdr_q_value`, `recount3_fdr_q_value`: cancer-wise Benjamini-Hochberg adjusted values.
 - `native_rank_biserial`, `recount3_rank_biserial`: signed nonparametric effect sizes.
+- `paired_support_score`, `paired_support_tier`: matched TCGA tumor-normal support when paired cases are available.
+- `paired_fdr_q_value`, `paired_rank_biserial`, `matched_case_count`: paired Wilcoxon evidence and case support.
 - `evidence_component_count`, `evidence_completeness`: number and fraction of available evidence components.
-- `priority_component`, `confidence_component`, `reference_component`, `bootstrap_component`, `external_component`, `statistical_component`, `mutation_component`: transparent score inputs.
+- `priority_component`, `confidence_component`, `reference_component`, `bootstrap_component`, `external_component`, `statistical_component`, `paired_component`, `mutation_component`: transparent score inputs.
 - `consensus_caveat`: required interpretation warning.
 
 ### `gold_expression_statistical_support.parquet`
@@ -309,6 +311,20 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `statistical_support_score`: bounded joint significance/effect score, set to zero for materially discordant direction.
 - `statistical_support_tier`: `replicated_fdr`, `recount3_fdr_supported`, `native_only_fdr`, `limited`, or `discordant`.
 - `statistical_caveat`: required source-confounding and non-clinical interpretation warning.
+
+### `gold_paired_tcga_expression_support.parquet`
+
+- `cancer_type`, `gene_symbol`: matched TCGA cancer-gene pair.
+- `matched_case_count`: number of cases with both primary-tumor and adjacent-normal expression for the gene.
+- `paired_median_tumor`, `paired_median_normal`, `paired_log2_fold_change`: paired descriptive effect estimates.
+- `wilcoxon_statistic`, `paired_p_value`, `paired_fdr_q_value`: two-sided Wilcoxon signed-rank test and cancer-wise FDR.
+- `paired_rank_biserial`: signed paired nonparametric effect size.
+- `effect_direction`: thresholded paired direction.
+- `recount3_direction`: external recount3 direction used for replication screening.
+- `paired_direction_agreement`: `concordant`, `discordant`, or `inconclusive`.
+- `paired_support_score`: bounded score from FDR, effect size, sample support, and direction agreement.
+- `paired_support_tier`: `paired_replicated`, `paired_internal_fdr`, `limited`, or `paired_discordant`.
+- `paired_caveat`: required warning that adjacent-normal comparisons reduce source confounding but remain exploratory.
 
 ### `gold_graph_nodes.parquet`
 

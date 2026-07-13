@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 
+import polars as pl
+
 from src.common.cap_profiles import resolve_cap_profile
 from src.common.config import load_config
 from src.common.logging import configure_logging, get_logger
@@ -18,6 +20,7 @@ from src.analytics.consensus_candidates import build_consensus_candidates
 from src.analytics.evidence_confidence import build_evidence_confidence
 from src.analytics.external_validation import build_external_expression_validation
 from src.analytics.expression_statistics import build_expression_statistical_support
+from src.analytics.paired_expression import build_paired_expression_support
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
@@ -169,6 +172,7 @@ def main() -> None:
     parser_download.add_argument("--use-medium-cap-profile", action="store_true")
     parser_download.add_argument("--use-aggressive-cap-profile", action="store_true")
     parser_download.add_argument("--download-workers", type=int, default=1)
+    parser_download.add_argument("--pair-tumors-to-downloaded-normals", action="store_true")
 
     parser_gold = subparsers.add_parser("run-gold")
     parser_gold.add_argument("--config", required=True)
@@ -202,6 +206,9 @@ def main() -> None:
 
     parser_expression_statistics = subparsers.add_parser("run-expression-statistics")
     parser_expression_statistics.add_argument("--config", required=True)
+
+    parser_paired_expression = subparsers.add_parser("run-paired-expression")
+    parser_paired_expression.add_argument("--config", required=True)
 
     parser_recount3 = subparsers.add_parser("run-recount3-expression")
     parser_recount3.add_argument("--config", required=True)
@@ -328,6 +335,29 @@ def main() -> None:
                 }
                 for project_id in cfg.tcga.projects
             }
+        paired_case_ids = None
+        if args.pair_tumors_to_downloaded_normals:
+            expression_path = Path("data/silver/silver_expression_tcga.parquet")
+            if not expression_path.exists():
+                raise RuntimeError("Paired acquisition requires data/silver/silver_expression_tcga.parquet")
+            expression_cases = pl.read_parquet(
+                expression_path,
+                columns=["project_id", "case_id", "sample_type"],
+            ).unique()
+            paired_case_ids = {
+                project_id: {
+                    str(case_id)
+                    for case_id in expression_cases.filter(
+                        (pl.col("project_id") == project_id)
+                        & (pl.col("sample_type").str.to_lowercase() == "solid tissue normal")
+                    )
+                    .get_column("case_id")
+                    .drop_nulls()
+                    .to_list()
+                    if str(case_id).strip() not in {"", "Unknown"}
+                }
+                for project_id in cfg.tcga.projects
+            }
         summary = download_tcga_files(
             cfg,
             force_download=args.force_download,
@@ -336,6 +366,7 @@ def main() -> None:
             project_modality_caps=caps,
             run_mode=run_mode,
             download_workers=args.download_workers,
+            paired_expression_case_ids_by_project=paired_case_ids,
         )
         logger = get_logger("canceromicslake")
         logger.info(
@@ -506,6 +537,20 @@ def main() -> None:
             statistics_summary["elapsed_seconds"],
         )
         print("Expression statistical support build completed.")
+        return
+    if args.command == "run-paired-expression":
+        load_config(args.config)
+        paired_summary = build_paired_expression_support()
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Paired expression support: status=%s rows=%s cases=%s tiers=%s path=%s",
+            paired_summary["status"],
+            paired_summary["row_count"],
+            paired_summary["matched_case_support"],
+            paired_summary["tier_counts"],
+            paired_summary["path"],
+        )
+        print("Paired expression support build completed.")
         return
     if args.command == "run-recount3-expression":
         load_config(args.config)

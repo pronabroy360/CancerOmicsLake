@@ -37,6 +37,11 @@ CONSENSUS_CANDIDATE_SCHEMA = {
     "recount3_fdr_q_value": pl.Float64,
     "native_rank_biserial": pl.Float64,
     "recount3_rank_biserial": pl.Float64,
+    "matched_case_count": pl.Int64,
+    "paired_fdr_q_value": pl.Float64,
+    "paired_rank_biserial": pl.Float64,
+    "paired_support_score": pl.Float64,
+    "paired_support_tier": pl.Utf8,
     "evidence_component_count": pl.Int64,
     "evidence_completeness": pl.Float64,
     "priority_component": pl.Float64,
@@ -45,6 +50,7 @@ CONSENSUS_CANDIDATE_SCHEMA = {
     "bootstrap_component": pl.Float64,
     "external_component": pl.Float64,
     "statistical_component": pl.Float64,
+    "paired_component": pl.Float64,
     "mutation_component": pl.Float64,
     "consensus_caveat": pl.Utf8,
 }
@@ -76,6 +82,8 @@ def _reason_summary(row: dict[str, object]) -> str:
         reasons.append("evidence_confidence_weak")
     if row.get("statistical_support_tier") == "discordant":
         reasons.append("statistical_support_discordant")
+    if row.get("paired_support_tier") == "paired_discordant":
+        reasons.append("paired_support_discordant")
     if float(row.get("consensus_score") or 0.0) < 0.45:
         reasons.append("low_consensus_score")
     return ";".join(reasons) if reasons else "none"
@@ -103,6 +111,7 @@ def build_consensus_candidates(
         bootstrap = _read_or_empty(gold_root / "gold_candidate_bootstrap_stability.parquet")
         external = _read_or_empty(gold_root / "gold_external_expression_validation.parquet")
         statistics = _read_or_empty(gold_root / "gold_expression_statistical_support.parquet")
+        paired = _read_or_empty(gold_root / "gold_paired_tcga_expression_support.parquet")
 
         base = candidate.select(
             [
@@ -202,6 +211,27 @@ def build_consensus_candidates(
                 "recount3_rank_biserial": pl.Float64,
             },
         )
+        paired_part = _select_existing(
+            paired,
+            [
+                "cancer_type",
+                "gene_symbol",
+                pl.col("matched_case_count").cast(pl.Int64, strict=False),
+                pl.col("paired_fdr_q_value").cast(pl.Float64, strict=False),
+                pl.col("paired_rank_biserial").cast(pl.Float64, strict=False),
+                pl.col("paired_support_score").cast(pl.Float64, strict=False),
+                pl.col("paired_support_tier").cast(pl.Utf8, strict=False),
+            ],
+            {
+                "cancer_type": pl.Utf8,
+                "gene_symbol": pl.Utf8,
+                "matched_case_count": pl.Int64,
+                "paired_fdr_q_value": pl.Float64,
+                "paired_rank_biserial": pl.Float64,
+                "paired_support_score": pl.Float64,
+                "paired_support_tier": pl.Utf8,
+            },
+        )
 
         joined = (
             base.join(confidence_part, on=["cancer_type", "gene_symbol"], how="left")
@@ -209,6 +239,7 @@ def build_consensus_candidates(
             .join(bootstrap_part, on=["cancer_type", "gene_symbol"], how="left")
             .join(external_part, on=["cancer_type", "gene_symbol"], how="left")
             .join(statistics_part, on=["cancer_type", "gene_symbol"], how="left")
+            .join(paired_part, on=["cancer_type", "gene_symbol"], how="left")
             .with_columns(
                 [
                     pl.col("priority_score").fill_null(0.0).clip(0.0, 1.0),
@@ -221,6 +252,10 @@ def build_consensus_candidates(
                     pl.col("recount3_fdr_q_value").fill_null(1.0).clip(0.0, 1.0),
                     pl.col("native_rank_biserial").fill_null(0.0).clip(-1.0, 1.0),
                     pl.col("recount3_rank_biserial").fill_null(0.0).clip(-1.0, 1.0),
+                    pl.col("matched_case_count").fill_null(0).cast(pl.Int64),
+                    pl.col("paired_fdr_q_value").fill_null(1.0).clip(0.0, 1.0),
+                    pl.col("paired_rank_biserial").fill_null(0.0).clip(-1.0, 1.0),
+                    pl.col("paired_support_score").fill_null(0.0).clip(0.0, 1.0),
                     pl.col("mutation_frequency").fill_null(0.0).clip(0.0, 1.0),
                     pl.col("mutated_sample_count").fill_null(0).cast(pl.Int64),
                     pl.col("total_profiled_sample_count").fill_null(0).cast(pl.Int64),
@@ -233,6 +268,7 @@ def build_consensus_candidates(
                     pl.col("validation_tier").fill_null("missing"),
                     pl.col("direction_agreement").fill_null("missing"),
                     pl.col("statistical_support_tier").fill_null("missing"),
+                    pl.col("paired_support_tier").fill_null("missing"),
                 ]
             )
             .with_columns(
@@ -267,6 +303,14 @@ def build_consensus_candidates(
                     .then(pl.col("statistical_support_score") * 0.15)
                     .otherwise(0.0)
                     .alias("statistical_component"),
+                    pl.when(pl.col("paired_support_tier") == "paired_replicated")
+                    .then(pl.col("paired_support_score"))
+                    .when(pl.col("paired_support_tier") == "paired_internal_fdr")
+                    .then(pl.col("paired_support_score") * 0.65)
+                    .when(pl.col("paired_support_tier") == "limited")
+                    .then(pl.col("paired_support_score") * 0.15)
+                    .otherwise(0.0)
+                    .alias("paired_component"),
                     pl.col("mutation_frequency").alias("mutation_component"),
                 ]
             )
@@ -278,17 +322,19 @@ def build_consensus_candidates(
                     + (pl.col("bootstrap_stability_tier") != "missing").cast(pl.Int64)
                     + (pl.col("validation_tier") != "missing").cast(pl.Int64)
                     + (pl.col("statistical_support_tier") != "missing").cast(pl.Int64)
+                    + (pl.col("paired_support_tier") != "missing").cast(pl.Int64)
                     + (pl.col("mutation_component") > 0).cast(pl.Int64)
                 ).alias("evidence_component_count")
             )
-            .with_columns((pl.col("evidence_component_count") / 7.0).round(6).alias("evidence_completeness"))
+            .with_columns((pl.col("evidence_component_count") / 8.0).round(6).alias("evidence_completeness"))
             .with_columns(
                 (
-                    pl.col("statistical_component") * 0.20
-                    + pl.col("external_component") * 0.20
-                    + pl.col("reference_component") * 0.15
-                    + pl.col("bootstrap_component") * 0.15
-                    + pl.col("confidence_component") * 0.15
+                    pl.col("paired_component") * 0.20
+                    + pl.col("statistical_component") * 0.20
+                    + pl.col("external_component") * 0.15
+                    + pl.col("reference_component") * 0.10
+                    + pl.col("bootstrap_component") * 0.10
+                    + pl.col("confidence_component") * 0.10
                     + pl.col("priority_component") * 0.10
                     + pl.col("mutation_component") * 0.05
                 )
@@ -305,6 +351,7 @@ def build_consensus_candidates(
                         "bootstrap_stability_tier",
                         "confidence_tier",
                         "statistical_support_tier",
+                        "paired_support_tier",
                         "consensus_score",
                     ]
                 )
@@ -328,7 +375,7 @@ def build_consensus_candidates(
                     .otherwise(pl.lit("deprioritized"))
                     .alias("publication_tier"),
                     pl.lit(
-                        "Consensus prioritization integrates statistical association and engineering evidence; source and disease remain confounded, so it is not a batch-corrected differential-expression, clinical biomarker, or causal claim."
+                        "Consensus prioritization integrates paired and cross-source statistical associations with engineering evidence; adjacent-tissue field effects and residual confounding remain, so it is not a clinical biomarker or causal claim."
                     ).alias("consensus_caveat"),
                 ]
             )

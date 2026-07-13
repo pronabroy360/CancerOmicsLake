@@ -13,6 +13,7 @@ from src.analytics.dashboard_data import (
     evidence_confidence_data,
     external_expression_validation_data,
     expression_statistical_support_data,
+    paired_expression_support_data,
     graph_explorer_data,
     graph_node_metrics_data,
     overview_metrics,
@@ -375,6 +376,35 @@ def test_expression_statistical_support_data_returns_filtered_rows(tmp_path: Pat
     result = expression_statistical_support_data(
         cancer_type="TCGA-BRCA",
         support_tier="replicated_fdr",
+        max_fdr=0.05,
+        min_support_score=0.8,
+        gold_path=path,
+    )
+
+    assert result.height == 1
+    assert result.row(0, named=True)["gene_symbol"] == "TP53"
+
+
+def test_paired_expression_support_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.paired_expression import PAIRED_EXPRESSION_SCHEMA
+
+    path = tmp_path / "paired.parquet"
+    row = {column: None for column in PAIRED_EXPRESSION_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "gene_symbol": "TP53",
+            "matched_case_count": 40,
+            "paired_fdr_q_value": 0.01,
+            "paired_support_score": 0.9,
+            "paired_support_tier": "paired_replicated",
+        }
+    )
+    pl.DataFrame([row], schema=PAIRED_EXPRESSION_SCHEMA).write_parquet(path)
+
+    result = paired_expression_support_data(
+        cancer_type="TCGA-BRCA",
+        support_tier="paired_replicated",
         max_fdr=0.05,
         min_support_score=0.8,
         gold_path=path,

@@ -439,6 +439,18 @@ def run_silver_quality_checks(
             "statistical_support_tier": pl.Utf8,
         },
     )
+    gold_paired_expression = _read_or_empty(
+        gold_root / "gold_paired_tcga_expression_support.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "matched_case_count": pl.Int64,
+            "paired_fdr_q_value": pl.Float64,
+            "paired_rank_biserial": pl.Float64,
+            "paired_support_score": pl.Float64,
+            "paired_support_tier": pl.Utf8,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -724,6 +736,39 @@ def run_silver_quality_checks(
                 & (pl.col("statistical_support_score") != 0.0)
             )
         ).height
+    missing_gold_paired_expression_cols = _missing_columns(
+        gold_paired_expression,
+        [
+            "cancer_type",
+            "gene_symbol",
+            "matched_case_count",
+            "paired_fdr_q_value",
+            "paired_rank_biserial",
+            "paired_support_score",
+            "paired_support_tier",
+        ],
+    )
+    invalid_gold_paired_expression_values = 0
+    if not gold_paired_expression.is_empty() and {
+        "matched_case_count",
+        "paired_fdr_q_value",
+        "paired_rank_biserial",
+        "paired_support_score",
+        "paired_support_tier",
+    }.issubset(gold_paired_expression.columns):
+        invalid_gold_paired_expression_values = gold_paired_expression.filter(
+            (pl.col("matched_case_count") < 10)
+            | ~pl.col("paired_fdr_q_value").is_between(0.0, 1.0)
+            | ~pl.col("paired_rank_biserial").is_between(-1.0, 1.0)
+            | ~pl.col("paired_support_score").is_between(0.0, 1.0)
+            | ~pl.col("paired_support_tier").is_in(
+                ["paired_replicated", "paired_internal_fdr", "limited", "paired_discordant"]
+            )
+            | (
+                (pl.col("paired_support_tier") == "paired_discordant")
+                & (pl.col("paired_support_score") != 0.0)
+            )
+        ).height
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
         gold_graph_edges,
@@ -996,6 +1041,20 @@ def run_silver_quality_checks(
             check_name="gold_expression_statistical_support_values_supported",
             status="passed" if invalid_gold_expression_statistics_values == 0 else "failed",
             failed_rows=int(invalid_gold_expression_statistics_values),
+        ),
+        CheckResult(
+            check_name="gold_paired_tcga_expression_support_schema_columns_present",
+            status=(
+                "passed"
+                if (gold_paired_expression.is_empty() or missing_gold_paired_expression_cols == 0)
+                else "failed"
+            ),
+            failed_rows=int(missing_gold_paired_expression_cols),
+        ),
+        CheckResult(
+            check_name="gold_paired_tcga_expression_support_values_supported",
+            status="passed" if invalid_gold_paired_expression_values == 0 else "failed",
+            failed_rows=int(invalid_gold_paired_expression_values),
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",
