@@ -54,6 +54,7 @@ make run-external-validation
 make run-expression-statistics
 make run-paired-expression
 make run-consensus-candidates
+make run-pathway-enrichment
 make run-flow-aggressive
 make run-demo-aggressive
 ```
@@ -174,6 +175,7 @@ Reports include `run_mode` where available:
 - Run `make run-recount3-expression` followed by `make run-external-validation` for the real external validation.
 - Run `make run-expression-statistics` before rebuilding consensus candidates to add sample-level effect sizes and FDR support.
 - Run `make run-metadata-strict`, `make run-download-tcga-paired`, and `make run-silver` to maximize matched cases before `make run-paired-expression`.
+- Run `make run-pathway-enrichment` after consensus candidates and a local GMT file are available at `data/bronze/reference/pathways/reactome_pathways.gmt`.
   CI intentionally permits a missing extract and writes an empty schema-valid mart because the public source download
   is too large for a bounded smoke job.
 - Generated raw data, credentials, and controlled-access files must not be committed.

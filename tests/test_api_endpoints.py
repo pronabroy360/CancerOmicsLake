@@ -125,6 +125,14 @@ def test_research_paired_expression_support_endpoint() -> None:
     assert payload["filters"]["limit"] == 5
 
 
+def test_research_pathway_enrichment_endpoint() -> None:
+    response = client.get("/research/pathway-enrichment", params={"limit": 5})
+    assert response.status_code == 200
+    payload = response.json()
+    assert "rows" in payload
+    assert payload["filters"]["limit"] == 5
+
+
 def test_quality_latest_endpoint() -> None:
     response = client.get("/quality/latest")
     assert response.status_code == 200

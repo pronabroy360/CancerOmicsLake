@@ -71,6 +71,7 @@ make run-external-validation
 make run-expression-statistics
 make run-paired-expression
 make run-consensus-candidates
+make run-pathway-enrichment
 make run-dbt
 make test-dbt
 make run-flow-medium
@@ -120,8 +121,10 @@ Research surface:
 - API: `GET /research/consensus-candidates?cancer_type=TCGA-BRCA&decision=prioritized&limit=20`
 - API: `GET /research/expression-statistical-support?cancer_type=TCGA-BRCA&support_tier=replicated_fdr&max_fdr=0.05&limit=20`
 - API: `GET /research/paired-expression-support?cancer_type=TCGA-BRCA&support_tier=paired_replicated&max_fdr=0.05&limit=20`
+- API: `GET /research/pathway-enrichment?cancer_type=TCGA-BRCA&candidate_set=prioritized&max_fdr=0.05&limit=20`
 - Build sample-level association support with `make run-expression-statistics`, then rebuild publication triage with `make run-consensus-candidates`.
 - Build matched cases with `make run-metadata-strict`, `make run-download-tcga-paired`, `make run-silver`, and `make run-paired-expression`.
+- Build pathway hypotheses with `make run-pathway-enrichment` after placing a GMT file at `data/bronze/reference/pathways/reactome_pathways.gmt`.
 - Build independently with `make run-evidence-confidence`; `make run-graph-export` also refreshes the confidence mart.
 
 Reviewer demo path:
@@ -198,6 +201,13 @@ make run-demo-check-strict
 - `make run-paired-expression` applies case-level Wilcoxon signed-rank tests, paired rank-biserial effects, and cancer-wise Benjamini-Hochberg FDR.
 - The paired mart classifies `paired_replicated`, `paired_internal_fdr`, `limited`, and `paired_discordant` evidence against recount3 direction.
 - Pairing reduces cross-source confounding, but adjacent-normal field effects and residual biological confounding remain.
+
+## Pathway Enrichment Profile
+
+- `make run-pathway-enrichment` performs hypergeometric over-representation analysis over consensus candidate sets.
+- Default input path: `data/bronze/reference/pathways/reactome_pathways.gmt`.
+- Outputs: `data/gold/gold_pathway_enrichment.parquet` and `outputs/reports/pathway_enrichment_report.json`.
+- This layer supports biological hypothesis generation only; it does not prove mechanism, causality, or clinical actionability.
 
 ## Runtime Notes
 

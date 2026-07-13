@@ -21,6 +21,7 @@ from src.analytics.evidence_confidence import build_evidence_confidence
 from src.analytics.external_validation import build_external_expression_validation
 from src.analytics.expression_statistics import build_expression_statistical_support
 from src.analytics.paired_expression import build_paired_expression_support
+from src.analytics.pathway_enrichment import build_pathway_enrichment
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
@@ -209,6 +210,12 @@ def main() -> None:
 
     parser_paired_expression = subparsers.add_parser("run-paired-expression")
     parser_paired_expression.add_argument("--config", required=True)
+
+    parser_pathway = subparsers.add_parser("run-pathway-enrichment")
+    parser_pathway.add_argument("--config", required=True)
+    parser_pathway.add_argument("--pathway-gmt", default="data/bronze/reference/pathways/reactome_pathways.gmt")
+    parser_pathway.add_argument("--pathway-source", default="Reactome")
+    parser_pathway.add_argument("--min-overlap", type=int, default=2)
 
     parser_recount3 = subparsers.add_parser("run-recount3-expression")
     parser_recount3.add_argument("--config", required=True)
@@ -551,6 +558,24 @@ def main() -> None:
             paired_summary["path"],
         )
         print("Paired expression support build completed.")
+        return
+    if args.command == "run-pathway-enrichment":
+        load_config(args.config)
+        pathway_summary = build_pathway_enrichment(
+            pathway_gmt_path=args.pathway_gmt,
+            pathway_source=args.pathway_source,
+            min_overlap=args.min_overlap,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Pathway enrichment: status=%s rows=%s pathways=%s tiers=%s path=%s",
+            pathway_summary["status"],
+            pathway_summary["row_count"],
+            pathway_summary["pathway_count"],
+            pathway_summary["tier_counts"],
+            pathway_summary["path"],
+        )
+        print("Pathway enrichment build completed.")
         return
     if args.command == "run-recount3-expression":
         load_config(args.config)

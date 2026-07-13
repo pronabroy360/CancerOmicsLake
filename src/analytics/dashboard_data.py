@@ -16,6 +16,7 @@ from src.analytics.evidence_confidence import CONFIDENCE_SCHEMA, evidence_confid
 from src.analytics.external_validation import EXTERNAL_VALIDATION_SCHEMA, external_expression_validation
 from src.analytics.expression_statistics import EXPRESSION_STATISTICS_SCHEMA, expression_statistical_support
 from src.analytics.paired_expression import PAIRED_EXPRESSION_SCHEMA, paired_expression_support
+from src.analytics.pathway_enrichment import PATHWAY_ENRICHMENT_SCHEMA, pathway_enrichment
 from src.analytics.reference_triangulation import REFERENCE_TRIANGULATION_SCHEMA, reference_triangulation
 from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene
@@ -376,6 +377,30 @@ def paired_expression_support_data(
     )
     rows = payload.get("rows", [])
     return pl.DataFrame(rows) if rows else pl.DataFrame(schema=PAIRED_EXPRESSION_SCHEMA)
+
+
+def pathway_enrichment_data(
+    cancer_type: str | None = None,
+    candidate_set: str | None = None,
+    pathway_query: str | None = None,
+    enrichment_tier: str | None = None,
+    max_fdr: float | None = None,
+    min_overlap: int | None = None,
+    limit: int = 50,
+    gold_path: str | Path = "data/gold/gold_pathway_enrichment.parquet",
+) -> pl.DataFrame:
+    payload = pathway_enrichment(
+        cancer_type=cancer_type,
+        candidate_set=candidate_set,
+        pathway_query=pathway_query,
+        enrichment_tier=enrichment_tier,
+        max_fdr=max_fdr,
+        min_overlap=min_overlap,
+        limit=limit,
+        gold_path=gold_path,
+    )
+    rows = payload.get("rows", [])
+    return pl.DataFrame(rows) if rows else pl.DataFrame(schema=PATHWAY_ENRICHMENT_SCHEMA)
 
 
 def graph_explorer_data(

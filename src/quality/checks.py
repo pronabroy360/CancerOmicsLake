@@ -451,6 +451,25 @@ def run_silver_quality_checks(
             "paired_support_tier": pl.Utf8,
         },
     )
+    gold_pathway_enrichment = _read_or_empty(
+        gold_root / "gold_pathway_enrichment.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "candidate_set": pl.Utf8,
+            "pathway_id": pl.Utf8,
+            "pathway_name": pl.Utf8,
+            "background_gene_count": pl.Int64,
+            "candidate_gene_count": pl.Int64,
+            "pathway_gene_count": pl.Int64,
+            "overlap_gene_count": pl.Int64,
+            "enrichment_ratio": pl.Float64,
+            "odds_ratio": pl.Float64,
+            "p_value": pl.Float64,
+            "fdr_q_value": pl.Float64,
+            "enrichment_score": pl.Float64,
+            "enrichment_tier": pl.Utf8,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -769,6 +788,46 @@ def run_silver_quality_checks(
                 & (pl.col("paired_support_score") != 0.0)
             )
         ).height
+    missing_gold_pathway_enrichment_cols = _missing_columns(
+        gold_pathway_enrichment,
+        [
+            "cancer_type",
+            "candidate_set",
+            "pathway_id",
+            "pathway_name",
+            "background_gene_count",
+            "candidate_gene_count",
+            "pathway_gene_count",
+            "overlap_gene_count",
+            "p_value",
+            "fdr_q_value",
+            "enrichment_score",
+            "enrichment_tier",
+        ],
+    )
+    invalid_gold_pathway_enrichment_values = 0
+    if not gold_pathway_enrichment.is_empty() and {
+        "background_gene_count",
+        "candidate_gene_count",
+        "pathway_gene_count",
+        "overlap_gene_count",
+        "p_value",
+        "fdr_q_value",
+        "enrichment_score",
+        "enrichment_tier",
+    }.issubset(gold_pathway_enrichment.columns):
+        invalid_gold_pathway_enrichment_values = gold_pathway_enrichment.filter(
+            (pl.col("background_gene_count") <= 0)
+            | (pl.col("candidate_gene_count") <= 0)
+            | (pl.col("pathway_gene_count") <= 0)
+            | (pl.col("overlap_gene_count") <= 0)
+            | (pl.col("overlap_gene_count") > pl.col("candidate_gene_count"))
+            | (pl.col("overlap_gene_count") > pl.col("pathway_gene_count"))
+            | ~pl.col("p_value").is_between(0.0, 1.0)
+            | ~pl.col("fdr_q_value").is_between(0.0, 1.0)
+            | ~pl.col("enrichment_score").is_between(0.0, 1.0)
+            | ~pl.col("enrichment_tier").is_in(["fdr_enriched", "nominal", "limited"])
+        ).height
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
         gold_graph_edges,
@@ -1055,6 +1114,20 @@ def run_silver_quality_checks(
             check_name="gold_paired_tcga_expression_support_values_supported",
             status="passed" if invalid_gold_paired_expression_values == 0 else "failed",
             failed_rows=int(invalid_gold_paired_expression_values),
+        ),
+        CheckResult(
+            check_name="gold_pathway_enrichment_schema_columns_present",
+            status=(
+                "passed"
+                if (gold_pathway_enrichment.is_empty() or missing_gold_pathway_enrichment_cols == 0)
+                else "failed"
+            ),
+            failed_rows=int(missing_gold_pathway_enrichment_cols),
+        ),
+        CheckResult(
+            check_name="gold_pathway_enrichment_values_supported",
+            status="passed" if invalid_gold_pathway_enrichment_values == 0 else "failed",
+            failed_rows=int(invalid_gold_pathway_enrichment_values),
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",

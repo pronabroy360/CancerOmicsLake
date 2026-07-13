@@ -326,6 +326,26 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `paired_support_tier`: `paired_replicated`, `paired_internal_fdr`, `limited`, or `paired_discordant`.
 - `paired_caveat`: required warning that adjacent-normal comparisons reduce source confounding but remain exploratory.
 
+### `gold_pathway_enrichment.parquet`
+
+- `cancer_type`: TCGA project ID.
+- `candidate_set`: candidate grouping tested, such as `prioritized`, `watchlist_plus_prioritized`, or `research_candidate_plus`.
+- `pathway_id`: stable pathway identifier when available, for example a Reactome `R-HSA-*` ID.
+- `pathway_name`: pathway display name from the GMT file.
+- `pathway_source`: pathway source label, default `Reactome`.
+- `background_gene_count`: tested gene background size for the cancer type.
+- `candidate_gene_count`: number of candidate genes in the tested candidate set.
+- `pathway_gene_count`: pathway genes present in the tested background.
+- `overlap_gene_count`: candidate genes overlapping the pathway.
+- `overlap_genes`: comma-separated overlapping gene symbols.
+- `enrichment_ratio`: observed overlap divided by expected overlap under the tested background.
+- `odds_ratio`: contingency-table odds ratio.
+- `p_value`: hypergeometric over-representation p-value.
+- `fdr_q_value`: Benjamini-Hochberg adjusted value within cancer and candidate set.
+- `enrichment_score`: bounded reviewer ranking score from FDR, overlap, and enrichment ratio.
+- `enrichment_tier`: `fdr_enriched`, `nominal`, or `limited`.
+- `pathway_caveat`: required hypothesis-generation warning.
+
 ### `gold_graph_nodes.parquet`
 
 - `node_id`: stable graph node identifier.

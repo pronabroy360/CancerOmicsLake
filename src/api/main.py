@@ -10,6 +10,7 @@ from src.analytics.evidence_confidence import evidence_confidence
 from src.analytics.external_validation import external_expression_validation
 from src.analytics.expression_statistics import expression_statistical_support
 from src.analytics.paired_expression import paired_expression_support
+from src.analytics.pathway_enrichment import pathway_enrichment
 from src.analytics.expression_summary import expression_by_gene
 from src.analytics.gene_search import search_genes
 from src.analytics.metadata import metadata_projects as metadata_projects_data
@@ -227,6 +228,27 @@ def research_paired_expression_support(
         support_tier=support_tier,
         max_fdr=max_fdr,
         min_support_score=min_support_score,
+        limit=limit,
+    )
+
+
+@app.get("/research/pathway-enrichment")
+def research_pathway_enrichment(
+    cancer_type: str | None = None,
+    candidate_set: str | None = None,
+    pathway_query: str | None = None,
+    enrichment_tier: str | None = None,
+    max_fdr: float | None = None,
+    min_overlap: int | None = None,
+    limit: int = 50,
+) -> dict[str, object]:
+    return pathway_enrichment(
+        cancer_type=cancer_type,
+        candidate_set=candidate_set,
+        pathway_query=pathway_query,
+        enrichment_tier=enrichment_tier,
+        max_fdr=max_fdr,
+        min_overlap=min_overlap,
         limit=limit,
     )
 

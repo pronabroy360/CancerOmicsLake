@@ -14,6 +14,7 @@ from src.analytics.dashboard_data import (
     external_expression_validation_data,
     expression_statistical_support_data,
     paired_expression_support_data,
+    pathway_enrichment_data,
     graph_explorer_data,
     graph_node_metrics_data,
     overview_metrics,
@@ -412,6 +413,39 @@ def test_paired_expression_support_data_returns_filtered_rows(tmp_path: Path) ->
 
     assert result.height == 1
     assert result.row(0, named=True)["gene_symbol"] == "TP53"
+
+
+def test_pathway_enrichment_data_returns_filtered_rows(tmp_path: Path) -> None:
+    from src.analytics.pathway_enrichment import PATHWAY_ENRICHMENT_SCHEMA
+
+    path = tmp_path / "pathway.parquet"
+    row = {column: None for column in PATHWAY_ENRICHMENT_SCHEMA}
+    row.update(
+        {
+            "cancer_type": "TCGA-BRCA",
+            "candidate_set": "prioritized",
+            "pathway_id": "R-HSA-1",
+            "pathway_name": "Cell cycle",
+            "overlap_gene_count": 5,
+            "fdr_q_value": 0.01,
+            "enrichment_score": 0.9,
+            "enrichment_tier": "fdr_enriched",
+        }
+    )
+    pl.DataFrame([row], schema=PATHWAY_ENRICHMENT_SCHEMA).write_parquet(path)
+
+    result = pathway_enrichment_data(
+        cancer_type="TCGA-BRCA",
+        candidate_set="prioritized",
+        pathway_query="cycle",
+        enrichment_tier="fdr_enriched",
+        max_fdr=0.05,
+        min_overlap=3,
+        gold_path=path,
+    )
+
+    assert result.height == 1
+    assert result.row(0, named=True)["pathway_name"] == "Cell cycle"
 
 
 def test_quality_report_data_builds_status_counts(tmp_path: Path) -> None:

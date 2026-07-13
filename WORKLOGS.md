@@ -463,3 +463,11 @@ Impact values:
 - Paired support tiers: 25,544 paired-replicated, 33,912 paired-internal-FDR, 114,938 limited, and 3,887 paired-discordant rows.
 - Consensus triage after paired evidence: 301 prioritized, 5,890 watchlist, and 102,590 deprioritized rows.
 - Verified pytest (`159 passed`), quality (`48 checks`), and strict demo (`27 checks`). Local dbt remains CI/Docker-gated because this shell is Python 3.14 and the Docker daemon is not running.
+
+## 2026-07-13 - Consensus Candidate Pathway Enrichment
+
+- Added `gold_pathway_enrichment` as a pathway-level hypothesis-generation mart over consensus candidate sets.
+- Implemented GMT parsing, Reactome-style pathway ID extraction, hypergeometric over-representation tests, and Benjamini-Hochberg FDR within cancer and candidate set.
+- Added candidate sets for `prioritized`, `watchlist_plus_prioritized`, and `research_candidate_plus` genes using the cancer-specific tested background.
+- Added CLI/Make execution, API endpoint, Streamlit page, quality contracts, data dictionary, reviewer SQL, and regression tests.
+- Kept pathway interpretation narrow: enrichment summarizes candidate-set biology for follow-up, not mechanism, causality, or clinical actionability.

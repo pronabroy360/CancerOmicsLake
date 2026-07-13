@@ -21,6 +21,7 @@ Implemented endpoints:
 - `GET /research/consensus-candidates?cancer_type=TCGA-BRCA&decision=prioritized&limit=20`
 - `GET /research/expression-statistical-support?cancer_type=TCGA-BRCA&support_tier=replicated_fdr&max_fdr=0.05&limit=20`
 - `GET /research/paired-expression-support?cancer_type=TCGA-BRCA&support_tier=paired_replicated&max_fdr=0.05&limit=20`
+- `GET /research/pathway-enrichment?cancer_type=TCGA-BRCA&candidate_set=prioritized&max_fdr=0.05&limit=20`
 - `GET /graph/nodes`
 - `GET /graph/edges`
 - `GET /quality/latest`
@@ -143,3 +144,8 @@ status remain confounded, so the endpoint does not represent causal or clinical 
 `GET /research/paired-expression-support` accepts `cancer_type`, `gene_query`, `support_tier`,
 `max_fdr`, `min_support_score`, and `limit`. It returns matched-case Wilcoxon tests, paired rank-biserial
 effects, cancer-wise FDR, and recount3 direction concordance. Adjacent-normal field effects remain.
+
+`GET /research/pathway-enrichment` accepts `cancer_type`, `candidate_set`, `pathway_query`,
+`enrichment_tier`, `max_fdr`, `min_overlap`, and `limit`. It returns hypergeometric pathway
+over-representation results over consensus candidate sets using the tested cancer-specific background.
+This is hypothesis generation, not mechanism or clinical validation.

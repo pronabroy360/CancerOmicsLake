@@ -308,6 +308,28 @@ LIMIT 50;
 This table uses exact TCGA case matching between primary tumor and adjacent normal samples. It reduces source
 confounding but still should not be treated as a clinical or causal result.
 
+## Candidate Pathway Enrichment
+
+```sql
+SELECT
+    cancer_type,
+    candidate_set,
+    pathway_id,
+    pathway_name,
+    overlap_gene_count,
+    overlap_genes,
+    enrichment_ratio,
+    fdr_q_value,
+    enrichment_score
+FROM read_parquet('data/gold/gold_pathway_enrichment.parquet')
+WHERE enrichment_tier = 'fdr_enriched'
+ORDER BY enrichment_score DESC, fdr_q_value ASC
+LIMIT 50;
+```
+
+This table summarizes pathway-level hypotheses over consensus candidate sets. It depends on the tested
+background and should not be interpreted as mechanistic proof.
+
 ## Quality Checks That Need Attention
 
 ```sql
