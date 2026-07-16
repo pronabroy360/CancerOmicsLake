@@ -10,6 +10,7 @@ env/
 
 data/
 outputs/raw/
+outputs/releases/
 
 .env
 *.token

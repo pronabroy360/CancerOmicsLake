@@ -240,6 +240,13 @@ make run-demo-check-strict
 See `docs/sample_queries.md` and `outputs/sample_queries/` for reviewer-friendly SQL examples.
 The confidence model and pre-publication validation plan are documented in `docs/evidence_confidence_methodology.md`.
 
+## FAIR Derived-Data Release
+
+Run `make build-fair-release RELEASE_VERSION=0.1.0` to create a versioned, checksummed bundle in
+`outputs/releases/v0.1.0/`. The strict release gate packages only aggregate research marts, rebuilds
+the graph through the public node policy, and fails on individual-level identifier columns or values.
+See [`docs/fair_release.md`](docs/fair_release.md) for verification and DOI-deposit steps.
+
 ## Ingestion Traceability
 
 Generate a download-to-silver traceability report:

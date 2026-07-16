@@ -553,3 +553,16 @@ Impact values:
 - Real reference run passed all six workloads; warm median latency ranged from 0.274 ms to 3.941 ms on the recorded
   macOS arm64, Python 3.11.15, DuckDB 1.5.4, four-thread environment.
 - Added CLI/Make execution, fixture coverage, methodology documentation, and CI artifact generation.
+
+## 2026-07-16 - FAIR Aggregate Research Release Gate
+
+- Added a strict, versioned release builder for public-safe aggregate Parquet marts with semantic-version validation.
+- Added fail-closed checks for missing or empty resources, identifier-bearing columns, TCGA/GTEx individual-like values,
+  and accidental Patient/Sample graph publication.
+- Rebuilt graph resources through the shared public allowlist instead of copying internal graph tables.
+- Added SHA-256 checksums, row counts, typed schemas, source provenance, limitations, Frictionless-style metadata,
+  citation metadata, and a DOI-deposit runbook.
+- Real v0.1.0 acceptance produced 16 resources totaling 42,661,802 bytes; all checksums and identifier checks passed.
+- Public graph release retained 55,209 safe nodes and 255,215 safe edges while excluding 4,780 individual nodes and
+  5,533 connected edges.
+- Verified pytest (`186 passed`), dbt build (`26 models`), and dbt tests (`86 passed`).

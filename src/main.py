@@ -43,6 +43,7 @@ from src.operations.project_completion import (
     write_project_completion_report,
 )
 from src.operations.research_benchmark import run_research_benchmark
+from src.operations.fair_release import build_fair_release
 from src.processing.build_expression_table import with_log2_expression
 from src.processing.gtex_harmonizer import harmonize_gtex_gct_files
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
@@ -253,6 +254,13 @@ def main() -> None:
     parser_benchmark.add_argument("--repeats", type=int, default=7)
     parser_benchmark.add_argument("--warmups", type=int, default=2)
     parser_benchmark.add_argument("--threads", type=int, default=4)
+
+    parser_release = subparsers.add_parser("build-fair-release")
+    parser_release.add_argument("--config", required=True)
+    parser_release.add_argument("--version", required=True)
+    parser_release.add_argument("--gold-dir", default="data/gold")
+    parser_release.add_argument("--output-root", default="outputs/releases")
+    parser_release.add_argument("--creator", default="Pronab Chandra Roy")
 
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
@@ -665,6 +673,24 @@ def main() -> None:
         if payload["status"] == "failed":
             raise RuntimeError(f"Research benchmark failed. See {args.output}")
         print("Research benchmark completed.")
+        return
+    if args.command == "build-fair-release":
+        load_config(args.config)
+        payload = build_fair_release(
+            version=args.version,
+            gold_dir=args.gold_dir,
+            output_root=args.output_root,
+            creator=args.creator,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "FAIR release built: version=%s resources=%s bytes=%s path=%s",
+            payload["release_version"],
+            payload["resource_count"],
+            payload["total_bytes"],
+            payload["release_directory"],
+        )
+        print("FAIR release bundle completed.")
         return
     if args.command == "run-flow":
         from src.orchestration.pipeline_flow import run_pipeline_with_fallback

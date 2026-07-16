@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use CancerOmicsLake, cite this software and its source biomedical datasets."
+title: "CancerOmicsLake: a reproducible TCGA-GTEx cancer-omics data platform"
+type: software
+authors:
+  - family-names: "Roy"
+    given-names: "Pronab Chandra"
+version: 0.1.0
+date-released: 2026-07-16
+repository-code: "https://github.com/pronabroy360/CancerOmicsLake"
+license: MIT
+keywords:
+  - bioinformatics
+  - data engineering
+  - TCGA
+  - GTEx
+  - knowledge graph
