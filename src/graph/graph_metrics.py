@@ -7,6 +7,8 @@ from typing import Any
 
 import polars as pl
 
+from src.graph.public_graph import filter_public_graph_tables
+
 
 NODE_SCHEMA = {
     "node_id": pl.Utf8,
@@ -57,11 +59,15 @@ def build_graph_node_metrics(
     graph_edges_path: str | Path = "data/gold/gold_graph_edges.parquet",
     output_path: str | Path = "data/gold/gold_graph_node_metrics.parquet",
     report_path: str | Path = "outputs/reports/graph_metrics_report.json",
+    public_safe: bool = True,
 ) -> dict[str, object]:
     nodes_path = Path(graph_nodes_path)
     edges_path = Path(graph_edges_path)
     nodes = _read_or_empty(nodes_path, NODE_SCHEMA)
     edges = _read_or_empty(edges_path, EDGE_SCHEMA)
+    public_filter_audit: dict[str, int] | None = None
+    if public_safe:
+        nodes, edges, public_filter_audit = filter_public_graph_tables(nodes, edges)
 
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -80,6 +86,8 @@ def build_graph_node_metrics(
             "top_nodes_by_degree": [],
             "edge_type_counts": [],
             "warning": "Graph nodes table is empty or missing.",
+            "public_safe": public_safe,
+            "public_filter_audit": public_filter_audit,
         }
         report_out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return {"path": str(out), "report_path": str(report_out), "metric_rows": 0, "status": "warning"}
@@ -174,6 +182,8 @@ def build_graph_node_metrics(
         "metric_rows": int(metrics.height),
         "top_nodes_by_degree": top_nodes,
         "edge_type_counts": edge_type_counts,
+        "public_safe": public_safe,
+        "public_filter_audit": public_filter_audit,
     }
     report_out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return {
@@ -183,4 +193,6 @@ def build_graph_node_metrics(
         "node_count": int(nodes.height),
         "edge_count": int(edges.height),
         "status": "passed",
+        "public_safe": public_safe,
+        "public_filter_audit": public_filter_audit,
     }

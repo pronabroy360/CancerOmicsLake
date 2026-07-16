@@ -9,7 +9,7 @@ from src.analytics.dashboard_data import graph_explorer_data, graph_node_metrics
 
 
 st.title("Knowledge Graph Explorer")
-st.caption("Graph tables loaded from `data/gold/gold_graph_nodes.parquet` and `data/gold/gold_graph_edges.parquet`.")
+st.caption("Public-safe aggregate graph view. Internal Patient and Sample entities are excluded from display and downloads.")
 
 base = graph_explorer_data(max_rows=50000)
 all_edge_types = sorted(base["edges"].get_column("edge_type").unique().to_list()) if not base["edges"].is_empty() else []

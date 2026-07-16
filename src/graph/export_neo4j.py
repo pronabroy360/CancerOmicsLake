@@ -6,6 +6,8 @@ import re
 
 import polars as pl
 
+from src.graph.public_graph import filter_public_graph_tables
+
 
 def export_neo4j_csv(rows: list[dict[str, str]], output_path: str | Path) -> Path:
     output = Path(output_path)
@@ -118,12 +120,24 @@ def export_neo4j_from_gold_graph_tables(
     graph_nodes_path: str | Path = "data/gold/gold_graph_nodes.parquet",
     graph_edges_path: str | Path = "data/gold/gold_graph_edges.parquet",
     output_dir: str | Path = "outputs/graph_exports/neo4j",
+    public_safe: bool = True,
 ) -> dict[str, object]:
     output_root = Path(output_dir)
     output_root.mkdir(parents=True, exist_ok=True)
 
     nodes_df = pl.read_parquet(graph_nodes_path) if Path(graph_nodes_path).exists() else pl.DataFrame()
     edges_df = pl.read_parquet(graph_edges_path) if Path(graph_edges_path).exists() else pl.DataFrame()
+
+    public_audit = {
+        "input_nodes": nodes_df.height,
+        "public_nodes": nodes_df.height,
+        "excluded_nodes": 0,
+        "input_edges": edges_df.height,
+        "public_edges": edges_df.height,
+        "excluded_edges": 0,
+    }
+    if public_safe:
+        nodes_df, edges_df, public_audit = filter_public_graph_tables(nodes_df, edges_df)
 
     nodes_rows = nodes_df.to_dicts() if not nodes_df.is_empty() else []
     edges_rows = edges_df.to_dicts() if not edges_df.is_empty() else []
@@ -133,6 +147,8 @@ def export_neo4j_from_gold_graph_tables(
 
     bulk_dir = output_root / "bulk"
     bulk_dir.mkdir(parents=True, exist_ok=True)
+    for stale_csv in bulk_dir.glob("*.csv"):
+        stale_csv.unlink()
     node_files = _write_bulk_node_files(nodes_df=nodes_df, bulk_dir=bulk_dir)
     edge_files = _write_bulk_edge_files(edges_df=edges_df, bulk_dir=bulk_dir)
     import_cypher = _write_import_cypher(
@@ -150,4 +166,6 @@ def export_neo4j_from_gold_graph_tables(
         "bulk_node_file_count": len(node_files),
         "bulk_edge_file_count": len(edge_files),
         "import_cypher": str(import_cypher),
+        "public_safe": public_safe,
+        "public_filter_audit": public_audit,
     }

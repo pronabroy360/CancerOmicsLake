@@ -17,6 +17,7 @@ Implemented so far:
 - Gold cohort, expression, tumor-vs-normal, mutation, candidate-priority, evidence-confidence, and graph marts
 - Quality report generation
 - Graphify and Neo4j CSV graph exports
+- Public graph exports and graph API/dashboard views exclude Patient and Sample identifiers by default
 - Graph node-degree metrics and graph metrics report
 - FastAPI endpoints and Streamlit dashboard pages backed by local marts
 - Test suite for config, ingestion, parsing, silver/gold builders, graph exports, API, dashboard data, reporting, and quality checks

@@ -9,6 +9,7 @@ from src.graph.pathway_projection import (
     select_enriched_pathways,
     selected_pathway_memberships,
 )
+from src.graph.public_graph import filter_public_graph_tables
 
 
 def build_graph_edges_stub() -> list[dict[str, str]]:
@@ -212,6 +213,8 @@ def build_graph_edges_table(
 
 def load_graph_edges(
     graph_edges_path: str | Path = "data/gold/gold_graph_edges.parquet",
+    graph_nodes_path: str | Path | None = None,
+    public_safe: bool = True,
 ) -> list[dict[str, object]]:
     path = Path(graph_edges_path)
     if not path.exists():
@@ -219,4 +222,12 @@ def load_graph_edges(
     df = pl.read_parquet(path)
     if df.is_empty():
         return build_graph_edges_stub()
+    if public_safe:
+        nodes_path = (
+            Path(graph_nodes_path)
+            if graph_nodes_path is not None
+            else Path(graph_edges_path).with_name("gold_graph_nodes.parquet")
+        )
+        nodes = pl.read_parquet(nodes_path) if nodes_path.exists() else pl.DataFrame()
+        _, df, _ = filter_public_graph_tables(nodes, df)
     return df.to_dicts()

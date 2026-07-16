@@ -1,5 +1,16 @@
 # Graph Schema
 
+## Public And Internal Views
+
+The internal ignored gold graph supports Patient and Sample linkage for pipeline validation. Public exports and
+user-facing API/dashboard views are aggregate-only and contain `CancerType`, `Dataset`, `Gene`, `Pathway`, and `Tissue`
+nodes. Edges touching Patient or Sample nodes are removed before export. This boundary enforces the repository
+compliance policy while retaining local entity-model testing.
+
+The small CSV files tracked under `outputs/graph_exports/` are synthetic aggregate examples. Running
+`make run-graph-export` replaces them locally with the complete public-safe aggregate graph; generated full exports
+remain uncommitted until they are reviewed and deposited as a versioned research artifact.
+
 ## Overview
 
 CancerOmicsLake builds graph tables from silver and gold marts, then exports:

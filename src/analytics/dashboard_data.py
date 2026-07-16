@@ -21,6 +21,7 @@ from src.analytics.reference_triangulation import REFERENCE_TRIANGULATION_SCHEMA
 from src.analytics.cohort_summary import cohort_summary_from_gold
 from src.analytics.expression_summary import expression_by_gene
 from src.analytics.tumor_vs_normal import tumor_vs_normal_by_gene
+from src.graph.public_graph import PUBLIC_NODE_LABELS, filter_public_graph_tables
 
 
 def overview_metrics(
@@ -414,6 +415,8 @@ def graph_explorer_data(
     edges_path = Path(graph_edges_path)
     nodes = pl.read_parquet(nodes_path) if nodes_path.exists() else pl.DataFrame()
     edges = pl.read_parquet(edges_path) if edges_path.exists() else pl.DataFrame()
+    if not nodes.is_empty() and not edges.is_empty():
+        nodes, edges, _ = filter_public_graph_tables(nodes, edges)
 
     if nodes.is_empty() or edges.is_empty():
         empty_nodes = pl.DataFrame(schema={"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8})
@@ -491,6 +494,8 @@ def graph_node_metrics_data(
     df = pl.read_parquet(path)
     if df.is_empty() or "total_degree" not in df.columns:
         return pl.DataFrame(schema=schema)
+    if "node_label" in df.columns:
+        df = df.filter(pl.col("node_label").is_in(sorted(PUBLIC_NODE_LABELS)))
     return df.sort(["total_degree", "weighted_degree"], descending=[True, True]).head(limit)
 
 

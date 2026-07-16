@@ -84,6 +84,7 @@ def test_graph_explorer_data_filters_edges_and_nodes(tmp_path: Path) -> None:
             {"node_id": "GENE:TP53", "node_label": "Gene", "name": "TP53", "primary_site": "NA", "source": "TCGA"},
             {"node_id": "TCGA-BRCA", "node_label": "CancerType", "name": "TCGA-BRCA", "primary_site": "Breast", "source": "TCGA"},
             {"node_id": "TISSUE:Lung", "node_label": "Tissue", "name": "Lung", "primary_site": "Lung", "source": "GTEx"},
+            {"node_id": "SAMPLE:s1", "node_label": "Sample", "name": "s1", "primary_site": "Lung", "source": "TCGA"},
         ]
     ).write_parquet(nodes_path)
     pl.DataFrame(
@@ -104,6 +105,14 @@ def test_graph_explorer_data_filters_edges_and_nodes(tmp_path: Path) -> None:
                 "weight": 2.1,
                 "evidence_source": "GTEx",
             },
+            {
+                "edge_id": "private",
+                "source_node_id": "SAMPLE:s1",
+                "target_node_id": "TCGA-BRCA",
+                "edge_type": "BELONGS_TO_CANCER",
+                "weight": 1.0,
+                "evidence_source": "TCGA",
+            },
         ]
     ).write_parquet(edges_path)
 
@@ -117,6 +126,7 @@ def test_graph_explorer_data_filters_edges_and_nodes(tmp_path: Path) -> None:
     assert payload["edges"].height == 1
     assert payload["nodes"].height == 2
     assert payload["edge_type_counts"].height == 1
+    assert "Sample" not in payload["nodes"].get_column("node_label").to_list()
 
 
 def test_candidate_priority_data_filters_rows(tmp_path: Path) -> None:

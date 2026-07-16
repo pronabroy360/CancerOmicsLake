@@ -532,3 +532,14 @@ Impact values:
   5,833 pathway-enrichment rows, including 2,207 in the engineering FDR-enriched tier.
 - Explicitly limited claims: consequence-stratified evidence is not driver/passenger classification, pathogenicity,
   causality, or clinical actionability.
+
+## 2026-07-16 - Public Graph Compliance Boundary
+
+- Identified that internal Patient and Sample graph entities were flowing into public Neo4j/Graphify exports despite the
+  repository's aggregate-only publication policy.
+- Added a shared public graph allowlist and made aggregate-safe filtering the default for exports, API graph endpoints,
+  dashboard graph views/downloads, and graph hub metrics.
+- Preserved full Patient/Sample topology only in ignored local gold tables for entity-model engineering tests.
+- Added stale bulk-file cleanup and a strict demo guard that rejects `PATIENT:` or `SAMPLE:` identifiers in public exports.
+- Real sanitized exports contain 55,209 nodes and 255,215 edges with zero individual-entity identifiers; 4,780 internal
+  Patient/Sample nodes and 5,533 connected edges were excluded.

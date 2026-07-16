@@ -9,6 +9,7 @@ from src.graph.pathway_projection import (
     select_enriched_pathways,
     selected_pathway_memberships,
 )
+from src.graph.public_graph import PUBLIC_NODE_LABELS
 
 
 def build_graph_nodes_stub() -> list[dict[str, str]]:
@@ -215,6 +216,7 @@ def build_graph_nodes_table(
 
 def load_graph_nodes(
     graph_nodes_path: str | Path = "data/gold/gold_graph_nodes.parquet",
+    public_safe: bool = True,
 ) -> list[dict[str, object]]:
     path = Path(graph_nodes_path)
     if not path.exists():
@@ -222,4 +224,6 @@ def load_graph_nodes(
     df = pl.read_parquet(path)
     if df.is_empty():
         return build_graph_nodes_stub()
+    if public_safe and "node_label" in df.columns:
+        df = df.filter(pl.col("node_label").is_in(sorted(PUBLIC_NODE_LABELS)))
     return df.to_dicts()

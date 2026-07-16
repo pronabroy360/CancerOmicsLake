@@ -55,13 +55,14 @@ def test_build_graph_node_metrics_computes_degree_and_report(tmp_path: Path) -> 
     report = json.loads(report_out.read_text(encoding="utf-8"))
 
     assert summary["status"] == "passed"
-    assert summary["metric_rows"] == 3
-    assert brca["in_degree"] == 2
+    assert summary["metric_rows"] == 2
+    assert brca["in_degree"] == 1
     assert brca["out_degree"] == 0
-    assert brca["total_degree"] == 2
-    assert brca["weighted_degree"] == 1.4
-    assert report["edge_count"] == 2
-    assert report["top_nodes_by_degree"][0]["node_id"] == "TCGA-BRCA"
+    assert brca["total_degree"] == 1
+    assert brca["weighted_degree"] == 0.4
+    assert report["edge_count"] == 1
+    assert report["public_safe"] is True
+    assert report["public_filter_audit"]["excluded_nodes"] == 1
 
 
 def test_build_graph_node_metrics_handles_missing_nodes(tmp_path: Path) -> None:

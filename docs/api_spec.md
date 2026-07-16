@@ -26,6 +26,8 @@ Implemented endpoints:
 - `GET /graph/edges`
 - `GET /quality/latest`
 
+Graph endpoints return the public-safe aggregate view. Patient and Sample identifiers are intentionally excluded.
+
 Example response: `GET /health`
 
 ```json

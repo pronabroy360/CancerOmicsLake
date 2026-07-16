@@ -72,6 +72,38 @@ def _csv_rows_check(path: Path, name: str, min_data_rows: int = 1) -> dict[str, 
     )
 
 
+def _public_graph_export_check(nodes_path: Path, edges_path: Path) -> dict[str, Any]:
+    try:
+        nodes = pl.read_csv(nodes_path)
+        edges = pl.read_csv(edges_path)
+    except Exception as exc:
+        return _check(
+            "public_graph_exports_exclude_individual_entities",
+            False,
+            "Public graph exports should be readable.",
+            {"error": str(exc)},
+        )
+
+    disallowed_nodes = nodes.filter(
+        pl.col("node_label").is_in(["Patient", "Sample"])
+        | pl.col("node_id").cast(pl.Utf8).str.starts_with("PATIENT:")
+        | pl.col("node_id").cast(pl.Utf8).str.starts_with("SAMPLE:")
+    ).height
+    disallowed_edges = edges.filter(
+        pl.col("source_node_id").cast(pl.Utf8).str.starts_with("PATIENT:")
+        | pl.col("source_node_id").cast(pl.Utf8).str.starts_with("SAMPLE:")
+        | pl.col("target_node_id").cast(pl.Utf8).str.starts_with("PATIENT:")
+        | pl.col("target_node_id").cast(pl.Utf8).str.starts_with("SAMPLE:")
+    ).height
+    failed_rows = disallowed_nodes + disallowed_edges
+    return _check(
+        "public_graph_exports_exclude_individual_entities",
+        failed_rows == 0,
+        "Public graph exports must exclude Patient and Sample identifiers.",
+        {"failed_rows": failed_rows},
+    )
+
+
 def _json_report_check(path: Path, name: str, allowed_statuses: set[str] | None = None) -> dict[str, Any]:
     if not path.exists():
         return _check(name, False, f"Missing JSON report: {path}")
@@ -248,6 +280,10 @@ def run_demo_check(
         _csv_rows_check(Path("outputs/graph_exports/neo4j/edges.csv"), "neo4j_edges_export_nonzero"),
         _csv_rows_check(Path("outputs/graph_exports/graphify/nodes.csv"), "graphify_nodes_export_nonzero"),
         _csv_rows_check(Path("outputs/graph_exports/graphify/edges.csv"), "graphify_edges_export_nonzero"),
+        _public_graph_export_check(
+            Path("outputs/graph_exports/neo4j/nodes.csv"),
+            Path("outputs/graph_exports/neo4j/edges.csv"),
+        ),
         _check(
             "neo4j_bulk_import_script_exists",
             Path("outputs/graph_exports/neo4j/import_bulk.cypher").exists(),
