@@ -4,7 +4,7 @@ import gzip
 import polars as pl
 
 from src.common.config import load_config
-from src.processing.build_mutation_table import load_tcga_mutation_table
+from src.processing.build_mutation_table import build_mutation_profile_table, load_tcga_mutation_table
 
 
 def test_load_tcga_mutation_table_prefers_manifest_files(tmp_path: Path) -> None:
@@ -51,6 +51,8 @@ def test_load_tcga_mutation_table_prefers_manifest_files(tmp_path: Path) -> None
     assert row["project_id"] == "TCGA-LUAD"
     assert row["gene_symbol"] == "TP53"
     assert row["variant_classification"] == "Missense_Mutation"
+    assert row["consequence_group"] == "protein_altering"
+    assert row["is_protein_altering"] is True
     assert row["start_position"] == 7673803
 
 
@@ -93,3 +95,31 @@ def test_load_tcga_mutation_table_reads_gz_maf_with_comments(tmp_path: Path) -> 
     assert row["project_id"] == "TCGA-BRCA"
     assert row["gene_symbol"] == "PIK3CA"
     assert row["start_position"] == 179218294
+
+
+def test_build_mutation_profile_uses_only_downloaded_open_maf_files(tmp_path: Path) -> None:
+    tcga_root = tmp_path / "tcga"
+    mutation_dir = tcga_root / "TCGA-LUAD" / "mutations"
+    mutation_dir.mkdir(parents=True)
+    (mutation_dir / "downloaded.maf").write_text("header\n", encoding="utf-8")
+
+    metadata = pl.DataFrame(
+        {
+            "project_id": ["TCGA-LUAD", "TCGA-LUAD"],
+            "case_id": ["case-1", "case-2"],
+            "sample_id": ["sample-1", "sample-2"],
+            "file_id": ["file-1", "file-2"],
+            "file_name": ["downloaded.maf", "not-downloaded.maf"],
+            "data_category": ["Simple Nucleotide Variation", "Simple Nucleotide Variation"],
+            "data_type": ["Masked Somatic Mutation", "Masked Somatic Mutation"],
+            "access": ["open", "open"],
+            "file_size": [7, 9],
+            "md5sum": ["abc", "def"],
+        }
+    )
+
+    profile = build_mutation_profile_table(metadata, "2026-07-16T00:00:00Z", tcga_root)
+
+    assert profile.height == 1
+    assert profile.row(0, named=True)["sample_id"] == "sample-1"
+    assert profile.row(0, named=True)["profile_status"] == "downloaded"

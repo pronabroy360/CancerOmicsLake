@@ -52,6 +52,7 @@ mutation_provenance as (
       then 1.0 else 0.0 end
     ) as mutation_provenance
   from {{ ref('silver_mutations') }}
+  where is_protein_altering
   group by 1, 2
 ),
 tcga_expression_provenance as (

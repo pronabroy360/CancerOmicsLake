@@ -71,6 +71,7 @@ def _build_complete_fixture(root: Path) -> None:
         "data/silver/silver_expression_tcga.parquet",
         "data/silver/silver_expression_gtex.parquet",
         "data/silver/silver_mutations.parquet",
+        "data/silver/silver_mutation_profile.parquet",
         "data/gold/gold_mutation_frequency_by_gene.parquet",
         "data/gold/gold_mutation_frequency_by_cancer.parquet",
         "data/gold/gold_graph_nodes.parquet",

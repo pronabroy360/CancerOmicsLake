@@ -6,7 +6,7 @@ from pathlib import Path
 import polars as pl
 
 from src.common.config import AppConfig
-from src.processing.build_mutation_table import load_tcga_mutation_table
+from src.processing.build_mutation_table import build_mutation_profile_table, load_tcga_mutation_table
 from src.processing.expression_loaders import load_gtex_expression_table, load_tcga_expression_table
 from src.processing.gtex_harmonizer import harmonize_gtex_gct_files
 
@@ -106,6 +106,11 @@ def build_silver_tables_from_bronze(
         metadata_df=raw,
         tcga_root_dir=tcga_expr_root,
     )
+    mutation_profile = build_mutation_profile_table(
+        metadata_df=raw,
+        ingest_time=ingest_time,
+        tcga_root_dir=tcga_expr_root,
+    )
 
     out_projects = _write_parquet(projects, silver_root / "silver_projects.parquet")
     out_patients = _write_parquet(patients, silver_root / "silver_patients.parquet")
@@ -126,6 +131,10 @@ def build_silver_tables_from_bronze(
         _write_parquet(expression_gtex, out_expr_gtex)
         expression_gtex_count = expression_gtex.height
     out_mutations = _write_parquet(mutations_tcga, silver_root / "silver_mutations.parquet")
+    out_mutation_profile = _write_parquet(
+        mutation_profile,
+        silver_root / "silver_mutation_profile.parquet",
+    )
 
     return {
         "source_metadata_file": str(source_path),
@@ -136,6 +145,7 @@ def build_silver_tables_from_bronze(
         "silver_expression_tcga_path": str(out_expr_tcga),
         "silver_expression_gtex_path": str(out_expr_gtex),
         "silver_mutations_path": str(out_mutations),
+        "silver_mutation_profile_path": str(out_mutation_profile),
         "projects_count": projects.height,
         "patients_count": patients.height,
         "samples_count": samples.height,
@@ -143,4 +153,5 @@ def build_silver_tables_from_bronze(
         "expression_tcga_count": expression_tcga.height,
         "expression_gtex_count": expression_gtex_count,
         "mutations_count": mutations_tcga.height,
+        "mutation_profile_count": mutation_profile.height,
     }

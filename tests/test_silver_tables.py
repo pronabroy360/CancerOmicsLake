@@ -49,6 +49,7 @@ def test_build_silver_tables_from_bronze(tmp_path: Path) -> None:
     assert summary["expression_tcga_count"] == 0
     assert summary["expression_gtex_count"] == len(config.gtex.tissues)
     assert summary["mutations_count"] == 0
+    assert summary["mutation_profile_count"] == 0
 
     assert (silver_dir / "silver_projects.parquet").exists()
     assert (silver_dir / "silver_patients.parquet").exists()
@@ -57,3 +58,4 @@ def test_build_silver_tables_from_bronze(tmp_path: Path) -> None:
     assert (silver_dir / "silver_expression_tcga.parquet").exists()
     assert (silver_dir / "silver_expression_gtex.parquet").exists()
     assert (silver_dir / "silver_mutations.parquet").exists()
+    assert (silver_dir / "silver_mutation_profile.parquet").exists()

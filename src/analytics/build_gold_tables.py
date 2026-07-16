@@ -7,6 +7,7 @@ import time
 import polars as pl
 
 from src.analytics.reference_triangulation import build_reference_triangulation_table
+from src.processing.mutation_consequences import PROTEIN_ALTERING_CLASSIFICATIONS
 
 
 def _read_or_empty(path: Path, schema: dict[str, pl.DataType]) -> pl.DataFrame:
@@ -515,6 +516,8 @@ def build_gold_cohort_summary(
             "gene_id": pl.Utf8,
             "gene_symbol": pl.Utf8,
             "variant_classification": pl.Utf8,
+            "consequence_group": pl.Utf8,
+            "is_protein_altering": pl.Boolean,
             "variant_type": pl.Utf8,
             "chromosome": pl.Utf8,
             "start_position": pl.Int64,
@@ -524,6 +527,39 @@ def build_gold_cohort_summary(
             "data_origin": pl.Utf8,
             "ingested_at": pl.Utf8,
         },
+    )
+    mutation_profile = _read_or_empty(
+        silver_root / "silver_mutation_profile.parquet",
+        {
+            "project_id": pl.Utf8,
+            "case_id": pl.Utf8,
+            "sample_id": pl.Utf8,
+            "file_id": pl.Utf8,
+            "file_name": pl.Utf8,
+            "file_size": pl.Int64,
+            "md5sum": pl.Utf8,
+            "data_origin": pl.Utf8,
+            "profile_status": pl.Utf8,
+            "ingested_at": pl.Utf8,
+        },
+    )
+
+    if "is_protein_altering" not in mutations.columns:
+        mutations = mutations.with_columns(
+            pl.col("variant_classification")
+            .cast(pl.Utf8)
+            .str.to_uppercase()
+            .is_in(sorted(PROTEIN_ALTERING_CLASSIFICATIONS))
+            .alias("is_protein_altering")
+        )
+
+    protein_altering_record_count = mutations.filter(pl.col("is_protein_altering")).height
+    mutation_profiled_sample_count = (
+        mutation_profile.select(pl.col("sample_id").n_unique()).item(0, 0)
+        if not mutation_profile.is_empty()
+        else mutations.select(pl.col("sample_id").n_unique()).item(0, 0)
+        if not mutations.is_empty()
+        else 0
     )
 
     summary = pl.DataFrame(
@@ -548,6 +584,8 @@ def build_gold_cohort_summary(
                 "gtex_expression_row_count": expr_gtex.height,
                 "gene_count": 0,
                 "mutation_record_count": mutations.height,
+                "protein_altering_mutation_record_count": protein_altering_record_count,
+                "mutation_profiled_sample_count": mutation_profiled_sample_count,
                 "generated_at": datetime.now(UTC).isoformat(),
             }
         ]
@@ -562,36 +600,78 @@ def build_gold_cohort_summary(
                 "total_profiled_sample_count": pl.Int64,
                 "mutation_frequency": pl.Float64,
                 "top_variant_classification": pl.Utf8,
+                "protein_altering_event_count": pl.Int64,
+                "all_somatic_event_count": pl.Int64,
+                "synonymous_event_count": pl.Int64,
+                "mutation_scope": pl.Utf8,
             }
         )
-        mutation_by_cancer = pl.DataFrame(
-            schema={
-                "cancer_type": pl.Utf8,
-                "total_profiled_sample_count": pl.Int64,
-                "mutated_sample_count": pl.Int64,
-                "mutation_event_count": pl.Int64,
-                "mutation_event_rate": pl.Float64,
-            }
+        mutation_by_cancer = (
+            mutation_profile.group_by("project_id")
+            .agg(pl.col("sample_id").n_unique().cast(pl.Int64).alias("total_profiled_sample_count"))
+            .with_columns(
+                [
+                    pl.col("project_id").alias("cancer_type"),
+                    pl.lit(0, dtype=pl.Int64).alias("mutated_sample_count"),
+                    pl.lit(0, dtype=pl.Int64).alias("mutation_event_count"),
+                    pl.lit(0.0, dtype=pl.Float64).alias("mutation_event_rate"),
+                    pl.lit(0, dtype=pl.Int64).alias("all_somatic_event_count"),
+                    pl.lit(0, dtype=pl.Int64).alias("synonymous_event_count"),
+                    pl.lit(0.0, dtype=pl.Float64).alias("mutation_frequency"),
+                    pl.lit("protein_altering_only").alias("mutation_scope"),
+                ]
+            )
+            .select(
+                [
+                    "cancer_type",
+                    "total_profiled_sample_count",
+                    "mutated_sample_count",
+                    "mutation_event_count",
+                    "mutation_event_rate",
+                    "all_somatic_event_count",
+                    "synonymous_event_count",
+                    "mutation_frequency",
+                    "mutation_scope",
+                ]
+            )
         )
     else:
         mutation_events = mutations.filter(
             pl.col("project_id").is_not_null() & pl.col("sample_id").is_not_null() & pl.col("gene_symbol").is_not_null()
         )
-        sample_counts = samples.group_by("project_id").agg(
+        profile_source = mutation_profile if not mutation_profile.is_empty() else mutation_events
+        sample_counts = profile_source.group_by("project_id").agg(
             pl.col("sample_id").n_unique().alias("total_profiled_sample_count")
         )
-        mutated_counts = mutation_events.group_by(["project_id", "gene_symbol"]).agg(
-            pl.col("sample_id").n_unique().alias("mutated_sample_count")
+        protein_altering_events = mutation_events.filter(pl.col("is_protein_altering").fill_null(False))
+        mutated_counts = protein_altering_events.group_by(["project_id", "gene_symbol"]).agg(
+            [
+                pl.col("sample_id").n_unique().alias("mutated_sample_count"),
+                pl.len().alias("protein_altering_event_count"),
+            ]
+        )
+        all_event_counts = mutation_events.group_by(["project_id", "gene_symbol"]).agg(
+            [
+                pl.len().alias("all_somatic_event_count"),
+                (pl.col("variant_classification").str.to_uppercase() == "SILENT")
+                .sum()
+                .cast(pl.Int64)
+                .alias("synonymous_event_count"),
+            ]
         )
         variant_top = (
-            mutation_events.group_by(["project_id", "gene_symbol", "variant_classification"])
+            protein_altering_events.group_by(["project_id", "gene_symbol", "variant_classification"])
             .len()
-            .sort(["project_id", "gene_symbol", "len"], descending=[False, False, True])
+            .sort(
+                ["project_id", "gene_symbol", "len", "variant_classification"],
+                descending=[False, False, True, False],
+            )
             .group_by(["project_id", "gene_symbol"])
             .agg(pl.first("variant_classification").alias("top_variant_classification"))
         )
         mutation_by_gene = (
             mutated_counts.join(variant_top, on=["project_id", "gene_symbol"], how="left")
+            .join(all_event_counts, on=["project_id", "gene_symbol"], how="left")
             .join(sample_counts, on="project_id", how="left")
             .with_columns(
                 [
@@ -612,28 +692,47 @@ def build_gold_cohort_summary(
                     pl.col("total_profiled_sample_count").fill_null(0).cast(pl.Int64),
                     pl.col("mutation_frequency").fill_null(0.0),
                     pl.col("top_variant_classification").fill_null("Unknown"),
+                    pl.col("protein_altering_event_count").cast(pl.Int64),
+                    pl.col("all_somatic_event_count").fill_null(0).cast(pl.Int64),
+                    pl.col("synonymous_event_count").fill_null(0).cast(pl.Int64),
+                    pl.lit("protein_altering_only").alias("mutation_scope"),
                 ]
             )
         )
 
+        protein_cancer_counts = protein_altering_events.group_by("project_id").agg(
+            [
+                pl.col("sample_id").n_unique().alias("mutated_sample_count"),
+                pl.len().alias("mutation_event_count"),
+            ]
+        )
+        all_cancer_counts = mutation_events.group_by("project_id").agg(
+            [
+                pl.len().alias("all_somatic_event_count"),
+                (pl.col("variant_classification").str.to_uppercase() == "SILENT")
+                .sum()
+                .cast(pl.Int64)
+                .alias("synonymous_event_count"),
+            ]
+        )
         mutation_by_cancer = (
-            mutation_events.group_by("project_id")
-            .agg(
-                [
-                    pl.col("sample_id").n_unique().alias("mutated_sample_count"),
-                    pl.len().alias("mutation_event_count"),
-                ]
-            )
-            .join(sample_counts, on="project_id", how="left")
+            sample_counts.join(protein_cancer_counts, on="project_id", how="left")
+            .join(all_cancer_counts, on="project_id", how="left")
             .with_columns(
                 [
                     pl.col("project_id").alias("cancer_type"),
                     (
-                        pl.col("mutation_event_count")
+                        pl.col("mutation_event_count").fill_null(0)
                         / pl.when(pl.col("total_profiled_sample_count") > 0)
                         .then(pl.col("total_profiled_sample_count"))
                         .otherwise(None)
                     ).cast(pl.Float64).alias("mutation_event_rate"),
+                    (
+                        pl.col("mutated_sample_count").fill_null(0)
+                        / pl.when(pl.col("total_profiled_sample_count") > 0)
+                        .then(pl.col("total_profiled_sample_count"))
+                        .otherwise(None)
+                    ).cast(pl.Float64).alias("mutation_frequency"),
                 ]
             )
             .select(
@@ -643,6 +742,10 @@ def build_gold_cohort_summary(
                     pl.col("mutated_sample_count").fill_null(0).cast(pl.Int64),
                     pl.col("mutation_event_count").fill_null(0).cast(pl.Int64),
                     pl.col("mutation_event_rate").fill_null(0.0),
+                    pl.col("all_somatic_event_count").fill_null(0).cast(pl.Int64),
+                    pl.col("synonymous_event_count").fill_null(0).cast(pl.Int64),
+                    pl.col("mutation_frequency").fill_null(0.0),
+                    pl.lit("protein_altering_only").alias("mutation_scope"),
                 ]
             )
         )

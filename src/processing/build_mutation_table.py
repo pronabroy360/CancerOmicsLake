@@ -7,6 +7,7 @@ import polars as pl
 
 from src.common.config import AppConfig
 from src.processing.expression_loaders import _resolve_column
+from src.processing.mutation_consequences import classify_variant_consequence
 from src.processing.normalize_gene_ids import normalize_gene_id
 
 
@@ -37,6 +38,8 @@ def _empty_mutation_df() -> pl.DataFrame:
             "gene_id": pl.Utf8,
             "gene_symbol": pl.Utf8,
             "variant_classification": pl.Utf8,
+            "consequence_group": pl.Utf8,
+            "is_protein_altering": pl.Boolean,
             "variant_type": pl.Utf8,
             "chromosome": pl.Utf8,
             "start_position": pl.Int64,
@@ -206,7 +209,20 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
         normalize_gene_id(str(v))["gene_id_normalized"] if v is not None else ""
         for v in base.get_column("gene_id_raw").to_list()
     ]
-    base = base.with_columns(pl.Series(name="gene_id", values=normalized_gene))
+    consequence_labels: list[str] = []
+    protein_altering_flags: list[bool] = []
+    for value in base.get_column("variant_classification").to_list():
+        consequence_group, is_protein_altering = classify_variant_consequence(value)
+        consequence_labels.append(consequence_group)
+        protein_altering_flags.append(is_protein_altering)
+
+    base = base.with_columns(
+        [
+            pl.Series(name="gene_id", values=normalized_gene),
+            pl.Series(name="consequence_group", values=consequence_labels, dtype=pl.Utf8),
+            pl.Series(name="is_protein_altering", values=protein_altering_flags, dtype=pl.Boolean),
+        ]
+    )
 
     return base.select(
         [
@@ -216,6 +232,8 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
             pl.col("gene_id").fill_null(""),
             pl.col("gene_symbol").fill_null("Unknown"),
             pl.col("variant_classification").fill_null("Unknown"),
+            pl.col("consequence_group"),
+            pl.col("is_protein_altering"),
             pl.col("variant_type").fill_null("Unknown"),
             pl.col("chromosome").fill_null("Unknown"),
             pl.col("start_position").cast(pl.Int64, strict=False),
@@ -258,3 +276,80 @@ def load_tcga_mutation_table(
         return empty
 
     return pl.concat(frames, how="vertical").with_columns(pl.lit(ingest_time).alias("ingested_at"))
+
+
+def build_mutation_profile_table(
+    metadata_df: pl.DataFrame,
+    ingest_time: str,
+    tcga_root_dir: str | Path = "data/bronze/tcga",
+) -> pl.DataFrame:
+    schema = {
+        "project_id": pl.Utf8,
+        "case_id": pl.Utf8,
+        "sample_id": pl.Utf8,
+        "file_id": pl.Utf8,
+        "file_name": pl.Utf8,
+        "file_size": pl.Int64,
+        "md5sum": pl.Utf8,
+        "data_origin": pl.Utf8,
+        "profile_status": pl.Utf8,
+        "ingested_at": pl.Utf8,
+    }
+    root = Path(tcga_root_dir)
+    required = {
+        "project_id",
+        "case_id",
+        "sample_id",
+        "file_id",
+        "file_name",
+        "data_category",
+        "data_type",
+    }
+    if not root.exists() or not required.issubset(metadata_df.columns):
+        return pl.DataFrame(schema=schema)
+
+    mutation_manifest = metadata_df.filter(
+        pl.col("data_category").cast(pl.Utf8).str.to_lowercase().str.contains("simple nucleotide variation")
+        & pl.col("data_type").cast(pl.Utf8).str.to_lowercase().str.contains("somatic mutation")
+        & (
+            (pl.col("access").cast(pl.Utf8).str.to_lowercase() == "open")
+            if "access" in metadata_df.columns
+            else pl.lit(True)
+        )
+    )
+
+    rows: list[dict[str, object]] = []
+    for row in mutation_manifest.iter_rows(named=True):
+        project_id = str(row.get("project_id") or "")
+        file_name = str(row.get("file_name") or "")
+        candidates = [
+            root / project_id / "mutations" / file_name,
+            root / project_id / file_name,
+            root / "mutations" / file_name,
+        ]
+        source_path = next((path for path in candidates if path.is_file()), None)
+        if source_path is None:
+            continue
+        rows.append(
+            {
+                "project_id": project_id,
+                "case_id": str(row.get("case_id") or "Unknown"),
+                "sample_id": str(row.get("sample_id") or "Unknown"),
+                "file_id": str(row.get("file_id") or ""),
+                "file_name": file_name,
+                "file_size": row.get("file_size"),
+                "md5sum": str(row.get("md5sum") or ""),
+                "data_origin": str(source_path),
+                "profile_status": "downloaded",
+                "ingested_at": ingest_time,
+            }
+        )
+
+    if not rows:
+        return pl.DataFrame(schema=schema)
+    return (
+        pl.DataFrame(rows)
+        .cast(schema, strict=False)
+        .unique(subset=["project_id", "file_id", "sample_id"], keep="first")
+        .sort(["project_id", "sample_id", "file_id"])
+    )

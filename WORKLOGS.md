@@ -517,3 +517,18 @@ Impact values:
 - Verified pytest (`175 passed`), quality (`50 checks`), and strict demo readiness (`27 checks`).
 - Kept interpretation narrow: graph relationships support hypothesis navigation and do not establish
   pathway activation, mechanism, causality, or clinical actionability.
+
+## 2026-07-16 - Publication Mutation Semantics Hardening
+
+- Preserved all source MAF rows while adding conservative consequence groups and an explicit protein-altering flag.
+- Added a downloaded mutation-profile silver table so mutation frequencies no longer divide by unrelated
+  expression or clinical samples.
+- Restricted mutation-based candidate evidence and graph edges to protein-altering events while retaining all-event
+  and synonymous audit counts.
+- Added matching Python, dbt, quality, test, and documentation contracts.
+- Real release audit: 34,393 protein-altering, 9,761 synonymous, and 1,434 non-coding/regulatory events across
+  126 downloaded mutation profiles; no silent classification remains as top gene evidence.
+- Rebuilt downstream research outputs after the semantic correction: 194 prioritized consensus candidates and
+  5,833 pathway-enrichment rows, including 2,207 in the engineering FDR-enriched tier.
+- Explicitly limited claims: consequence-stratified evidence is not driver/passenger classification, pathogenicity,
+  causality, or clinical actionability.

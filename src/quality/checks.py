@@ -348,6 +348,8 @@ def run_silver_quality_checks(
             "gene_id": pl.Utf8,
             "gene_symbol": pl.Utf8,
             "variant_classification": pl.Utf8,
+            "consequence_group": pl.Utf8,
+            "is_protein_altering": pl.Boolean,
             "variant_type": pl.Utf8,
             "chromosome": pl.Utf8,
             "start_position": pl.Int64,
@@ -355,6 +357,21 @@ def run_silver_quality_checks(
             "reference_allele": pl.Utf8,
             "tumor_seq_allele": pl.Utf8,
             "data_origin": pl.Utf8,
+            "ingested_at": pl.Utf8,
+        },
+    )
+    mutation_profile = _read_or_empty(
+        root / "silver_mutation_profile.parquet",
+        {
+            "project_id": pl.Utf8,
+            "case_id": pl.Utf8,
+            "sample_id": pl.Utf8,
+            "file_id": pl.Utf8,
+            "file_name": pl.Utf8,
+            "file_size": pl.Int64,
+            "md5sum": pl.Utf8,
+            "data_origin": pl.Utf8,
+            "profile_status": pl.Utf8,
             "ingested_at": pl.Utf8,
         },
     )
@@ -367,6 +384,10 @@ def run_silver_quality_checks(
             "total_profiled_sample_count": pl.Int64,
             "mutation_frequency": pl.Float64,
             "top_variant_classification": pl.Utf8,
+            "protein_altering_event_count": pl.Int64,
+            "all_somatic_event_count": pl.Int64,
+            "synonymous_event_count": pl.Int64,
+            "mutation_scope": pl.Utf8,
         },
     )
     gold_batch_sensitivity = _read_or_empty(
@@ -598,12 +619,69 @@ def run_silver_quality_checks(
     )
     missing_mut_cols = _missing_columns(
         mutations,
-        ["project_id", "case_id", "sample_id", "gene_symbol", "variant_classification", "start_position", "end_position"],
+        [
+            "project_id",
+            "case_id",
+            "sample_id",
+            "gene_symbol",
+            "variant_classification",
+            "consequence_group",
+            "is_protein_altering",
+            "start_position",
+            "end_position",
+        ],
     )
+    missing_mutation_profile_cols = _missing_columns(
+        mutation_profile,
+        ["project_id", "sample_id", "file_id", "file_name", "data_origin", "profile_status"],
+    )
+    invalid_mutation_consequences = 0
+    if {"consequence_group", "is_protein_altering"}.issubset(mutations.columns):
+        invalid_mutation_consequences = mutations.filter(
+            ~pl.col("consequence_group").is_in(
+                ["protein_altering", "synonymous", "non_coding_or_regulatory", "unclassified"]
+            )
+            | (pl.col("is_protein_altering") != (pl.col("consequence_group") == "protein_altering"))
+        ).height
+    invalid_mutation_profile_rows = 0
+    if {"project_id", "sample_id", "file_id", "profile_status"}.issubset(mutation_profile.columns):
+        invalid_mutation_profile_rows = mutation_profile.filter(
+            pl.col("project_id").cast(pl.Utf8).str.strip_chars().eq("")
+            | pl.col("sample_id").cast(pl.Utf8).str.strip_chars().eq("")
+            | pl.col("file_id").cast(pl.Utf8).str.strip_chars().eq("")
+            | (pl.col("profile_status") != "downloaded")
+        ).height
     missing_gold_mut_cols = _missing_columns(
         gold_mut_gene,
-        ["gene_symbol", "cancer_type", "mutated_sample_count", "mutation_frequency"],
+        [
+            "gene_symbol",
+            "cancer_type",
+            "mutated_sample_count",
+            "total_profiled_sample_count",
+            "mutation_frequency",
+            "protein_altering_event_count",
+            "all_somatic_event_count",
+            "synonymous_event_count",
+            "mutation_scope",
+        ],
     )
+    invalid_gold_mutation_values = 0
+    if {
+        "mutated_sample_count",
+        "total_profiled_sample_count",
+        "mutation_frequency",
+        "protein_altering_event_count",
+        "all_somatic_event_count",
+        "top_variant_classification",
+        "mutation_scope",
+    }.issubset(gold_mut_gene.columns):
+        invalid_gold_mutation_values = gold_mut_gene.filter(
+            ~pl.col("mutation_frequency").is_between(0.0, 1.0)
+            | (pl.col("mutated_sample_count") > pl.col("total_profiled_sample_count"))
+            | (pl.col("protein_altering_event_count") > pl.col("all_somatic_event_count"))
+            | (pl.col("top_variant_classification").str.to_uppercase() == "SILENT")
+            | (pl.col("mutation_scope") != "protein_altering_only")
+        ).height
     missing_gold_batch_cols = _missing_columns(
         gold_batch_sensitivity,
         ["gene_symbol", "cancer_type", "percentile_delta", "robust_z_delta", "support_tier", "sensitivity_direction"],
@@ -936,6 +1014,25 @@ def run_silver_quality_checks(
             failed_rows=int(missing_mut_cols),
         ),
         CheckResult(
+            check_name="silver_mutation_profile_schema_columns_present",
+            status=(
+                "passed"
+                if mutations.is_empty() or missing_mutation_profile_cols == 0
+                else "failed"
+            ),
+            failed_rows=int(missing_mutation_profile_cols),
+        ),
+        CheckResult(
+            check_name="silver_mutation_consequence_semantics_valid",
+            status="passed" if invalid_mutation_consequences == 0 else "failed",
+            failed_rows=int(invalid_mutation_consequences),
+        ),
+        CheckResult(
+            check_name="silver_mutation_profile_rows_valid",
+            status="passed" if invalid_mutation_profile_rows == 0 else "failed",
+            failed_rows=int(invalid_mutation_profile_rows),
+        ),
+        CheckResult(
             check_name="silver_expression_gtex_null_gene_id",
             status="passed" if null_gene_ids == 0 else "failed",
             failed_rows=int(null_gene_ids),
@@ -1012,6 +1109,11 @@ def run_silver_quality_checks(
             check_name="gold_mutation_frequency_schema_columns_present",
             status="passed" if (gold_mut_gene.is_empty() or missing_gold_mut_cols == 0) else "failed",
             failed_rows=int(missing_gold_mut_cols),
+        ),
+        CheckResult(
+            check_name="gold_mutation_frequency_semantics_valid",
+            status="passed" if invalid_gold_mutation_values == 0 else "failed",
+            failed_rows=int(invalid_gold_mutation_values),
         ),
         CheckResult(
             check_name="gold_batch_effect_sensitivity_schema_columns_present",

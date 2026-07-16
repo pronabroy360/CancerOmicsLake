@@ -74,6 +74,14 @@ def _write_demo_fixture(root: Path, *, tcga_origin: str = "data/bronze/tcga/TCGA
             "ingested_at": ["2026-05-28T00:00:00Z"],
         }
     ).write_parquet(silver / "silver_mutations.parquet")
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA"],
+            "sample_id": ["sample-1"],
+            "file_id": ["mutation-file-1"],
+            "profile_status": ["downloaded"],
+        }
+    ).write_parquet(silver / "silver_mutation_profile.parquet")
 
     pl.DataFrame(
         [

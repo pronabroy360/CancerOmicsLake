@@ -154,10 +154,12 @@ def build_project_completion_report() -> dict[str, Any]:
         _make_check(
             "mutation_pipeline_outputs_nonempty",
             _parquet_nonempty("data/silver/silver_mutations.parquet")
+            and _parquet_nonempty("data/silver/silver_mutation_profile.parquet")
             and _parquet_nonempty("data/gold/gold_mutation_frequency_by_gene.parquet")
             and _parquet_nonempty("data/gold/gold_mutation_frequency_by_cancer.parquet"),
             [
                 "data/silver/silver_mutations.parquet",
+                "data/silver/silver_mutation_profile.parquet",
                 "data/gold/gold_mutation_frequency_by_gene.parquet",
                 "data/gold/gold_mutation_frequency_by_cancer.parquet",
             ],

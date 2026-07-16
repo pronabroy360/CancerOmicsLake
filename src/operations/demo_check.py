@@ -229,6 +229,10 @@ def run_demo_check(
         _parquet_rows_check(Path("data/silver/silver_expression_tcga.parquet"), "silver_expression_tcga_nonzero"),
         _parquet_rows_check(Path("data/silver/silver_expression_gtex.parquet"), "silver_expression_gtex_nonzero"),
         _parquet_rows_check(Path("data/silver/silver_mutations.parquet"), "silver_mutations_nonzero"),
+        _parquet_rows_check(
+            Path("data/silver/silver_mutation_profile.parquet"),
+            "silver_mutation_profile_nonzero",
+        ),
         _parquet_rows_check(Path("data/gold/gold_cohort_summary.parquet"), "gold_cohort_summary_nonzero"),
         _parquet_rows_check(Path("data/gold/gold_mutation_frequency_by_gene.parquet"), "gold_mutation_frequency_by_gene_nonzero"),
         _parquet_rows_check(Path("data/gold/gold_graph_nodes.parquet"), "gold_graph_nodes_nonzero"),

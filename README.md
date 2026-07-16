@@ -13,7 +13,7 @@ Implemented so far:
 - Strict live-ingestion support (`tcga.require_live_gdc`)
 - File-based TCGA/GTEx expression loaders with fallback behavior
 - Silver parquet outputs for projects, patients, samples, file manifest, and expression tables
-- Mutation MAF parsing and mutation-frequency gold marts
+- Consequence-stratified mutation MAF parsing with downloaded-profile denominators
 - Gold cohort, expression, tumor-vs-normal, mutation, candidate-priority, evidence-confidence, and graph marts
 - Quality report generation
 - Graphify and Neo4j CSV graph exports
@@ -163,7 +163,11 @@ make run-demo-check-strict
 - This profile is intended for fast manual completion and uses `--force-download`.
 - Flow/demo targets focus download scope on `expression,mutations` for higher success rates.
 - Download and flow targets use bounded parallel workers (`8` for aggressive, `4` for medium) while preserving checksum skip/retry behavior.
-- The expanded local profile now produces 27.1 million TCGA expression rows, including 60 BRCA, 59 LUAD, and 41 COAD adjacent-normal samples, plus 45,588 mutation records.
+- The expanded local profile now produces 37.0 million TCGA expression rows, including paired primary-tumor coverage
+  and 60 BRCA, 59 LUAD, and 41 COAD adjacent-normal samples, plus 45,588 mutation records.
+- Mutation candidate evidence excludes synonymous and non-coding/regulatory events. Frequencies use the downloaded
+  mutation-profile cohort as their denominator; they do not classify drivers or pathogenic variants. See
+  [`docs/mutation_semantics.md`](docs/mutation_semantics.md).
 
 ## GTEx V8 Live Profile
 

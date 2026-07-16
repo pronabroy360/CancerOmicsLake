@@ -27,8 +27,14 @@ gtex_expr_rows as (
   from {{ ref('silver_expression_gtex') }}
 ),
 mutation_rows as (
-  select count(*) as mutation_record_count
+  select
+    count(*) as mutation_record_count,
+    sum(case when is_protein_altering then 1 else 0 end) as protein_altering_mutation_record_count
   from {{ ref('silver_mutations') }}
+),
+mutation_profile_counts as (
+  select count(distinct sample_id) as mutation_profiled_sample_count
+  from {{ ref('silver_mutation_profile') }}
 )
 select
   p.tcga_project_count,
@@ -40,6 +46,8 @@ select
   ge.gtex_expression_row_count,
   cast(0 as bigint) as gene_count,
   m.mutation_record_count,
+  m.protein_altering_mutation_record_count,
+  mp.mutation_profiled_sample_count,
   current_timestamp as generated_at
 from project_counts p
 cross join patient_counts pa
@@ -49,3 +57,4 @@ cross join gtex_sample_counts g
 cross join tcga_expr_rows te
 cross join gtex_expr_rows ge
 cross join mutation_rows m
+cross join mutation_profile_counts mp

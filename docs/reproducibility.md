@@ -70,8 +70,10 @@ Aggressive cap:
 Aggressive flow and demo targets force downloads (`--force-download`) so runs do not silently skip file pulling when `tcga.metadata_only: true`.
 Aggressive flow and demo targets also scope downloads to `expression,mutations` via `--data-subdirs` so clinical/biospecimen categories do not create avoidable failures during rapid completion.
 The downloader persists the exact selected file list in `outputs/reports/tcga_download_report.json`; quality checks validate those selected files rather than treating unselected capped candidates as missing data.
-The expanded local run produces 27,054,360 TCGA expression rows and 45,588 mutation records. Reference
+The expanded local run produces 37,002,600 TCGA expression rows and 45,588 mutation records. Reference
 triangulation has 60 BRCA, 59 LUAD, and 41 COAD adjacent-normal samples alongside 95/94/96 primary tumors.
+The silver build also writes `silver_mutation_profile.parquet` from mutation files physically present in bronze.
+Gold mutation frequencies use this downloaded profile as the denominator and protein-altering events as the numerator.
 
 ## Reviewer Demo Check
 
@@ -85,7 +87,7 @@ make run-demo-check-strict
 `make run-demo-check` validates:
 
 - required silver and gold parquet tables are readable and non-empty
-- mutation marts are available
+- downloaded mutation-profile denominator and mutation marts are available
 - latest quality report has a passing or warning-only status
 - Graphify and Neo4j exports exist and contain rows
 - FastAPI `/health` responds

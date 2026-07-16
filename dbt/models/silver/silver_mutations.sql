@@ -5,6 +5,8 @@ select
   cast(gene_id as varchar) as gene_id,
   cast(gene_symbol as varchar) as gene_symbol,
   cast(variant_classification as varchar) as variant_classification,
+  cast(consequence_group as varchar) as consequence_group,
+  cast(is_protein_altering as boolean) as is_protein_altering,
   cast(variant_type as varchar) as variant_type,
   cast(chromosome as varchar) as chromosome,
   cast(start_position as bigint) as start_position,

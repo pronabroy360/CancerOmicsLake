@@ -2,7 +2,7 @@ with sample_counts as (
   select
     project_id as cancer_type,
     count(distinct sample_id) as total_profiled_sample_count
-  from {{ ref('silver_samples') }}
+  from {{ ref('silver_mutation_profile') }}
   group by 1
 ),
 mutation_counts as (
@@ -11,6 +11,15 @@ mutation_counts as (
     count(distinct sample_id) as mutated_sample_count,
     count(*) as mutation_event_count
   from {{ ref('silver_mutations') }}
+  where is_protein_altering
+  group by 1
+),
+all_mutation_counts as (
+  select
+    project_id as cancer_type,
+    count(*) as all_somatic_event_count,
+    sum(case when upper(variant_classification) = 'SILENT' then 1 else 0 end) as synonymous_event_count
+  from {{ ref('silver_mutations') }}
   group by 1
 )
 select
@@ -18,10 +27,19 @@ select
   s.total_profiled_sample_count,
   coalesce(m.mutated_sample_count, 0) as mutated_sample_count,
   coalesce(m.mutation_event_count, 0) as mutation_event_count,
+  coalesce(a.all_somatic_event_count, 0) as all_somatic_event_count,
+  coalesce(a.synonymous_event_count, 0) as synonymous_event_count,
   case
     when s.total_profiled_sample_count = 0 then 0.0
     else cast(coalesce(m.mutation_event_count, 0) as double) / cast(s.total_profiled_sample_count as double)
-  end as mutation_event_rate
+  end as mutation_event_rate,
+  case
+    when s.total_profiled_sample_count = 0 then 0.0
+    else cast(coalesce(m.mutated_sample_count, 0) as double) / cast(s.total_profiled_sample_count as double)
+  end as mutation_frequency,
+  'protein_altering_only' as mutation_scope
 from sample_counts s
 left join mutation_counts m
   on s.cancer_type = m.cancer_type
+left join all_mutation_counts a
+  on s.cancer_type = a.cancer_type

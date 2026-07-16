@@ -37,7 +37,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ["open"]
+              arguments:
+                values: ["open"]
 
   - name: silver_expression_tcga
     columns:
@@ -80,3 +81,31 @@ models:
       - name: end_position
         tests:
           - not_null
+      - name: consequence_group
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['protein_altering', 'synonymous', 'non_coding_or_regulatory', 'unclassified']
+      - name: is_protein_altering
+        tests:
+          - not_null
+
+  - name: silver_mutation_profile
+    columns:
+      - name: project_id
+        tests:
+          - not_null
+      - name: sample_id
+        tests:
+          - not_null
+      - name: file_id
+        tests:
+          - not_null
+          - unique
+      - name: profile_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['downloaded']

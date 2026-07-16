@@ -21,6 +21,12 @@ models:
       - name: mutation_frequency
         tests:
           - not_null
+      - name: mutation_scope
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['protein_altering_only']
 
   - name: gold_mutation_frequency_by_cancer
     columns:
@@ -28,6 +34,12 @@ models:
         tests:
           - not_null
           - unique
+      - name: mutation_scope
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['protein_altering_only']
 
   - name: gold_tumor_vs_normal_expression
     columns:

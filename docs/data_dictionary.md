@@ -77,6 +77,9 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `gene_id`: normalized Ensembl gene ID when available.
 - `gene_symbol`: Hugo/gene symbol.
 - `variant_classification`: MAF variant classification.
+- `consequence_group`: conservative consequence group used to separate protein-altering, synonymous,
+  non-coding/regulatory, and unclassified records.
+- `is_protein_altering`: true only for the documented conservative protein-altering allowlist.
 - `variant_type`: MAF variant type.
 - `chromosome`: chromosome.
 - `start_position`: variant start coordinate.
@@ -85,6 +88,14 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `tumor_seq_allele`: tumor allele.
 - `source`: source system label.
 - `data_origin`: source MAF filepath or demo source.
+- `ingested_at`: processing timestamp.
+
+### `silver_mutation_profile.parquet`
+
+- `project_id`, `case_id`, `sample_id`: GDC entities represented by a downloaded mutation profile.
+- `file_id`, `file_name`, `file_size`, `md5sum`: source manifest identity and integrity metadata.
+- `data_origin`: local path of the downloaded open-access MAF file.
+- `profile_status`: `downloaded` for files included in the analytical denominator.
 - `ingested_at`: processing timestamp.
 
 ## Gold Tables
@@ -100,6 +111,8 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `gtex_expression_row_count`
 - `gene_count`
 - `mutation_record_count`
+- `protein_altering_mutation_record_count`
+- `mutation_profiled_sample_count`
 - `generated_at`
 
 ### `gold_gene_expression_by_cancer.parquet`
@@ -159,20 +172,24 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 ### `gold_mutation_frequency_by_gene.parquet`
 
 - `cancer_type`: TCGA project ID.
-- `gene_id`: normalized Ensembl gene ID when available.
 - `gene_symbol`: gene symbol.
-- `mutated_sample_count`
-- `total_profiled_sample_count`
-- `mutation_frequency`
-- `top_variant_classification`
+- `mutated_sample_count`: samples with at least one protein-altering event in the gene.
+- `total_profiled_sample_count`: unique samples represented by downloaded open-access mutation profiles.
+- `mutation_frequency`: `mutated_sample_count / total_profiled_sample_count`.
+- `top_variant_classification`: most frequent protein-altering classification.
+- `protein_altering_event_count`, `all_somatic_event_count`, `synonymous_event_count`: consequence-aware audit counts.
+- `mutation_scope`: fixed to `protein_altering_only`.
 
 ### `gold_mutation_frequency_by_cancer.parquet`
 
 - `cancer_type`: TCGA project ID.
-- `mutated_sample_count`
-- `total_profiled_sample_count`
-- `mutation_record_count`
-- `mean_mutation_frequency`
+- `mutated_sample_count`: profiled samples with at least one protein-altering event.
+- `total_profiled_sample_count`: unique downloaded mutation-profile samples.
+- `mutation_event_count`: protein-altering event count.
+- `all_somatic_event_count`, `synonymous_event_count`: all-event audit counts.
+- `mutation_event_rate`: protein-altering event count per profiled sample.
+- `mutation_frequency`: fraction of profiled samples with any protein-altering event.
+- `mutation_scope`: fixed to `protein_altering_only`.
 
 ### `gold_candidate_gene_priority.parquet`
 

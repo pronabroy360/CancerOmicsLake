@@ -53,12 +53,19 @@ SELECT
     mutated_sample_count,
     total_profiled_sample_count,
     mutation_frequency,
-    top_variant_classification
+    top_variant_classification,
+    protein_altering_event_count,
+    all_somatic_event_count,
+    synonymous_event_count,
+    mutation_scope
 FROM read_parquet('data/gold/gold_mutation_frequency_by_gene/*.parquet')
 WHERE cancer_type = 'TCGA-LUAD'
 ORDER BY mutation_frequency DESC, mutated_sample_count DESC
 LIMIT 20;
 ```
+
+Mutation frequencies use only protein-altering events and divide by samples represented by downloaded mutation-profile
+files. They are partial-cohort engineering summaries, not driver prevalence or clinical pathogenicity estimates.
 
 ## Cancer-Gene Graph Edges
 
