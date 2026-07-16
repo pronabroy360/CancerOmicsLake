@@ -60,6 +60,9 @@ jobs:
       - name: Graph Export
         run: make run-graph-export
 
+      - name: Research Benchmark
+        run: make run-research-benchmark
+
       - name: Reviewer Demo Check
         run: make run-demo-check
 

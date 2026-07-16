@@ -26,6 +26,7 @@ Implemented so far:
 - Medium-cap real ingestion profile (`expression<=25`, `mutations<=10` per project)
 - Pipeline run-mode tagging (`manual`/`push`/`scheduled`) and run history tracking
 - Project completion report for milestone-level release readiness (`outputs/reports/project_completion_report.json`)
+- Reproducible DuckDB research benchmark with dataset inventory and median/p95 latency reporting
 
 ## Architecture
 

@@ -543,3 +543,13 @@ Impact values:
 - Added stale bulk-file cleanup and a strict demo guard that rejects `PATIENT:` or `SAMPLE:` identifiers in public exports.
 - Real sanitized exports contain 55,209 nodes and 255,215 edges with zero individual-entity identifiers; 4,780 internal
   Patient/Sample nodes and 5,533 connected edges were excluded.
+
+## 2026-07-16 - Reproducible Research Benchmark
+
+- Added six deterministic DuckDB analytical workloads over mutation, consensus, pathway, graph, expression, and cohort
+  gold marts with two warmups and seven measured repeats by default.
+- Added typed JSON reporting for source rows/bytes, SQL hashes, result cardinality, min/median/p95/max latency, software,
+  hardware, threads, Git commit, and explicit single-environment interpretation boundaries.
+- Real reference run passed all six workloads; warm median latency ranged from 0.274 ms to 3.941 ms on the recorded
+  macOS arm64, Python 3.11.15, DuckDB 1.5.4, four-thread environment.
+- Added CLI/Make execution, fixture coverage, methodology documentation, and CI artifact generation.

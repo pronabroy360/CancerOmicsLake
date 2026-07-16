@@ -42,6 +42,7 @@ from src.operations.project_completion import (
     build_project_completion_report,
     write_project_completion_report,
 )
+from src.operations.research_benchmark import run_research_benchmark
 from src.processing.build_expression_table import with_log2_expression
 from src.processing.gtex_harmonizer import harmonize_gtex_gct_files
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
@@ -244,6 +245,14 @@ def main() -> None:
     parser_completion = subparsers.add_parser("run-project-completion")
     parser_completion.add_argument("--config", required=True)
     parser_completion.add_argument("--output", default="outputs/reports/project_completion_report.json")
+
+    parser_benchmark = subparsers.add_parser("run-research-benchmark")
+    parser_benchmark.add_argument("--config", required=True)
+    parser_benchmark.add_argument("--gold-dir", default="data/gold")
+    parser_benchmark.add_argument("--output", default="outputs/reports/research_benchmark_report.json")
+    parser_benchmark.add_argument("--repeats", type=int, default=7)
+    parser_benchmark.add_argument("--warmups", type=int, default=2)
+    parser_benchmark.add_argument("--threads", type=int, default=4)
 
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
@@ -640,6 +649,22 @@ def main() -> None:
             payload["total_milestones"],
         )
         print("Project completion report generated.")
+        return
+    if args.command == "run-research-benchmark":
+        load_config(args.config)
+        payload = run_research_benchmark(
+            gold_dir=args.gold_dir,
+            output_path=args.output,
+            repeats=args.repeats,
+            warmups=args.warmups,
+            threads=args.threads,
+        )
+        logger = get_logger("canceromicslake")
+        passed = sum(1 for workload in payload["workloads"] if workload["status"] == "passed")
+        logger.info("Research benchmark status=%s passed_workloads=%s", payload["status"], passed)
+        if payload["status"] == "failed":
+            raise RuntimeError(f"Research benchmark failed. See {args.output}")
+        print("Research benchmark completed.")
         return
     if args.command == "run-flow":
         from src.orchestration.pipeline_flow import run_pipeline_with_fallback

@@ -16,6 +16,7 @@ make run-quality
 make run-dbt
 make test-dbt
 make run-project-completion
+make run-research-benchmark
 make test
 ```
 
