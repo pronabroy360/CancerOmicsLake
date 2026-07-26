@@ -91,7 +91,12 @@ def _fixture(root: Path, *, complete: bool) -> Path:
                 "tool_version": "fixture",
                 "evidence": [f"{tool}/{task_id}.json"],
             }
-            for tool in ["TCGAbiolinks", "UCSC Xena", "cBioPortal"]
+            for tool in [
+                "CancerOmicsLake",
+                "TCGAbiolinks",
+                "UCSC Xena",
+                "cBioPortal",
+            ]
             for task_id in ["T1", "T2", "T3", "T4", "T5"]
         ]
         (reports / "comparative_evaluation_report.json").write_text(
@@ -109,6 +114,7 @@ def _fixture(root: Path, *, complete: bool) -> Path:
         "publication": {
             "primary_venue": "GigaScience",
             "article_type": "Technical Note",
+            "subject_tool": "CancerOmicsLake",
             "manuscript_path": "manuscript/manuscript.md",
             "package_manifest_path": "manuscript/package_manifest.json",
             "evidence_ledger_path": "manuscript/evidence_ledger.json",

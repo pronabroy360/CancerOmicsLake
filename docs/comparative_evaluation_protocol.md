@@ -12,6 +12,9 @@ Required comparators:
 - UCSC Xena
 - cBioPortal
 
+CancerOmicsLake is the subject tool. The complete matrix therefore contains five CancerOmicsLake
+baseline results plus 15 external comparator results, for 20 evidence-backed tool-task rows.
+
 Primary references:
 
 - [TCGAbiolinks Bioconductor documentation](https://bioconductor.org/packages/release/bioc/html/TCGAbiolinks.html)
@@ -75,6 +78,35 @@ inputs. Hosted-service latency must be reported separately and never ranked agai
 - Do not infer an unsupported feature from missing documentation; record it as unverified.
 - Have a second person reproduce at least T2 and T3 before manuscript submission.
 
+## Reproducible Commands
+
+```bash
+make setup-comparative
+make run-comparative-evaluation
+make run-comparative-evaluation-strict
+```
+
+`setup-comparative` installs xenaPython from the exact Git commit recorded in
+`requirements-comparative.txt`. The normal run collects the local CancerOmicsLake baseline,
+cBioPortal T1 through its public REST API, and UCSC Xena T1 through its pinned Python client. The
+strict command does not collect new evidence; it fails unless the assembled matrix is complete.
+
+TCGAbiolinks execution must use a versioned Bioconductor container because R is not a core project
+runtime. Start Docker before that phase and record the image digest as the tool version. A missing
+Docker daemon or package is an execution blocker, not evidence that TCGAbiolinks lacks a feature.
+
+## Current Checkpoint
+
+The first live collection completed 7 of 20 required rows with zero failed results:
+
+- CancerOmicsLake T1-T5: passed.
+- UCSC Xena T1: passed using xenaPython 1.0.14 pinned at `f243bbf`.
+- cBioPortal T1: passed using its public OpenAPI-described REST service.
+- Remaining external T2-T5 and all TCGAbiolinks tasks: pending.
+
+This checkpoint is not a completed comparison and must not appear as a comparative performance
+claim in the manuscript.
+
 ## Required Report Contract
 
 Write `outputs/reports/comparative_evaluation_report.json`:
@@ -97,7 +129,7 @@ Write `outputs/reports/comparative_evaluation_report.json`:
 }
 ```
 
-The example contains one row for brevity; the completed report needs all 15 tool-task combinations.
+The example contains one row for brevity; the completed report needs all 20 tool-task combinations.
 `status=passed` requires every tool to have an evidence-backed result for every task, including
 `unsupported` where the tool's documented scope does not provide the capability. Failed execution,
 missing version information, or absent raw evidence cannot pass.

@@ -88,11 +88,11 @@ def _citation_has_doi(citation: dict[str, Any]) -> bool:
 
 def _comparison_evidence_complete(
     comparison: dict[str, Any],
-    required_comparators: set[str],
+    required_tools: set[str],
     required_tasks: set[str],
 ) -> tuple[bool, set[str]]:
     rows = comparison.get("tasks", [])
-    if comparison.get("status") != "passed" or not isinstance(rows, list):
+    if not isinstance(rows, list):
         return False, set()
     valid_pairs = {
         (str(row.get("tool")), str(row.get("task_id")))
@@ -104,15 +104,19 @@ def _comparison_evidence_complete(
     }
     expected_pairs = {
         (tool, task_id)
-        for tool in required_comparators
+        for tool in required_tools
         for task_id in required_tasks
     }
-    completed_comparators = {
+    completed_tools = {
         tool
-        for tool in required_comparators
+        for tool in required_tools
         if all((tool, task_id) in valid_pairs for task_id in required_tasks)
     }
-    return expected_pairs.issubset(valid_pairs), completed_comparators
+    complete = (
+        comparison.get("status") == "passed"
+        and expected_pairs.issubset(valid_pairs)
+    )
+    return complete, completed_tools
 
 
 def build_submission_readiness_report(
@@ -146,12 +150,14 @@ def build_submission_readiness_report(
     required_comparators = {
         str(value) for value in config.get("required_comparators", [])
     }
+    subject_tool = str(config.get("subject_tool", "CancerOmicsLake"))
+    required_tools = {subject_tool, *required_comparators}
     required_tasks = {
         str(value) for value in config.get("required_comparison_tasks", [])
     }
-    comparison_complete, completed_comparators = _comparison_evidence_complete(
+    comparison_complete, completed_tools = _comparison_evidence_complete(
         comparison,
-        required_comparators,
+        required_tools,
         required_tasks,
     )
     required_documents = [
@@ -208,8 +214,8 @@ def build_submission_readiness_report(
             comparison_complete,
             [
                 str(comparison_path.relative_to(root)),
-                f"required={sorted(required_comparators)}",
-                f"completed={sorted(completed_comparators)}",
+                f"required={sorted(required_tools)}",
+                f"completed={sorted(completed_tools)}",
                 f"tasks={sorted(required_tasks)}",
             ],
             "Run the preregistered comparison against TCGAbiolinks, UCSC Xena, and cBioPortal.",

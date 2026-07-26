@@ -270,6 +270,11 @@ Run `make run-submission-readiness` for a non-failing audit of remaining publica
 author fields, DOI, biological review, comparative evaluation, and AI disclosure are complete. See
 [`docs/publication_strategy.md`](docs/publication_strategy.md).
 
+Install the pinned UCSC Xena comparison client with `make setup-comparative`, then run
+`make run-comparative-evaluation`. The collector writes evidence-backed task records under
+`outputs/comparative/` and assembles `outputs/reports/comparative_evaluation_report.json`. Missing
+or failed tool-task evidence cannot pass the strict submission gate.
+
 ## Ingestion Traceability
 
 Generate a download-to-silver traceability report:

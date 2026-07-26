@@ -35,6 +35,13 @@ from src.ingestion.gtex_downloader import download_gtex_files, gtex_metadata_stu
 from src.ingestion.recount3_expression import build_recount3_expression_extract
 from src.operations.demo_check import run_demo_check, write_demo_check_report
 from src.operations.dbt_runner import run_dbt_command
+from src.operations.comparative_evaluation import (
+    build_comparative_evaluation_report,
+    collect_canceromicslake_baseline,
+    collect_cbioportal_t1,
+    collect_xena_t1,
+    write_comparative_evaluation_report,
+)
 from src.operations.ingestion_traceability import (
     build_ingestion_traceability_report,
     write_ingestion_traceability_report,
@@ -289,6 +296,21 @@ def main() -> None:
         "--output", default="outputs/reports/submission_readiness_report.json"
     )
     parser_submission.add_argument("--strict", action="store_true")
+
+    parser_comparison = subparsers.add_parser("run-comparative-evaluation")
+    parser_comparison.add_argument("--collect-local", action="store_true")
+    parser_comparison.add_argument("--collect-cbioportal", action="store_true")
+    parser_comparison.add_argument("--collect-xena", action="store_true")
+    parser_comparison.add_argument(
+        "--publication-config", default="configs/publication_config.yml"
+    )
+    parser_comparison.add_argument(
+        "--evidence-root", default="outputs/comparative"
+    )
+    parser_comparison.add_argument(
+        "--output", default="outputs/reports/comparative_evaluation_report.json"
+    )
+    parser_comparison.add_argument("--strict", action="store_true")
 
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
@@ -773,6 +795,33 @@ def main() -> None:
                 f"Submission is not ready. See {args.output} for required actions."
             )
         print("Submission readiness report completed.")
+        return
+    if args.command == "run-comparative-evaluation":
+        if args.collect_local:
+            collect_canceromicslake_baseline(output_root=args.evidence_root)
+        if args.collect_cbioportal:
+            collect_cbioportal_t1(output_root=args.evidence_root)
+        if args.collect_xena:
+            collect_xena_t1(output_root=args.evidence_root)
+        payload = build_comparative_evaluation_report(
+            publication_config_path=args.publication_config,
+            evidence_root=args.evidence_root,
+        )
+        write_comparative_evaluation_report(payload, args.output)
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Comparative evaluation: status=%s completed=%s/%s missing=%s failed=%s",
+            payload["status"],
+            payload["completed_result_count"],
+            payload["required_result_count"],
+            payload["missing_result_count"],
+            payload["failed_result_count"],
+        )
+        if args.strict and payload["status"] != "passed":
+            raise RuntimeError(
+                f"Comparative evaluation is incomplete. See {args.output}."
+            )
+        print("Comparative evaluation report completed.")
         return
     if args.command == "run-flow":
         from src.orchestration.pipeline_flow import run_pipeline_with_fallback

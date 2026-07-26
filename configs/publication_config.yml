@@ -1,6 +1,7 @@
 publication:
   primary_venue: GigaScience
   article_type: Technical Note
+  subject_tool: CancerOmicsLake
   manuscript_path: manuscript/manuscript.md
   package_manifest_path: manuscript/package_manifest.json
   evidence_ledger_path: manuscript/evidence_ledger.json

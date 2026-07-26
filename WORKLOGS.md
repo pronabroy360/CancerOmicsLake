@@ -626,3 +626,20 @@ Impact values:
 - Current status is intentionally `not_ready`: four checks pass and five blockers remain for author
   and AI fields, DOI deposit, independent biological review, and comparative evaluation.
 - Verified `202` Python tests and successful manuscript package regeneration.
+
+## 2026-07-26 - Comparative Evaluation Evidence Harness
+
+- Expanded the preregistered comparison to the correct 20-row matrix: five CancerOmicsLake baseline
+  tasks plus five tasks for each of TCGAbiolinks, UCSC Xena, and cBioPortal.
+- Added atomic task evidence collectors, local-path containment checks, live API capture, version
+  recording, report assembly, strict incomplete-result handling, and CLI/Make execution.
+- Pinned xenaPython 1.0.14 to upstream commit `f243bbf` in a separate comparison dependency file so
+  the research API client does not become a core platform dependency.
+- Live CancerOmicsLake T1-T5 passed using aggregate cohort, TP53 expression, TP53 mutation,
+  reproducibility, and public-safe graph evidence.
+- Live cBioPortal T1 passed against three GDC TCGA studies through its public REST API; UCSC Xena T1
+  passed against three GDC cohorts and integrated TCGA/GTEx hubs through its pinned Python client.
+- Current comparison status is honestly `in_progress`: 7/20 results complete, 13 pending, and zero
+  failed. TCGAbiolinks remains unexecuted because the Docker daemon and Bioconductor container were
+  unavailable, not because the tool was judged unsupported.
+- Verified `205` Python tests and retained the fail-closed submission blocker.
