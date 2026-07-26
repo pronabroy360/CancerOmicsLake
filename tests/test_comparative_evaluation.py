@@ -10,6 +10,7 @@ from src.operations.comparative_evaluation import (
     TASK_IDS,
     build_comparative_evaluation_report,
     collect_canceromicslake_baseline,
+    collect_tcgabiolinks,
 )
 
 
@@ -184,3 +185,63 @@ def test_local_baseline_collector_writes_five_safe_tasks(
     assert {record["task_id"] for record in records} == set(TASK_IDS)
     t5 = next(record for record in records if record["task_id"] == "T5")
     assert t5["result_summary"]["individual_identifier_hits"] == 0
+
+
+def test_tcgabiolinks_collector_preserves_partial_scope(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    raw = tmp_path / "outputs/comparative/TCGAbiolinks/raw"
+    raw.mkdir(parents=True)
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA", "TCGA-COAD", "TCGA-LUAD"],
+            "file_count": [10, 20, 30],
+            "sample_count": [9, 19, 29],
+            "case_count": [8, 18, 28],
+            "source_updated_at": ["fixture", "fixture", "fixture"],
+        }
+    ).write_csv(raw / "cohort_discovery.csv")
+    (raw / "runtime.json").write_text(
+        json.dumps(
+            {
+                "package_version": "2.36.0",
+                "bioconductor_version": "3.21",
+                "wall_time_seconds": 12.5,
+                "exported_functions": ["GDCquery", "GDCdownload"],
+                "graph_named_exports": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (raw / "expression_capability.json").write_text(
+        json.dumps({"summary_computed": False}),
+        encoding="utf-8",
+    )
+    (raw / "mutation_capability.json").write_text(
+        json.dumps({"mutation_frequency_computed": False}),
+        encoding="utf-8",
+    )
+
+    def fake_run(command, **kwargs):
+        class Result:
+            stdout = "sha256:" + ("b" * 64)
+
+        return Result()
+
+    monkeypatch.setattr(
+        "src.operations.comparative_evaluation.subprocess.run",
+        fake_run,
+    )
+
+    records = collect_tcgabiolinks(root_dir=tmp_path)
+
+    assert [record["task_status"] for record in records] == [
+        "passed",
+        "partial",
+        "partial",
+        "partial",
+        "partial",
+    ]
+    assert records[0]["result_summary"]["files"] == 60
+    assert records[4]["result_summary"]["graph_named_exports"] == []

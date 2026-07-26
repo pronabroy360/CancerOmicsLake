@@ -39,6 +39,7 @@ from src.operations.comparative_evaluation import (
     build_comparative_evaluation_report,
     collect_canceromicslake_baseline,
     collect_cbioportal_t1,
+    collect_tcgabiolinks,
     collect_xena_t1,
     write_comparative_evaluation_report,
 )
@@ -300,6 +301,7 @@ def main() -> None:
     parser_comparison = subparsers.add_parser("run-comparative-evaluation")
     parser_comparison.add_argument("--collect-local", action="store_true")
     parser_comparison.add_argument("--collect-cbioportal", action="store_true")
+    parser_comparison.add_argument("--collect-tcgabiolinks", action="store_true")
     parser_comparison.add_argument("--collect-xena", action="store_true")
     parser_comparison.add_argument(
         "--publication-config", default="configs/publication_config.yml"
@@ -801,6 +803,8 @@ def main() -> None:
             collect_canceromicslake_baseline(output_root=args.evidence_root)
         if args.collect_cbioportal:
             collect_cbioportal_t1(output_root=args.evidence_root)
+        if args.collect_tcgabiolinks:
+            collect_tcgabiolinks(output_root=args.evidence_root)
         if args.collect_xena:
             collect_xena_t1(output_root=args.evidence_root)
         payload = build_comparative_evaluation_report(

@@ -82,6 +82,8 @@ inputs. Hosted-service latency must be reported separately and never ranked agai
 
 ```bash
 make setup-comparative
+make build-tcgabiolinks-comparator
+make run-tcgabiolinks-comparison
 make run-comparative-evaluation
 make run-comparative-evaluation-strict
 ```
@@ -91,18 +93,24 @@ make run-comparative-evaluation-strict
 cBioPortal T1 through its public REST API, and UCSC Xena T1 through its pinned Python client. The
 strict command does not collect new evidence; it fails unless the assembled matrix is complete.
 
-TCGAbiolinks execution must use a versioned Bioconductor container because R is not a core project
-runtime. Start Docker before that phase and record the image digest as the tool version. A missing
-Docker daemon or package is an execution blocker, not evidence that TCGAbiolinks lacks a feature.
+TCGAbiolinks executes in a base-image-digest-pinned Bioconductor 3.21 container. The build uses the
+official Posit Bioconductor mirror to avoid redirect timeouts, installs TCGAbiolinks 2.36.0, and
+records the resulting local image ID. Its collector performs live aggregate-only GDC metadata
+queries and does not download expression or mutation files.
 
 ## Current Checkpoint
 
-The first live collection completed 7 of 20 required rows with zero failed results:
+The live collection completed 12 of 20 required rows with zero failed results:
 
 - CancerOmicsLake T1-T5: passed.
 - UCSC Xena T1: passed using xenaPython 1.0.14 pinned at `f243bbf`.
 - cBioPortal T1: passed using its public OpenAPI-described REST service.
-- Remaining external T2-T5 and all TCGAbiolinks tasks: pending.
+- TCGAbiolinks T1: passed using live open GDC metadata.
+- TCGAbiolinks T2-T4: partial because GTEx integration, mutation numerator computation, and an
+  independent second rebuild remain outside the captured run.
+- TCGAbiolinks T5: partial/unverified because no graph-named API was found and the requested
+  aggregate export was not produced; absence from the inventory is not proof of impossibility.
+- UCSC Xena and cBioPortal T2-T5: pending.
 
 This checkpoint is not a completed comparison and must not appear as a comparative performance
 claim in the manuscript.

@@ -371,6 +371,147 @@ def collect_xena_t1(
     return record
 
 
+def collect_tcgabiolinks(
+    root_dir: str | Path = ".",
+    output_root: str | Path = "outputs/comparative",
+    image: str = "canceromicslake-tcgabiolinks:bioc-3.21",
+) -> list[dict[str, Any]]:
+    root = Path(root_dir).resolve()
+    output = root / Path(output_root) / "TCGAbiolinks"
+    raw = output / "raw"
+    raw.mkdir(parents=True, exist_ok=True)
+    command = [
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        f"{raw.resolve()}:/evidence",
+        image,
+        "Rscript",
+        "/opt/canceromicslake/run_comparative_tasks.R",
+    ]
+    subprocess.run(command, cwd=root, check=True)
+    inspection = subprocess.run(
+        ["docker", "image", "inspect", image, "--format", "{{.Id}}"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    image_id = inspection.stdout.strip()
+
+    runtime = _read_json(raw / "runtime.json")
+    expression = _read_json(raw / "expression_capability.json")
+    mutation = _read_json(raw / "mutation_capability.json")
+    cohort_path = raw / "cohort_discovery.csv"
+    if not runtime or not expression or not mutation or not cohort_path.exists():
+        raise RuntimeError("TCGAbiolinks container did not produce complete raw evidence")
+
+    cohorts = pl.read_csv(cohort_path)
+    version_label = (
+        f"TCGAbiolinks {runtime['package_version']}; "
+        f"Bioconductor {runtime['bioconductor_version']}; "
+        f"image {image_id.removeprefix('sha256:')[:12]}"
+    )
+    documentation = (
+        "https://bioconductor.org/packages/3.21/bioc/html/TCGAbiolinks.html"
+    )
+    runtime_evidence = _relative(raw / "runtime.json", root)
+    records = [
+        _task_payload(
+            "TCGAbiolinks",
+            "T1",
+            "passed" if cohorts.height == 3 else "failed",
+            version_label,
+            "pinned Bioconductor Docker image and live GDC API",
+            [_relative(cohort_path, root), runtime_evidence, documentation],
+            {
+                "projects": cohorts.height,
+                "files": int(cohorts["file_count"].sum()),
+                "samples": int(cohorts["sample_count"].sum()),
+                "cases": int(cohorts["case_count"].sum()),
+                "wall_time_seconds": runtime["wall_time_seconds"],
+            },
+            ["Counts reflect open STAR-Counts files visible at evaluation time."],
+        ),
+        _task_payload(
+            "TCGAbiolinks",
+            "T2",
+            "partial",
+            version_label,
+            "pinned Bioconductor Docker image and live GDC API",
+            [
+                _relative(raw / "expression_capability.json", root),
+                runtime_evidence,
+                documentation,
+            ],
+            expression,
+            [
+                "The package queried TCGA BRCA STAR-Counts metadata.",
+                "No GTEx-named package API was available, so the preregistered "
+                "TCGA-versus-GTEx TP53 summary was not computed.",
+            ],
+        ),
+        _task_payload(
+            "TCGAbiolinks",
+            "T3",
+            "partial",
+            version_label,
+            "pinned Bioconductor Docker image and live GDC API",
+            [
+                _relative(raw / "mutation_capability.json", root),
+                runtime_evidence,
+                documentation,
+            ],
+            mutation,
+            [
+                "Live LUAD masked-mutation metadata supplied a candidate denominator.",
+                "Variant files were not downloaded, so the protein-altering TP53 "
+                "numerator and frequency were not computed.",
+            ],
+        ),
+        _task_payload(
+            "TCGAbiolinks",
+            "T4",
+            "partial",
+            version_label,
+            "clean pinned Docker container",
+            [runtime_evidence, _relative(cohort_path, root), documentation],
+            {
+                "clean_container_completed": True,
+                "wall_time_seconds": runtime["wall_time_seconds"],
+                "cohort_output_sha256": _sha256(cohort_path),
+                "image_id": image_id,
+                "second_rebuild_completed": False,
+            },
+            [
+                "The clean container run completed with pinned base and package versions.",
+                "A second independent rebuild has not yet been executed.",
+            ],
+        ),
+        _task_payload(
+            "TCGAbiolinks",
+            "T5",
+            "partial",
+            version_label,
+            "documented package API inventory",
+            [runtime_evidence, documentation],
+            {
+                "exported_function_count": len(runtime["exported_functions"]),
+                "graph_named_exports": runtime["graph_named_exports"],
+                "aggregate_cancer_gene_export_created": False,
+            },
+            [
+                "No graph or Neo4j/GraphML-named export was found in the package API inventory.",
+                "This does not prove impossibility; the requested aggregate export was not produced.",
+            ],
+        ),
+    ]
+    for record in records:
+        _write_json(output / record["task_id"] / "task.json", record)
+    return records
+
+
 def build_comparative_evaluation_report(
     publication_config_path: str | Path = "configs/publication_config.yml",
     root_dir: str | Path = ".",

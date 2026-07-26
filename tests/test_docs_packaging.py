@@ -81,7 +81,7 @@ def test_publication_strategy_and_human_review_packet_are_packaged() -> None:
     assert "not a universal tool ranking" in comparison
     assert "make setup-comparative" in comparison
     assert "make run-comparative-evaluation-strict" in comparison
-    assert "7 of 20" in comparison
+    assert "12 of 20" in comparison
     assert "Independent" in biological
     assert (ROOT / "configs" / "publication_config.yml").exists()
     assert (

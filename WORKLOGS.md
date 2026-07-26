@@ -643,3 +643,15 @@ Impact values:
   failed. TCGAbiolinks remains unexecuted because the Docker daemon and Bioconductor container were
   unavailable, not because the tool was judged unsupported.
 - Verified `205` Python tests and retained the fail-closed submission blocker.
+
+## 2026-07-26 - Containerized TCGAbiolinks Comparison
+
+- Added a digest-pinned Bioconductor 3.21 image with TCGAbiolinks 2.36.0 and retryable installation
+  through the official Posit Bioconductor mirror.
+- Added an aggregate-only live GDC collector for expression metadata across BRCA, COAD, and LUAD,
+  plus LUAD masked-mutation metadata and a machine-readable package capability inventory.
+- Classified outcomes conservatively: cohort discovery passed; expression, mutation, clean
+  rebuild, and graph-export tasks remained partial, with absent named APIs treated as unverified
+  rather than proof of unsupported capability.
+- Added CLI and Make targets, evidence checksums, image identity, execution timing, tests, and
+  protocol documentation without promoting partial capability evidence to a biological result.
