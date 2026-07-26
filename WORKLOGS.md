@@ -708,3 +708,12 @@ Impact values:
   `3d418eaaa0aa9b19bce22bff661257484e4d764d7eb9a46c644f6353b85ae039`.
 - Kept `doi: null` and an explicit claim boundary until a human uploads the archive and registers
   the persistent identifier.
+
+## 2026-07-26 - External Publication Handoff Packets
+
+- Added form-ready DOI deposit metadata with archive path, exact size, SHA-256, evidence commit,
+  description, keywords, licensing boundary, source acknowledgements, and post-mint update steps.
+- Added an independent biological-review request with a bounded review scope, six concrete
+  questions, evidence locations, attestation instructions, and explicit non-clinical claim limits.
+- Registered both handoff packets as required publication documents while preserving human control
+  over DOI minting, reviewer approval, authorship, and scientific sign-off.

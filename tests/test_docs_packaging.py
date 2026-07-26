@@ -73,6 +73,8 @@ def test_publication_strategy_and_human_review_packet_are_packaged() -> None:
     strategy = read_text("docs/publication_strategy.md")
     comparison = read_text("docs/comparative_evaluation_protocol.md")
     biological = read_text("docs/biological_review_checklist.md")
+    review_request = read_text("docs/biological_review_request.md")
+    deposit = read_text("docs/release_deposit_metadata.md")
 
     assert "make run-submission-readiness-strict" in readme
     assert "GigaScience Technical Note" in strategy
@@ -86,6 +88,8 @@ def test_publication_strategy_and_human_review_packet_are_packaged() -> None:
     assert "make run-comparative-evaluation-strict" in comparison
     assert "all 20" in comparison
     assert "Independent" in biological
+    assert "independent biological/methodological review" in review_request
+    assert "3d418eaaa0aa9b19bce22bff661257484e4d764d7eb9a46c644f6353b85ae039" in deposit
     assert (ROOT / "configs" / "publication_config.yml").exists()
     assert (
         ROOT / "docs" / "attestations" / "biological_review.example.yml"

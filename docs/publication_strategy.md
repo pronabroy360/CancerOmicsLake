@@ -82,8 +82,8 @@ Do not use:
 ## Submission Sequence
 
 1. Execute `docs/comparative_evaluation_protocol.md`.
-2. Obtain review using `docs/biological_review_checklist.md`.
-3. Create a frozen GitHub release and DOI-backed software/data deposits.
+2. Send `docs/biological_review_request.md` and obtain review using the checklist.
+3. Use `docs/release_deposit_metadata.md` to create a frozen GitHub release and DOI-backed deposit.
 4. Complete and confirm `configs/manuscript_metadata.yml`, then regenerate the manuscript package.
 5. Run `make run-submission-readiness-strict`.
 6. Send a short presubmission enquiry to GigaScience describing the Technical Note fit.

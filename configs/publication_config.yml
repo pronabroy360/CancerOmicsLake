@@ -23,5 +23,7 @@ publication:
     - docs/publication_strategy.md
     - docs/comparative_evaluation_protocol.md
     - docs/biological_review_checklist.md
+    - docs/biological_review_request.md
     - docs/attestations/biological_review.example.yml
+    - docs/release_deposit_metadata.md
     - configs/manuscript_metadata.yml
