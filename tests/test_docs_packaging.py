@@ -65,6 +65,27 @@ def test_manuscript_reproducibility_documents_strict_evidence_gates() -> None:
     assert "evidence_ledger.json" in manuscript
 
 
+def test_publication_strategy_and_human_review_packet_are_packaged() -> None:
+    readme = read_text("README.md")
+    strategy = read_text("docs/publication_strategy.md")
+    comparison = read_text("docs/comparative_evaluation_protocol.md")
+    biological = read_text("docs/biological_review_checklist.md")
+
+    assert "make run-submission-readiness-strict" in readme
+    assert "GigaScience Technical Note" in strategy
+    assert "Bioinformatics Advances" in strategy
+    assert "Journal of Open Source Software" in strategy
+    assert "TCGAbiolinks" in comparison
+    assert "UCSC Xena" in comparison
+    assert "cBioPortal" in comparison
+    assert "not a universal tool ranking" in comparison
+    assert "Independent" in biological
+    assert (ROOT / "configs" / "publication_config.yml").exists()
+    assert (
+        ROOT / "docs" / "attestations" / "biological_review.example.yml"
+    ).exists()
+
+
 def test_sample_queries_cover_core_marts() -> None:
     sample_queries = read_text("docs/sample_queries.md")
 

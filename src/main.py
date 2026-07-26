@@ -46,6 +46,10 @@ from src.operations.project_completion import (
 )
 from src.operations.research_benchmark import run_research_benchmark
 from src.operations.fair_release import build_fair_release
+from src.operations.submission_readiness import (
+    build_submission_readiness_report,
+    write_submission_readiness_report,
+)
 from src.processing.build_expression_table import with_log2_expression
 from src.processing.gtex_harmonizer import harmonize_gtex_gct_files
 from src.processing.build_silver_tables import build_silver_tables_from_bronze
@@ -276,6 +280,15 @@ def main() -> None:
     parser_manuscript.add_argument(
         "--fair-manifest", default="outputs/releases/v0.1.0/manifest.json"
     )
+
+    parser_submission = subparsers.add_parser("run-submission-readiness")
+    parser_submission.add_argument(
+        "--publication-config", default="configs/publication_config.yml"
+    )
+    parser_submission.add_argument(
+        "--output", default="outputs/reports/submission_readiness_report.json"
+    )
+    parser_submission.add_argument("--strict", action="store_true")
 
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
@@ -740,6 +753,26 @@ def main() -> None:
             payload["git_commit"],
         )
         print("Manuscript evidence package completed.")
+        return
+    if args.command == "run-submission-readiness":
+        payload = build_submission_readiness_report(
+            config_path=args.publication_config,
+        )
+        write_submission_readiness_report(payload, args.output)
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Submission readiness: status=%s passed=%s blockers=%s target=%s %s",
+            payload["status"],
+            payload["passed_count"],
+            payload["blocker_count"],
+            payload["primary_venue"],
+            payload["article_type"],
+        )
+        if args.strict and payload["status"] != "ready":
+            raise RuntimeError(
+                f"Submission is not ready. See {args.output} for required actions."
+            )
+        print("Submission readiness report completed.")
         return
     if args.command == "run-flow":
         from src.orchestration.pipeline_flow import run_pipeline_with_fallback

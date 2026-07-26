@@ -1,0 +1,24 @@
+publication:
+  primary_venue: GigaScience
+  article_type: Technical Note
+  manuscript_path: manuscript/manuscript.md
+  package_manifest_path: manuscript/package_manifest.json
+  evidence_ledger_path: manuscript/evidence_ledger.json
+  citation_path: CITATION.cff
+  biological_review_path: docs/attestations/biological_review.yml
+  comparative_evaluation_path: outputs/reports/comparative_evaluation_report.json
+  required_comparators:
+    - TCGAbiolinks
+    - UCSC Xena
+    - cBioPortal
+  required_comparison_tasks:
+    - T1
+    - T2
+    - T3
+    - T4
+    - T5
+  required_documents:
+    - docs/publication_strategy.md
+    - docs/comparative_evaluation_protocol.md
+    - docs/biological_review_checklist.md
+    - docs/attestations/biological_review.example.yml

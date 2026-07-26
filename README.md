@@ -265,6 +265,11 @@ generates a journal-neutral manuscript, editable SVG figures, aggregate CSV tabl
 and a claim-level SHA-256 evidence ledger in `manuscript/`. See
 [`docs/manuscript_reproducibility.md`](docs/manuscript_reproducibility.md).
 
+Run `make run-submission-readiness` for a non-failing audit of remaining publication blockers.
+`make run-submission-readiness-strict` is the final fail-closed gate and will remain blocked until
+author fields, DOI, biological review, comparative evaluation, and AI disclosure are complete. See
+[`docs/publication_strategy.md`](docs/publication_strategy.md).
+
 ## Ingestion Traceability
 
 Generate a download-to-silver traceability report:

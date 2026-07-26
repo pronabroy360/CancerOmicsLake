@@ -1,0 +1,16 @@
+status: pending
+reviewer_name: ""
+reviewer_affiliation: ""
+reviewer_orcid: ""
+review_date: ""
+conflicts_of_interest: ""
+reviewed_commit: ""
+reviewed_sections:
+  expression_harmonization: false
+  mutation_semantics: false
+  statistical_methods: false
+  candidate_interpretation: false
+  pathway_interpretation: false
+  limitations_and_claim_boundaries: false
+decision: ""
+required_revisions: []

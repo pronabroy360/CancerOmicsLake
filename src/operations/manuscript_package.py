@@ -539,6 +539,13 @@ not redistributed. A versioned aggregate-derived bundle can be generated with
 Only open-access public resources were used. Controlled-access data were excluded. Public graph and
 release surfaces remove Patient and Sample entities and block individual-like identifiers.
 
+## Generative AI Disclosure
+
+[AI DISCLOSURE TO COMPLETE] List the tools and model versions used for code, tests, documentation,
+and manuscript drafting; describe the scope of assistance; and confirm that the human author
+reviewed, edited, and validated all assisted outputs and retained responsibility for design choices,
+scientific interpretation, and the submitted work.
+
 ## Author Contributions
 
 **Pronab Chandra Roy:** Conceptualization, software, data engineering, methodology, validation,
