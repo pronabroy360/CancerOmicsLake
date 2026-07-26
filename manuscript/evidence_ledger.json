@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-26T04:36:25.528059+00:00",
-  "git_commit": "b7f32eb30916c2efeaa6fb11156bd2f2c44aa0d0",
+  "generated_at": "2026-07-26T06:58:49.646891+00:00",
+  "git_commit": "011de8b54019f7836893d1d2228b25f8eba041af",
   "status": "passed",
   "scope": "aggregate_publication_evidence",
   "resources": [
@@ -32,14 +32,14 @@
     {
       "name": "report:benchmark",
       "path": "outputs/reports/research_benchmark_report.json",
-      "bytes": 3807,
-      "sha256": "7d4d018c5be4aefce3456a32382bd6ba784319f3447131790a8b25757e66fea1"
+      "bytes": 3804,
+      "sha256": "9a27eabe134e4fb0e4330889bdb2ccee963ce149d3b8a3756d8b207662a6b668"
     },
     {
       "name": "report:reference_ablation",
       "path": "outputs/reports/reference_ablation_report.json",
       "bytes": 78718,
-      "sha256": "8401cef179b970debff9f5878117036d301d8a48323ae4d49038946b5d6405f3"
+      "sha256": "9d037bec080e0571316ebd3ec57abe33d61dffe474baba8b097be4e172d23251"
     },
     {
       "name": "report:graph",
@@ -103,7 +103,7 @@
       "name": "fair_manifest",
       "path": "outputs/releases/v0.1.0/manifest.json",
       "bytes": 48912,
-      "sha256": "9745a462d62518c3306421f0e4ef1137e1c83f35353f35b5eff4d9aa6f7ddb94"
+      "sha256": "4f3f272de86d278f47c5bd2cf2d421d318f3099e8bab8c9df213c4ddc8017420"
     }
   ],
   "claims": [

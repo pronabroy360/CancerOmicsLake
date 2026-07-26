@@ -684,3 +684,14 @@ Impact values:
 - Documented the metadata-first workflow and added tests for complete, incomplete, and attempted
   marker-bypass scenarios.
 - Verified 210 Python tests with the four legitimate external/human publication blockers retained.
+
+## 2026-07-26 - Provenance-Refreshed Manuscript Release Candidate
+
+- Regenerated the benchmark, reference-ablation report, 18-resource FAIR bundle, and manuscript
+  package against clean evidence-producing commit `011de8b`.
+- Refreshed the manuscript evidence ledger and package hashes while preserving visible placeholders
+  for unconfirmed affiliation, email, declarations, and AI-use details.
+- Added the exact structured metadata snapshot to the 15-file manuscript package.
+- Verified FAIR identifier safety, 14 manuscript-package hashes, 210 Python tests, and five of nine
+  submission checks; DOI registration, metadata confirmation, AI confirmation, and independent
+  biological review remain external gates.
