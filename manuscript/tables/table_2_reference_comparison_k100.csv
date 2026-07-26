@@ -1,0 +1,10 @@
+cancer_type,method_a,method_b,common_gene_count,top_k_overlap_count,top_k_jaccard,regulated_direction_concordance,spearman_abs_effect,agreement_tier
+TCGA-BRCA,gtex_native,recount3_uniform,36004,27,0.156069,0.35352,0.706826,limited
+TCGA-BRCA,gtex_native,tcga_adjacent,36004,19,0.104972,0.205275,0.801923,limited
+TCGA-BRCA,tcga_adjacent,recount3_uniform,36004,36,0.219512,0.1923,0.659136,limited
+TCGA-COAD,gtex_native,recount3_uniform,36004,47,0.30719,0.39631,0.748199,limited
+TCGA-COAD,gtex_native,tcga_adjacent,36004,5,0.025641,0.185329,0.812312,limited
+TCGA-COAD,tcga_adjacent,recount3_uniform,36004,8,0.041667,0.12433,0.618475,limited
+TCGA-LUAD,gtex_native,recount3_uniform,36004,10,0.052632,0.353333,0.711792,limited
+TCGA-LUAD,gtex_native,tcga_adjacent,36004,8,0.041667,0.262759,0.807752,limited
+TCGA-LUAD,tcga_adjacent,recount3_uniform,36004,19,0.104972,0.19669,0.627422,limited

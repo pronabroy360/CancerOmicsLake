@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-26T04:25:31.539093+00:00",
+  "git_commit": "8474ef5bc23b5c6739c206e00f72edc279988710",
+  "status": "passed",
+  "scope": "aggregate_publication_evidence",
+  "resources": [
+    {
+      "name": "report:quality",
+      "path": "outputs/reports/silver_data_quality_report.json",
+      "bytes": 12225,
+      "sha256": "0ed88bd7d2cbc7cd91b528d532cd32783567b6274ffc9615ea630f1b39fa08c0"
+    },
+    {
+      "name": "report:dbt",
+      "path": "outputs/reports/dbt_execution_report.json",
+      "bytes": 356,
+      "sha256": "f9b2af1800cab44f268833f41f207153ef068ce419cec82ef16a7c2c071e26d4"
+    },
+    {
+      "name": "report:demo",
+      "path": "outputs/reports/demo_check_report.json",
+      "bytes": 9297,
+      "sha256": "488fa141673b43dcbdc3fc4ab7e125da151a3089f087f97597a292cbb2ace0d7"
+    },
+    {
+      "name": "report:completion",
+      "path": "outputs/reports/project_completion_report.json",
+      "bytes": 5003,
+      "sha256": "d620d72d6bc13dca20f6cb8c242cb10b630263d7334d40aa8b470635daef8f55"
+    },
+    {
+      "name": "report:benchmark",
+      "path": "outputs/reports/research_benchmark_report.json",
+      "bytes": 3808,
+      "sha256": "754b7e44f653c81100c63baaf181ace51f5ca5a517e4e89b6e801e5b10eab4a9"
+    },
+    {
+      "name": "report:reference_ablation",
+      "path": "outputs/reports/reference_ablation_report.json",
+      "bytes": 78718,
+      "sha256": "1d8e4803e45bf363f56997609ab0e925a98bd41e493a6b70292c57f1547f43d7"
+    },
+    {
+      "name": "report:graph",
+      "path": "outputs/reports/graph_metrics_report.json",
+      "bytes": 6643,
+      "sha256": "c0491bc8f573d6200324c8898fc17312c7e71500ad62bc10a5109d2a62cc109a"
+    },
+    {
+      "name": "report:consensus",
+      "path": "outputs/reports/consensus_candidate_report.json",
+      "bytes": 760,
+      "sha256": "d52c9bf077f6e3f739efa809a86c949a9baac08c739d5ed2efbb34b2a969ba23"
+    },
+    {
+      "name": "report:external",
+      "path": "outputs/reports/external_expression_validation_report.json",
+      "bytes": 608,
+      "sha256": "6744ff3107dc1eba7187ff9d8409f39fd8300c52e0e06801c60e275ae182a10d"
+    },
+    {
+      "name": "report:paired",
+      "path": "outputs/reports/paired_expression_support_report.json",
+      "bytes": 897,
+      "sha256": "08613e094125dfbb50fa822d92569dae2af56a35f9689f7e0b70da5351e8d5a8"
+    },
+    {
+      "name": "report:pathway",
+      "path": "outputs/reports/pathway_enrichment_report.json",
+      "bytes": 877,
+      "sha256": "271bb39fc3b67d036b2b8ee2d454b26f8f3b63af9d07d1705617147614fde42a"
+    },
+    {
+      "name": "gold:cohort",
+      "path": "data/gold/gold_cohort_summary.parquet",
+      "bytes": 5341,
+      "sha256": "a50818d576822e133cb7f03f566d7ba25a03c4f652aa6c386a8c68d654a1eb55",
+      "row_count": 1
+    },
+    {
+      "name": "gold:mutation_by_cancer",
+      "path": "data/gold/gold_mutation_frequency_by_cancer.parquet",
+      "bytes": 3975,
+      "sha256": "c7a26138d70df3b4791ab97da65290f42a0c905d9592b73935350bf803949abb",
+      "row_count": 3
+    },
+    {
+      "name": "gold:reference_comparison",
+      "path": "data/gold/gold_reference_method_comparison.parquet",
+      "bytes": 8165,
+      "sha256": "005ef34617088b154dd5000b86b7fdfd7304ab785b3cce45738d773fe5869352",
+      "row_count": 36
+    },
+    {
+      "name": "gold:consensus_ablation",
+      "path": "data/gold/gold_consensus_ablation_stability.parquet",
+      "bytes": 9112,
+      "sha256": "e79a35dc9c46792d0534123fc60b8152e269111643c2e2916da2360b6219f3da",
+      "row_count": 48
+    },
+    {
+      "name": "fair_manifest",
+      "path": "outputs/releases/v0.1.0/manifest.json",
+      "bytes": 48912,
+      "sha256": "7a8a514ed3b3e9690650f7a5716fcd52e9e46dea82622e3e5f425ef2920ea96b"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C01",
+      "statement": "TCGA patient count",
+      "value": 2098,
+      "source": "gold:cohort"
+    },
+    {
+      "claim_id": "C02",
+      "statement": "TCGA sample count",
+      "value": 2682,
+      "source": "gold:cohort"
+    },
+    {
+      "claim_id": "C03",
+      "statement": "Protein-altering mutation record count",
+      "value": 34393,
+      "source": "gold:cohort"
+    },
+    {
+      "claim_id": "C04",
+      "statement": "Reference comparison common genes per cancer",
+      "value": 36004,
+      "source": "gold:reference_comparison"
+    },
+    {
+      "claim_id": "C05",
+      "statement": "Direct-reference Top-K Jaccard range",
+      "value": [
+        0.010101,
+        0.369863
+      ],
+      "source": "gold:reference_comparison"
+    },
+    {
+      "claim_id": "C06",
+      "statement": "Regulated-direction concordance range",
+      "value": [
+        0.12433,
+        0.39631
+      ],
+      "source": "gold:reference_comparison"
+    },
+    {
+      "claim_id": "C07",
+      "statement": "Absolute-effect Spearman range",
+      "value": [
+        0.618475,
+        0.812312
+      ],
+      "source": "gold:reference_comparison"
+    },
+    {
+      "claim_id": "C08",
+      "statement": "Prioritized consensus candidates",
+      "value": 194,
+      "source": "report:consensus"
+    },
+    {
+      "claim_id": "C09",
+      "statement": "Public graph node and edge counts",
+      "value": [
+        55194,
+        253543
+      ],
+      "source": "report:graph"
+    },
+    {
+      "claim_id": "C10",
+      "statement": "Passing standard quality checks",
+      "value": 58,
+      "source": "report:quality"
+    }
+  ],
+  "limitations": [
+    "Evidence values are computational outputs and require scientific interpretation.",
+    "Cross-source expression sensitivity is measured but not fully batch corrected.",
+    "The package is a manuscript draft, not evidence of peer review or acceptance."
+  ]
+}

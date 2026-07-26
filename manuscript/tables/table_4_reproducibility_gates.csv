@@ -1,0 +1,7 @@
+gate,result,status
+dbt model/test gate,test,passed
+Quality checks,58 passed; 0 warnings,passed
+Strict demo checks,29,passed
+PRD milestones,9,complete
+Benchmark workloads,6,passed
+FAIR identifier audit,18,passed

@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="784" height="728" viewBox="0 0 784 728">
+<style>text{font-family:Georgia,serif;fill:#17343a}.title{font-size:22px;font-weight:700}.sub{font-size:12px;fill:#52676b}.label{font-size:12px}.value{font:600 12px ui-monospace,monospace}.legend{font-size:11px;fill:#52676b}</style>
+<rect width="100%" height="100%" fill="#fbfaf4"/>
+<text x="24" y="34" class="title">Consensus candidate stability under component ablation</text>
+<text x="24" y="57" class="sub">Baseline-versus-ablated Top-K Jaccard; retained component weights are renormalized</text>
+<text x="336.0" y="98" text-anchor="middle" class="label">25</text>
+<text x="448.0" y="98" text-anchor="middle" class="label">50</text>
+<text x="560.0" y="98" text-anchor="middle" class="label">100</text>
+<text x="672.0" y="98" text-anchor="middle" class="label">250</text>
+<text x="268" y="142" text-anchor="end" class="label">TCGA-BRCA | Remove triangulation</text>
+<rect x="282" y="118" width="108" height="38" rx="3" fill="#b9cfc4"/>
+<text x="336.0" y="143" text-anchor="middle" class="value" style="fill:#17343a">0.220</text>
+<rect x="394" y="118" width="108" height="38" rx="3" fill="#acc7bd"/>
+<text x="448.0" y="143" text-anchor="middle" class="value" style="fill:#17343a">0.266</text>
+<rect x="506" y="118" width="108" height="38" rx="3" fill="#4e8989"/>
+<text x="560.0" y="143" text-anchor="middle" class="value" style="fill:#ffffff">0.613</text>
+<rect x="618" y="118" width="108" height="38" rx="3" fill="#619594"/>
+<text x="672.0" y="143" text-anchor="middle" class="value" style="fill:#ffffff">0.543</text>
+<text x="268" y="184" text-anchor="end" class="label">TCGA-BRCA | Remove external validation</text>
+<rect x="282" y="160" width="108" height="38" rx="3" fill="#8bb1ab"/>
+<text x="336.0" y="185" text-anchor="middle" class="value" style="fill:#17343a">0.389</text>
+<rect x="394" y="160" width="108" height="38" rx="3" fill="#689a98"/>
+<text x="448.0" y="185" text-anchor="middle" class="value" style="fill:#ffffff">0.515</text>
+<rect x="506" y="160" width="108" height="38" rx="3" fill="#2b7276"/>
+<text x="560.0" y="185" text-anchor="middle" class="value" style="fill:#ffffff">0.739</text>
+<rect x="618" y="160" width="108" height="38" rx="3" fill="#33777a"/>
+<text x="672.0" y="185" text-anchor="middle" class="value" style="fill:#ffffff">0.712</text>
+<text x="268" y="226" text-anchor="end" class="label">TCGA-BRCA | Remove paired support</text>
+<rect x="282" y="202" width="108" height="38" rx="3" fill="#3f7f81"/>
+<text x="336.0" y="227" text-anchor="middle" class="value" style="fill:#ffffff">0.667</text>
+<rect x="394" y="202" width="108" height="38" rx="3" fill="#1f6a6f"/>
+<text x="448.0" y="227" text-anchor="middle" class="value" style="fill:#ffffff">0.786</text>
+<rect x="506" y="202" width="108" height="38" rx="3" fill="#085b63"/>
+<text x="560.0" y="227" text-anchor="middle" class="value" style="fill:#ffffff">0.869</text>
+<rect x="618" y="202" width="108" height="38" rx="3" fill="#18656c"/>
+<text x="672.0" y="227" text-anchor="middle" class="value" style="fill:#ffffff">0.812</text>
+<text x="268" y="268" text-anchor="end" class="label">TCGA-BRCA | Remove all explicit reference components</text>
+<rect x="282" y="244" width="108" height="38" rx="3" fill="#eff3e2"/>
+<text x="336.0" y="269" text-anchor="middle" class="value" style="fill:#17343a">0.020</text>
+<rect x="394" y="244" width="108" height="38" rx="3" fill="#c8dacd"/>
+<text x="448.0" y="269" text-anchor="middle" class="value" style="fill:#17343a">0.163</text>
+<rect x="506" y="244" width="108" height="38" rx="3" fill="#6b9c9a"/>
+<text x="560.0" y="269" text-anchor="middle" class="value" style="fill:#ffffff">0.504</text>
+<rect x="618" y="244" width="108" height="38" rx="3" fill="#6b9c99"/>
+<text x="672.0" y="269" text-anchor="middle" class="value" style="fill:#ffffff">0.506</text>
+<text x="268" y="310" text-anchor="end" class="label">TCGA-COAD | Remove triangulation</text>
+<rect x="282" y="286" width="108" height="38" rx="3" fill="#95b8b0"/>
+<text x="336.0" y="311" text-anchor="middle" class="value" style="fill:#17343a">0.351</text>
+<rect x="394" y="286" width="108" height="38" rx="3" fill="#80aaa5"/>
+<text x="448.0" y="311" text-anchor="middle" class="value" style="fill:#17343a">0.429</text>
+<rect x="506" y="286" width="108" height="38" rx="3" fill="#3b7d7f"/>
+<text x="560.0" y="311" text-anchor="middle" class="value" style="fill:#ffffff">0.681</text>
+<rect x="618" y="286" width="108" height="38" rx="3" fill="#8fb4ad"/>
+<text x="672.0" y="311" text-anchor="middle" class="value" style="fill:#17343a">0.374</text>
+<text x="268" y="352" text-anchor="end" class="label">TCGA-COAD | Remove external validation</text>
+<rect x="282" y="328" width="108" height="38" rx="3" fill="#689a98"/>
+<text x="336.0" y="353" text-anchor="middle" class="value" style="fill:#ffffff">0.515</text>
+<rect x="394" y="328" width="108" height="38" rx="3" fill="#2f7579"/>
+<text x="448.0" y="353" text-anchor="middle" class="value" style="fill:#ffffff">0.724</text>
+<rect x="506" y="328" width="108" height="38" rx="3" fill="#16646b"/>
+<text x="560.0" y="353" text-anchor="middle" class="value" style="fill:#ffffff">0.818</text>
+<rect x="618" y="328" width="108" height="38" rx="3" fill="#6c9d9a"/>
+<text x="672.0" y="353" text-anchor="middle" class="value" style="fill:#ffffff">0.502</text>
+<text x="268" y="394" text-anchor="end" class="label">TCGA-COAD | Remove paired support</text>
+<rect x="282" y="370" width="108" height="38" rx="3" fill="#2f7579"/>
+<text x="336.0" y="395" text-anchor="middle" class="value" style="fill:#ffffff">0.724</text>
+<rect x="394" y="370" width="108" height="38" rx="3" fill="#16646b"/>
+<text x="448.0" y="395" text-anchor="middle" class="value" style="fill:#ffffff">0.818</text>
+<rect x="506" y="370" width="108" height="38" rx="3" fill="#0d5e66"/>
+<text x="560.0" y="395" text-anchor="middle" class="value" style="fill:#ffffff">0.852</text>
+<rect x="618" y="370" width="108" height="38" rx="3" fill="#377a7d"/>
+<text x="672.0" y="395" text-anchor="middle" class="value" style="fill:#ffffff">0.695</text>
+<text x="268" y="436" text-anchor="end" class="label">TCGA-COAD | Remove all explicit reference components</text>
+<rect x="282" y="412" width="108" height="38" rx="3" fill="#e3ebdc"/>
+<text x="336.0" y="437" text-anchor="middle" class="value" style="fill:#17343a">0.064</text>
+<rect x="394" y="412" width="108" height="38" rx="3" fill="#acc7bd"/>
+<text x="448.0" y="437" text-anchor="middle" class="value" style="fill:#17343a">0.266</text>
+<rect x="506" y="412" width="108" height="38" rx="3" fill="#58908f"/>
+<text x="560.0" y="437" text-anchor="middle" class="value" style="fill:#ffffff">0.575</text>
+<rect x="618" y="412" width="108" height="38" rx="3" fill="#95b8b0"/>
+<text x="672.0" y="437" text-anchor="middle" class="value" style="fill:#17343a">0.351</text>
+<text x="268" y="478" text-anchor="end" class="label">TCGA-LUAD | Remove triangulation</text>
+<rect x="282" y="454" width="108" height="38" rx="3" fill="#8bb1ab"/>
+<text x="336.0" y="479" text-anchor="middle" class="value" style="fill:#17343a">0.389</text>
+<rect x="394" y="454" width="108" height="38" rx="3" fill="#6f9e9b"/>
+<text x="448.0" y="479" text-anchor="middle" class="value" style="fill:#ffffff">0.493</text>
+<rect x="506" y="454" width="108" height="38" rx="3" fill="#3b7d7f"/>
+<text x="560.0" y="479" text-anchor="middle" class="value" style="fill:#ffffff">0.681</text>
+<rect x="618" y="454" width="108" height="38" rx="3" fill="#558d8d"/>
+<text x="672.0" y="479" text-anchor="middle" class="value" style="fill:#ffffff">0.587</text>
+<text x="268" y="520" text-anchor="end" class="label">TCGA-LUAD | Remove external validation</text>
+<rect x="282" y="496" width="108" height="38" rx="3" fill="#74a29f"/>
+<text x="336.0" y="521" text-anchor="middle" class="value" style="fill:#ffffff">0.471</text>
+<rect x="394" y="496" width="108" height="38" rx="3" fill="#689a98"/>
+<text x="448.0" y="521" text-anchor="middle" class="value" style="fill:#ffffff">0.515</text>
+<rect x="506" y="496" width="108" height="38" rx="3" fill="#377a7d"/>
+<text x="560.0" y="521" text-anchor="middle" class="value" style="fill:#ffffff">0.695</text>
+<rect x="618" y="496" width="108" height="38" rx="3" fill="#3f7f81"/>
+<text x="672.0" y="521" text-anchor="middle" class="value" style="fill:#ffffff">0.667</text>
+<text x="268" y="562" text-anchor="end" class="label">TCGA-LUAD | Remove paired support</text>
+<rect x="282" y="538" width="108" height="38" rx="3" fill="#2f7579"/>
+<text x="336.0" y="563" text-anchor="middle" class="value" style="fill:#ffffff">0.724</text>
+<rect x="394" y="538" width="108" height="38" rx="3" fill="#2f7579"/>
+<text x="448.0" y="563" text-anchor="middle" class="value" style="fill:#ffffff">0.724</text>
+<rect x="506" y="538" width="108" height="38" rx="3" fill="#1f6a6f"/>
+<text x="560.0" y="563" text-anchor="middle" class="value" style="fill:#ffffff">0.786</text>
+<rect x="618" y="538" width="108" height="38" rx="3" fill="#2b7276"/>
+<text x="672.0" y="563" text-anchor="middle" class="value" style="fill:#ffffff">0.742</text>
+<text x="268" y="604" text-anchor="end" class="label">TCGA-LUAD | Remove all explicit reference components</text>
+<rect x="282" y="580" width="108" height="38" rx="3" fill="#cfded1"/>
+<text x="336.0" y="605" text-anchor="middle" class="value" style="fill:#17343a">0.136</text>
+<rect x="394" y="580" width="108" height="38" rx="3" fill="#95b8b0"/>
+<text x="448.0" y="605" text-anchor="middle" class="value" style="fill:#17343a">0.351</text>
+<rect x="506" y="580" width="108" height="38" rx="3" fill="#74a29f"/>
+<text x="560.0" y="605" text-anchor="middle" class="value" style="fill:#ffffff">0.471</text>
+<rect x="618" y="580" width="108" height="38" rx="3" fill="#689a98"/>
+<text x="672.0" y="605" text-anchor="middle" class="value" style="fill:#ffffff">0.515</text>
+<text x="24" y="656" class="legend">Jaccard similarity: 0.020 to 0.869</text>
+<text x="24" y="678" class="legend">Generated from validated aggregate CancerOmicsLake marts.</text>
+</svg>

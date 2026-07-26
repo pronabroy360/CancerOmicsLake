@@ -1,0 +1,16 @@
+metric,value,evidence
+tcga_project_count,3,gold_cohort_summary.parquet
+tcga_patient_count,2098,gold_cohort_summary.parquet
+tcga_sample_count,2682,gold_cohort_summary.parquet
+tcga_file_count,3444,gold_cohort_summary.parquet
+gtex_expression_sample_count,200,gold_cohort_summary.parquet
+tcga_expression_row_count,37002600,gold_cohort_summary.parquet
+gtex_expression_row_count,11240000,gold_cohort_summary.parquet
+gene_count,61199,gold_cohort_summary.parquet
+mutation_record_count,45588,gold_cohort_summary.parquet
+protein_altering_mutation_record_count,34393,gold_cohort_summary.parquet
+mutation_profiled_sample_count,126,gold_cohort_summary.parquet
+generated_at,2026-07-26T04:24:10.439671+00:00,gold_cohort_summary.parquet
+public_graph_nodes,55194,graph_metrics_report.json
+public_graph_edges,253543,graph_metrics_report.json
+fair_release_resources,18,manifest.json

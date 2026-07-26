@@ -1,0 +1,13 @@
+cancer_type,ablation_scenario,retained_weight,top_k_overlap_count,top_k_jaccard,spearman_consensus_score,median_baseline_top_k_rank_shift,fixed_threshold_retention_rate,sensitivity_tier
+TCGA-BRCA,without_explicit_reference_components,0.55,67,0.503759,0.67159,50.0,0.0,sensitive
+TCGA-BRCA,without_external_validation,0.85,85,0.73913,0.886049,19.0,0.133333,moderate
+TCGA-BRCA,without_paired_support,0.8,93,0.869159,0.779957,8.0,0.055556,moderate
+TCGA-BRCA,without_reference_triangulation,0.9,76,0.612903,0.942279,31.0,0.6,moderate
+TCGA-COAD,without_explicit_reference_components,0.55,73,0.574803,0.694598,38.0,0.0,sensitive
+TCGA-COAD,without_external_validation,0.85,90,0.818182,0.881206,12.0,0.0,moderate
+TCGA-COAD,without_paired_support,0.8,92,0.851852,0.80942,5.5,0.0,moderate
+TCGA-COAD,without_reference_triangulation,0.9,81,0.680672,0.937753,22.0,0.0,moderate
+TCGA-LUAD,without_explicit_reference_components,0.55,64,0.470588,0.700451,31.5,0.0,sensitive
+TCGA-LUAD,without_external_validation,0.85,82,0.694915,0.902312,18.0,0.176471,moderate
+TCGA-LUAD,without_paired_support,0.8,88,0.785714,0.788401,11.0,0.176471,moderate
+TCGA-LUAD,without_reference_triangulation,0.9,81,0.680672,0.956429,25.0,0.764706,moderate

@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-26T04:25:31.539093+00:00",
+  "git_commit": "8474ef5bc23b5c6739c206e00f72edc279988710",
+  "status": "passed",
+  "file_count": 14,
+  "hashed_file_count": 13,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 539,
+      "sha256": "783ac589a5c9ae9675e57e29755df0b78a8fad3e1353550c70ef8f496667c1ad"
+    },
+    {
+      "path": "evidence_ledger.json",
+      "bytes": 5713,
+      "sha256": "93cc9e957f963d997ec8729f0575b4a60e70a52e80ed901cd14e9d6d18b0a452"
+    },
+    {
+      "path": "figures/figure_1_architecture.svg",
+      "bytes": 2664,
+      "sha256": "ebf4a54ed206dcc04144d7c9d385bc4577c272df97718af3d8ededfa7b0da7d2"
+    },
+    {
+      "path": "figures/figure_2_reference_jaccard.svg",
+      "bytes": 7835,
+      "sha256": "7fb1e392a92fedf45b04d618849f0cf6f7a32cf0264c2f178447f7b3771340d4"
+    },
+    {
+      "path": "figures/figure_3_ablation_jaccard.svg",
+      "bytes": 10081,
+      "sha256": "c27cc1eefc5a9eacdc31f9562a0318d0ca62b941e80492e8a5a9a3632977a304"
+    },
+    {
+      "path": "manuscript.md",
+      "bytes": 12685,
+      "sha256": "49c7b66b09619ac0226ec849fa3e493e7a5b4b517949cbc8f7b00b2f169d424a"
+    },
+    {
+      "path": "supplement/reproducibility_checklist.md",
+      "bytes": 720,
+      "sha256": "1366d8eb3f449cadc150e86ea2facdb43e6d7fd0ab2094be4b6cf2b7ab565a67"
+    },
+    {
+      "path": "supplement/table_s1_reference_comparison_all_k.csv",
+      "bytes": 10734,
+      "sha256": "c51176433b0d85664d8341e2c15aa36130622ced4c1190bd429dc0bed4766fb7"
+    },
+    {
+      "path": "supplement/table_s2_consensus_ablation_all_k.csv",
+      "bytes": 20872,
+      "sha256": "8047ace84cd5e6119c4e1d7e9e12c71683aa54a00021120bafbb434531122fcf"
+    },
+    {
+      "path": "tables/table_1_dataset_inventory.csv",
+      "bytes": 864,
+      "sha256": "915988f20312676fb54ac9bf59b3944210a59b960f240a4232a81aaca4196dc5"
+    },
+    {
+      "path": "tables/table_2_reference_comparison_k100.csv",
+      "bytes": 883,
+      "sha256": "8649c1570ccf40a6af4f6301fcca20a2cc3e42020a3a43f5076a19776c87f87f"
+    },
+    {
+      "path": "tables/table_3_consensus_ablation_k100.csv",
+      "bytes": 1214,
+      "sha256": "5eca3e37f75723c78768776f93d5820d1e9cbccdff5e2dc6655e8d30335cfe5c"
+    },
+    {
+      "path": "tables/table_4_reproducibility_gates.csv",
+      "bytes": 211,
+      "sha256": "70a5e833f48709d4ffc1441833c2c230d0aad140c0fb937c1ddec49dc9619dbd"
+    }
+  ]
+}

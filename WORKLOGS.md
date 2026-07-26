@@ -590,3 +590,20 @@ Impact values:
   documentation, FAIR release inclusion, and four standard quality checks.
 - Verified pytest (`193 passed`), dbt (`86 tests`), quality (`58 checks`), strict demo (`29 checks`),
   research benchmark (`6 workloads`), project completion (`9/9`), and an 18-resource FAIR bundle.
+
+## 2026-07-26 - Evidence-Linked Manuscript Package
+
+- Added a strict manuscript builder that fails on missing, failing, unsafe, incomplete, or stale
+  evidence and validates dbt, quality, strict-demo, completion, graph, benchmark, and FAIR gates.
+- Generated a journal-neutral methods/data-engineering manuscript, four aggregate tables, two full
+  multi-k supplements, three editable pure-SVG figures, and a reproducibility checklist.
+- Added a claim-level evidence ledger over 16 source artifacts with SHA-256 hashes and 10 explicit
+  quantitative claims; the package records evidence-producing commit `8474ef5`.
+- Replaced the placeholder cohort `gene_count=0` in Python and dbt with the union of normalized
+  TCGA/GTEx expression gene IDs; the corrected real inventory contains 61,199 genes and is guarded
+  by a positive-count dbt test and a fail-closed manuscript check.
+- Preserved conservative scope: candidate lists are hypothesis-generating, multi-reference
+  sensitivity is not complete batch correction, and no biomarker, causal, or clinical claim is made.
+- Verified `198` Python tests, 88 dbt tests, 58 passing quality checks, 29 strict-demo checks,
+  9/9 milestones, six benchmark workloads, 18 FAIR resources, all package hashes, all SVGs, and
+  identifier safety.
