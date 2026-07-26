@@ -84,7 +84,7 @@ Do not use:
 1. Execute `docs/comparative_evaluation_protocol.md`.
 2. Obtain review using `docs/biological_review_checklist.md`.
 3. Create a frozen GitHub release and DOI-backed software/data deposits.
-4. Complete all manuscript placeholders and AI-assistance disclosure.
+4. Complete and confirm `configs/manuscript_metadata.yml`, then regenerate the manuscript package.
 5. Run `make run-submission-readiness-strict`.
 6. Send a short presubmission enquiry to GigaScience describing the Technical Note fit.
 7. Format the accepted draft using the journal template only after editorial fit is confirmed.

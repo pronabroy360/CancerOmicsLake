@@ -3,11 +3,15 @@ from pathlib import Path
 
 import polars as pl
 import pytest
+import yaml
 
 from src.operations.manuscript_package import build_manuscript_package
 
 
-def _write_fixture(root: Path, commit: str = "fixture") -> tuple[Path, Path, Path]:
+def _write_fixture(
+    root: Path,
+    commit: str = "fixture",
+) -> tuple[Path, Path, Path, Path]:
     gold = root / "gold"
     reports = root / "reports"
     gold.mkdir()
@@ -180,19 +184,53 @@ def _write_fixture(root: Path, commit: str = "fixture") -> tuple[Path, Path, Pat
         ),
         encoding="utf-8",
     )
-    return gold, reports, fair
+    metadata = root / "manuscript_metadata.yml"
+    metadata.write_text(
+        yaml.safe_dump(
+            {
+                "manuscript": {
+                    "author": {
+                        "name": "Author",
+                        "affiliation": "Institute",
+                        "corresponding_email": "author@example.org",
+                        "metadata_verified": True,
+                    },
+                    "declarations": {
+                        "competing_interests": "None declared.",
+                        "funding": "No external funding.",
+                        "declarations_verified": True,
+                    },
+                    "ai_assistance": {
+                        "tools": [
+                            {
+                                "name": "Codex",
+                                "model": "fixture",
+                                "scope": "Testing.",
+                                "author_confirmation_required": False,
+                            }
+                        ],
+                        "human_review_confirmed": True,
+                        "author_responsibility_confirmed": True,
+                    },
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    return gold, reports, fair, metadata
 
 
 def test_build_manuscript_package_writes_evidence_linked_outputs(
     tmp_path: Path,
 ) -> None:
-    gold, reports, fair = _write_fixture(tmp_path)
+    gold, reports, fair, metadata = _write_fixture(tmp_path)
     output = tmp_path / "manuscript"
 
     summary = build_manuscript_package(
         gold_dir=gold,
         reports_dir=reports,
         fair_manifest_path=fair,
+        metadata_path=metadata,
         output_dir=output,
         strict_provenance=False,
     )
@@ -207,8 +245,8 @@ def test_build_manuscript_package_writes_evidence_linked_outputs(
     assert ledger["status"] == "passed"
     assert all(len(resource["sha256"]) == 64 for resource in ledger["resources"])
     manifest = json.loads((output / "package_manifest.json").read_text(encoding="utf-8"))
-    assert manifest["file_count"] == 14
-    assert manifest["hashed_file_count"] == len(manifest["files"]) == 13
+    assert manifest["file_count"] == 15
+    assert manifest["hashed_file_count"] == len(manifest["files"]) == 14
 
 
 def test_build_manuscript_package_fails_on_missing_evidence(tmp_path: Path) -> None:
@@ -221,22 +259,49 @@ def test_build_manuscript_package_fails_on_missing_evidence(tmp_path: Path) -> N
         )
 
 
+def test_build_manuscript_package_keeps_unconfirmed_metadata_visible(
+    tmp_path: Path,
+) -> None:
+    gold, reports, fair, metadata = _write_fixture(tmp_path)
+    payload = yaml.safe_load(metadata.read_text(encoding="utf-8"))
+    payload["manuscript"]["author"]["affiliation"] = ""
+    payload["manuscript"]["author"]["metadata_verified"] = False
+    payload["manuscript"]["ai_assistance"]["human_review_confirmed"] = False
+    metadata.write_text(yaml.safe_dump(payload), encoding="utf-8")
+    output = tmp_path / "manuscript"
+
+    build_manuscript_package(
+        gold_dir=gold,
+        reports_dir=reports,
+        fair_manifest_path=fair,
+        metadata_path=metadata,
+        output_dir=output,
+        strict_provenance=False,
+    )
+
+    manuscript = (output / "manuscript.md").read_text(encoding="utf-8")
+    assert "[AUTHOR TO COMPLETE]" in manuscript
+    assert "[AI DISCLOSURE TO COMPLETE]" in manuscript
+    assert (output / "manuscript_metadata.yml").exists()
+
+
 def test_build_manuscript_package_fails_on_stale_provenance(
     tmp_path: Path,
 ) -> None:
-    gold, reports, fair = _write_fixture(tmp_path, commit="stale")
+    gold, reports, fair, metadata = _write_fixture(tmp_path, commit="stale")
     with pytest.raises(RuntimeError, match="does not match Git commit"):
         build_manuscript_package(
             gold_dir=gold,
             reports_dir=reports,
             fair_manifest_path=fair,
+            metadata_path=metadata,
             output_dir=tmp_path / "manuscript",
             strict_provenance=True,
         )
 
 
 def test_build_manuscript_package_rejects_zero_gene_inventory(tmp_path: Path) -> None:
-    gold, reports, fair = _write_fixture(tmp_path)
+    gold, reports, fair, metadata = _write_fixture(tmp_path)
     cohort_path = gold / "gold_cohort_summary.parquet"
     pl.read_parquet(cohort_path).with_columns(pl.lit(0).alias("gene_count")).write_parquet(
         cohort_path
@@ -247,6 +312,7 @@ def test_build_manuscript_package_rejects_zero_gene_inventory(tmp_path: Path) ->
             gold_dir=gold,
             reports_dir=reports,
             fair_manifest_path=fair,
+            metadata_path=metadata,
             output_dir=tmp_path / "manuscript",
             strict_provenance=False,
         )

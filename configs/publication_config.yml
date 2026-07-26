@@ -6,6 +6,7 @@ publication:
   package_manifest_path: manuscript/package_manifest.json
   evidence_ledger_path: manuscript/evidence_ledger.json
   citation_path: CITATION.cff
+  manuscript_metadata_path: configs/manuscript_metadata.yml
   biological_review_path: docs/attestations/biological_review.yml
   comparative_evaluation_path: outputs/reports/comparative_evaluation_report.json
   required_comparators:
@@ -23,3 +24,4 @@ publication:
     - docs/comparative_evaluation_protocol.md
     - docs/biological_review_checklist.md
     - docs/attestations/biological_review.example.yml
+    - configs/manuscript_metadata.yml

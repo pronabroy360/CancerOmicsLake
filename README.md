@@ -262,7 +262,9 @@ multi-reference and hypothesis-generating.
 
 Run `make build-manuscript-package` after rebuilding the FAIR release from the current commit. This
 generates a journal-neutral manuscript, editable SVG figures, aggregate CSV tables, supplements,
-and a claim-level SHA-256 evidence ledger in `manuscript/`. See
+and a claim-level SHA-256 evidence ledger in `manuscript/`. Author and AI-assistance fields are
+rendered from `configs/manuscript_metadata.yml`; generated manuscript files are not the metadata
+source of truth. See
 [`docs/manuscript_reproducibility.md`](docs/manuscript_reproducibility.md).
 
 Run `make run-submission-readiness` for a non-failing audit of remaining publication blockers.

@@ -671,3 +671,16 @@ Impact values:
   must accompany mutation-frequency comparisons.
 - Kept individual sample identifiers in memory only; persisted external evidence contains aggregate
   counts, versions, checksums, limitations, and aggregate relationship tables.
+
+## 2026-07-26 - Fail-Closed Manuscript Metadata Contract
+
+- Replaced hard-coded manuscript identity and disclosure fields with
+  `configs/manuscript_metadata.yml` as the durable source of truth.
+- Added explicit confirmation flags for author metadata, declarations, exact AI tool/model records,
+  human review, and author responsibility; pending values continue to render visible placeholders.
+- Added the exact metadata snapshot to every generated manuscript package and its SHA-256 manifest.
+- Strengthened submission readiness so deleting placeholder text cannot bypass missing metadata or
+  human-confirmation requirements.
+- Documented the metadata-first workflow and added tests for complete, incomplete, and attempted
+  marker-bypass scenarios.
+- Verified 210 Python tests with the four legitimate external/human publication blockers retained.

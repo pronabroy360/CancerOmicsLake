@@ -25,7 +25,7 @@ def _sha256(path: Path) -> str:
 
 
 def _read_mapping(path: Path, *, yaml_input: bool = False) -> dict[str, Any]:
-    if not path.exists():
+    if not path.is_file():
         return {}
     try:
         payload = (
@@ -86,6 +86,52 @@ def _citation_has_doi(citation: dict[str, Any]) -> bool:
     )
 
 
+def _metadata_confirmation(
+    metadata: dict[str, Any],
+) -> tuple[bool, list[str], bool, list[str]]:
+    author = metadata.get("author", {})
+    declarations = metadata.get("declarations", {})
+    ai = metadata.get("ai_assistance", {})
+    author_missing: list[str] = []
+    if not isinstance(author, dict):
+        author = {}
+    if not isinstance(declarations, dict):
+        declarations = {}
+    for field in ("name", "affiliation", "corresponding_email"):
+        if not str(author.get(field, "")).strip():
+            author_missing.append(f"author.{field}")
+    if author.get("metadata_verified") is not True:
+        author_missing.append("author.metadata_verified")
+    for field in ("competing_interests", "funding"):
+        if not str(declarations.get(field, "")).strip():
+            author_missing.append(f"declarations.{field}")
+    if declarations.get("declarations_verified") is not True:
+        author_missing.append("declarations.declarations_verified")
+
+    ai_missing: list[str] = []
+    if not isinstance(ai, dict):
+        ai = {}
+    tools = ai.get("tools", [])
+    if not isinstance(tools, list) or not tools:
+        ai_missing.append("ai_assistance.tools")
+    else:
+        for index, tool in enumerate(tools):
+            if not isinstance(tool, dict):
+                ai_missing.append(f"ai_assistance.tools[{index}]")
+                continue
+            for field in ("name", "model", "scope"):
+                if not str(tool.get(field, "")).strip():
+                    ai_missing.append(f"ai_assistance.tools[{index}].{field}")
+            if tool.get("author_confirmation_required") is True:
+                ai_missing.append(
+                    f"ai_assistance.tools[{index}].author_confirmation_required"
+                )
+    for field in ("human_review_confirmed", "author_responsibility_confirmed"):
+        if ai.get(field) is not True:
+            ai_missing.append(f"ai_assistance.{field}")
+    return not author_missing, author_missing, not ai_missing, ai_missing
+
+
 def _comparison_evidence_complete(
     comparison: dict[str, Any],
     required_tools: set[str],
@@ -136,6 +182,7 @@ def build_submission_readiness_report(
     package_manifest_path = target("package_manifest_path")
     evidence_ledger_path = target("evidence_ledger_path")
     citation_path = target("citation_path")
+    metadata_path = target("manuscript_metadata_path")
     review_path = target("biological_review_path")
     comparison_path = target("comparative_evaluation_path")
 
@@ -145,6 +192,9 @@ def build_submission_readiness_report(
     package_ok, package_detail = _package_integrity(root, package_manifest_path)
     ledger = _read_mapping(evidence_ledger_path)
     citation = _read_mapping(citation_path, yaml_input=True)
+    metadata = _read_mapping(metadata_path, yaml_input=True).get("manuscript", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
     review = _read_mapping(review_path, yaml_input=True)
     comparison = _read_mapping(comparison_path)
     required_comparators = {
@@ -164,6 +214,9 @@ def build_submission_readiness_report(
         root / Path(str(value)) for value in config.get("required_documents", [])
     ]
     placeholder_hits = [marker for marker in PLACEHOLDER_MARKERS if marker in manuscript]
+    author_confirmed, author_missing, ai_confirmed, ai_missing = (
+        _metadata_confirmation(metadata)
+    )
 
     review_fields = ("reviewer_name", "reviewer_affiliation", "review_date")
     review_complete = review.get("status") == "approved" and all(
@@ -186,16 +239,30 @@ def build_submission_readiness_report(
         ),
         _check(
             "author_and_disclosure_fields_complete",
-            bool(manuscript) and not placeholder_hits,
-            [str(manuscript_path.relative_to(root)), *placeholder_hits],
-            "Complete author, collaborator, competing-interest, funding, and AI disclosure fields.",
+            bool(manuscript)
+            and not placeholder_hits
+            and author_confirmed
+            and ai_confirmed,
+            [
+                str(manuscript_path.relative_to(root)),
+                str(metadata_path.relative_to(root)),
+                *placeholder_hits,
+                *author_missing,
+                *ai_missing,
+            ],
+            "Complete and confirm author, declaration, and AI-assistance metadata, then rebuild.",
         ),
         _check(
             "generative_ai_disclosure_present",
             "## Generative AI Disclosure" in manuscript
-            and "[AI DISCLOSURE TO COMPLETE]" not in manuscript,
-            [str(manuscript_path.relative_to(root))],
-            "List the AI tools/models used, assistance scope, and human verification responsibility.",
+            and "[AI DISCLOSURE TO COMPLETE]" not in manuscript
+            and ai_confirmed,
+            [
+                str(manuscript_path.relative_to(root)),
+                str(metadata_path.relative_to(root)),
+                *ai_missing,
+            ],
+            "Confirm exact AI tools/models, assistance scope, human review, and author responsibility.",
         ),
         _check(
             "persistent_identifier_registered",

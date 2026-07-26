@@ -63,6 +63,8 @@ def test_manuscript_reproducibility_documents_strict_evidence_gates() -> None:
     assert "make build-fair-release" in manuscript
     assert "make build-manuscript-package" in manuscript
     assert "evidence_ledger.json" in manuscript
+    assert "configs/manuscript_metadata.yml" in manuscript
+    assert "manuscript_metadata.yml" in manuscript
 
 
 def test_publication_strategy_and_human_review_packet_are_packaged() -> None:

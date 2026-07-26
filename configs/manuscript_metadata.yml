@@ -1,0 +1,26 @@
+manuscript:
+  schema_version: "1.0"
+  status: pending_author_confirmation
+  author:
+    name: Pronab Chandra Roy
+    affiliation: ""
+    corresponding_email: ""
+    orcid: ""
+    metadata_verified: false
+  collaborators: []
+  declarations:
+    competing_interests: ""
+    funding: ""
+    declarations_verified: false
+  ai_assistance:
+    tools:
+      - name: OpenAI Codex
+        model: Exact Codex model version pending author confirmation
+        scope: Code implementation, testing, documentation, and manuscript-draft assistance.
+        author_confirmation_required: true
+      - name: Other generative AI assistants
+        model: Exact products and model versions pending author confirmation
+        scope: Planning and review assistance discussed during project development.
+        author_confirmation_required: true
+    human_review_confirmed: false
+    author_responsibility_confirmed: false

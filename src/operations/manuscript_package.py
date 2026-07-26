@@ -11,6 +11,7 @@ import subprocess
 from typing import Any
 
 import polars as pl
+import yaml
 
 
 REQUIRED_REPORTS = {
@@ -33,6 +34,55 @@ REQUIRED_GOLD = {
     "reference_comparison": "gold_reference_method_comparison.parquet",
     "consensus_ablation": "gold_consensus_ablation_stability.parquet",
 }
+
+AUTHOR_PLACEHOLDER = "[AUTHOR TO COMPLETE]"
+AI_PLACEHOLDER = "[AI DISCLOSURE TO COMPLETE]"
+
+
+def _read_manuscript_metadata(path: str | Path) -> dict[str, Any]:
+    target = Path(path)
+    if not target.exists():
+        raise RuntimeError(f"Manuscript metadata file is missing: {target}")
+    payload = yaml.safe_load(target.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or not isinstance(payload.get("manuscript"), dict):
+        raise RuntimeError("Manuscript metadata must contain a manuscript mapping")
+    return payload["manuscript"]
+
+
+def _text_or_placeholder(value: Any) -> str:
+    text = str(value or "").strip()
+    return text if text else AUTHOR_PLACEHOLDER
+
+
+def _ai_disclosure(metadata: dict[str, Any]) -> str:
+    ai = metadata.get("ai_assistance", {})
+    if not isinstance(ai, dict):
+        return AI_PLACEHOLDER
+    tools = ai.get("tools", [])
+    tools_complete = isinstance(tools, list) and bool(tools) and all(
+        isinstance(tool, dict)
+        and all(str(tool.get(field, "")).strip() for field in ("name", "model", "scope"))
+        and not bool(tool.get("author_confirmation_required", False))
+        for tool in tools
+    )
+    confirmed = (
+        ai.get("human_review_confirmed") is True
+        and ai.get("author_responsibility_confirmed") is True
+    )
+    if not tools_complete or not confirmed:
+        return (
+            f"{AI_PLACEHOLDER} The structured draft in `manuscript_metadata.yml` "
+            "must be completed and confirmed by the author."
+        )
+    tool_text = "; ".join(
+        f"{tool['name']} ({tool['model']}): {tool['scope']}" for tool in tools
+    )
+    return (
+        f"Generative AI assistance was used as follows: {tool_text}. "
+        "The human author reviewed and edited all assisted outputs, validated the reported "
+        "computational evidence, retained responsibility for the study design and interpretation, "
+        "and takes responsibility for the submitted work."
+    )
 
 
 def _git_commit() -> str:
@@ -311,20 +361,60 @@ def _summarize_ablation_table(ablation: pl.DataFrame) -> list[dict[str, Any]]:
     )
 
 
-def _manuscript_text(evidence: dict[str, Any]) -> str:
+def _manuscript_text(
+    evidence: dict[str, Any],
+    metadata: dict[str, Any],
+) -> str:
     cohort = evidence["cohort"]
     results = evidence["results"]
     verification = evidence["verification"]
     generated_at = evidence["generated_at"]
+    author = metadata.get("author", {})
+    declarations = metadata.get("declarations", {})
+    collaborators = metadata.get("collaborators", [])
+    author_name = _text_or_placeholder(
+        author.get("name") if isinstance(author, dict) else None
+    )
+    affiliation = _text_or_placeholder(
+        author.get("affiliation") if isinstance(author, dict) else None
+    )
+    corresponding_email = _text_or_placeholder(
+        author.get("corresponding_email") if isinstance(author, dict) else None
+    )
+    competing_interests = _text_or_placeholder(
+        declarations.get("competing_interests")
+        if isinstance(declarations, dict)
+        else None
+    )
+    funding = _text_or_placeholder(
+        declarations.get("funding") if isinstance(declarations, dict) else None
+    )
+    ai_disclosure = _ai_disclosure(metadata)
+    collaborator_text = (
+        "; ".join(
+            f"{item['name']} ({item['contribution']})"
+            for item in collaborators
+            if isinstance(item, dict)
+            and item.get("name")
+            and item.get("contribution")
+        )
+        if isinstance(collaborators, list)
+        else ""
+    )
+    if not collaborator_text:
+        collaborator_text = (
+            "No collaborator contribution is claimed in this draft; independent biological "
+            "review remains pending."
+        )
     return f"""# CancerOmicsLake: a provenance-aware multi-reference data lakehouse for reproducible cancer-omics research
 
 **Manuscript status:** Methods/data-engineering draft generated from validated artifacts on {generated_at}.
 
-**Author:** Pronab Chandra Roy
+**Author:** {author_name}
 
-**Affiliation:** [AUTHOR TO COMPLETE]
+**Affiliation:** {affiliation}
 
-**Corresponding email:** [AUTHOR TO COMPLETE]
+**Corresponding email:** {corresponding_email}
 
 ## Abstract
 
@@ -541,24 +631,21 @@ release surfaces remove Patient and Sample entities and block individual-like id
 
 ## Generative AI Disclosure
 
-[AI DISCLOSURE TO COMPLETE] List the tools and model versions used for code, tests, documentation,
-and manuscript drafting; describe the scope of assistance; and confirm that the human author
-reviewed, edited, and validated all assisted outputs and retained responsibility for design choices,
-scientific interpretation, and the submitted work.
+{ai_disclosure}
 
 ## Author Contributions
 
-**Pronab Chandra Roy:** Conceptualization, software, data engineering, methodology, validation,
+**{author_name}:** Conceptualization, software, data engineering, methodology, validation,
 visualization, and writing.
-**Review and biological interpretation:** [COLLABORATOR TO COMPLETE]
+**Review and biological interpretation:** {collaborator_text}
 
 ## Competing Interests
 
-[AUTHOR TO COMPLETE]
+{competing_interests}
 
 ## Funding
 
-[AUTHOR TO COMPLETE]
+{funding}
 
 ## References
 
@@ -579,6 +666,7 @@ def build_manuscript_package(
     gold_dir: str | Path = "data/gold",
     reports_dir: str | Path = "outputs/reports",
     fair_manifest_path: str | Path = "outputs/releases/v0.1.0/manifest.json",
+    metadata_path: str | Path = "configs/manuscript_metadata.yml",
     output_dir: str | Path = "manuscript",
     strict_provenance: bool = True,
 ) -> dict[str, Any]:
@@ -599,6 +687,7 @@ def build_manuscript_package(
 
     reports = {name: _read_json(path) for name, path in report_paths.items()}
     fair_manifest = _read_json(fair_path)
+    manuscript_metadata = _read_manuscript_metadata(metadata_path)
     git_commit = _git_commit()
     _status_guard(reports, fair_manifest, git_commit, strict_provenance)
 
@@ -809,8 +898,16 @@ def build_manuscript_package(
         encoding="utf-8",
     )
 
-    manuscript = _manuscript_text(evidence)
+    manuscript = _manuscript_text(evidence, manuscript_metadata)
     (build / "manuscript.md").write_text(manuscript, encoding="utf-8")
+    (build / "manuscript_metadata.yml").write_text(
+        yaml.safe_dump(
+            {"manuscript": manuscript_metadata},
+            sort_keys=False,
+            allow_unicode=False,
+        ),
+        encoding="utf-8",
+    )
     (build / "supplement/reproducibility_checklist.md").write_text(
         f"""# Reproducibility Checklist
 
@@ -933,9 +1030,10 @@ This directory is generated by `make build-manuscript-package`.
 - `figures/`: editable SVG figures
 - `supplement/`: full multi-K results and reproducibility checklist
 - `evidence_ledger.json`: claim-to-source mapping with SHA-256 hashes
+- `manuscript_metadata.yml`: exact author/disclosure metadata used to render the draft
 
-Complete author placeholders and obtain biological review before submission. Re-run the generator
-after any evidence-producing pipeline change.
+Complete and confirm `configs/manuscript_metadata.yml`, obtain biological review, and re-run the
+generator after any evidence-producing pipeline change.
 """,
         encoding="utf-8",
     )

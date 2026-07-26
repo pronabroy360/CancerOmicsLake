@@ -286,6 +286,9 @@ def main() -> None:
     parser_manuscript.add_argument("--config", required=True)
     parser_manuscript.add_argument("--output-dir", default="manuscript")
     parser_manuscript.add_argument(
+        "--metadata", default="configs/manuscript_metadata.yml"
+    )
+    parser_manuscript.add_argument(
         "--fair-manifest", default="outputs/releases/v0.1.0/manifest.json"
     )
 
@@ -767,6 +770,7 @@ def main() -> None:
         payload = build_manuscript_package(
             output_dir=args.output_dir,
             fair_manifest_path=args.fair_manifest,
+            metadata_path=args.metadata,
         )
         logger = get_logger("canceromicslake")
         logger.info(

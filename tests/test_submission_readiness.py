@@ -57,6 +57,37 @@ def _fixture(root: Path, *, complete: bool) -> Path:
     }
     (root / "CITATION.cff").write_text(yaml.safe_dump(citation), encoding="utf-8")
     (root / "LICENSE").write_text("MIT", encoding="utf-8")
+    metadata = {
+        "manuscript": {
+            "author": {
+                "name": "Pronab Chandra Roy",
+                "affiliation": "Institute" if complete else "",
+                "corresponding_email": "author@example.org" if complete else "",
+                "metadata_verified": complete,
+            },
+            "declarations": {
+                "competing_interests": "None declared." if complete else "",
+                "funding": "No external funding." if complete else "",
+                "declarations_verified": complete,
+            },
+            "ai_assistance": {
+                "tools": [
+                    {
+                        "name": "Codex",
+                        "model": "fixture",
+                        "scope": "Testing.",
+                        "author_confirmation_required": not complete,
+                    }
+                ],
+                "human_review_confirmed": complete,
+                "author_responsibility_confirmed": complete,
+            },
+        }
+    }
+    (root / "manuscript_metadata.yml").write_text(
+        yaml.safe_dump(metadata),
+        encoding="utf-8",
+    )
 
     docs = root / "docs"
     (docs / "attestations").mkdir(parents=True)
@@ -119,6 +150,7 @@ def _fixture(root: Path, *, complete: bool) -> Path:
             "package_manifest_path": "manuscript/package_manifest.json",
             "evidence_ledger_path": "manuscript/evidence_ledger.json",
             "citation_path": "CITATION.cff",
+            "manuscript_metadata_path": "manuscript_metadata.yml",
             "biological_review_path": "docs/attestations/biological_review.yml",
             "comparative_evaluation_path": "outputs/reports/comparative_evaluation_report.json",
             "required_comparators": ["TCGAbiolinks", "UCSC Xena", "cBioPortal"],
@@ -190,3 +222,34 @@ def test_submission_readiness_detects_package_hash_tampering(tmp_path: Path) -> 
         if check["check_name"] == "manuscript_package_integrity"
     )
     assert package_check["status"] == "failed"
+
+
+def test_submission_readiness_requires_metadata_confirmation_even_without_markers(
+    tmp_path: Path,
+) -> None:
+    config = _fixture(tmp_path, complete=False)
+    manuscript = tmp_path / "manuscript/manuscript.md"
+    manuscript.write_text(
+        "# Paper\n\n## Generative AI Disclosure\n\nDraft disclosure text.\n",
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "manuscript/package_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manuscript_entry = next(
+        item for item in manifest["files"] if item["path"] == "manuscript.md"
+    )
+    manuscript_entry["sha256"] = _sha256(manuscript)
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    payload = build_submission_readiness_report(
+        config_path=config.relative_to(tmp_path),
+        root_dir=tmp_path,
+    )
+    failed = {
+        check["check_name"]
+        for check in payload["checks"]
+        if check["status"] == "failed"
+    }
+
+    assert "author_and_disclosure_fields_complete" in failed
+    assert "generative_ai_disclosure_present" in failed
