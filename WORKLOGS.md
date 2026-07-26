@@ -695,3 +695,16 @@ Impact values:
 - Verified FAIR identifier safety, 14 manuscript-package hashes, 210 Python tests, and five of nine
   submission checks; DOI registration, metadata confirmation, AI confirmation, and independent
   biological review remain external gates.
+
+## 2026-07-26 - Deterministic DOI-Deposit Archive
+
+- Added a FAIR release packager that re-verifies every resource checksum and identifier-safety
+  status before creating an external-deposit artifact.
+- Normalized archive ordering, ownership, permissions, tar timestamps, and gzip metadata for
+  byte-reproducible packaging.
+- Added CLI/Make execution, a machine-readable deposit manifest, tamper rejection, deterministic
+  rebuild tests, and DOI runbook documentation.
+- Built the real 22-file, 42,348,808-byte v0.1.0 archive twice with identical SHA-256
+  `3d418eaaa0aa9b19bce22bff661257484e4d764d7eb9a46c644f6353b85ae039`.
+- Kept `doi: null` and an explicit claim boundary until a human uploads the archive and registers
+  the persistent identifier.

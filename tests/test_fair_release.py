@@ -1,9 +1,11 @@
+import json
 from pathlib import Path
+import tarfile
 
 import polars as pl
 import pytest
 
-from src.operations.fair_release import build_fair_release
+from src.operations.fair_release import build_fair_release, package_fair_release
 
 
 def _write_graph(gold: Path) -> None:
@@ -105,3 +107,52 @@ def test_strict_fair_release_requires_graph_resources(
 
     with pytest.raises(RuntimeError, match="requires both gold graph"):
         build_fair_release("0.1.0", gold_dir=gold, output_root=tmp_path / "releases")
+
+
+def test_package_fair_release_writes_deterministic_deposit_archive(
+    tmp_path: Path,
+) -> None:
+    gold = tmp_path / "gold"
+    gold.mkdir()
+    pl.DataFrame(
+        {"cancer_type": ["TCGA-LUAD"], "gene_symbol": ["TP53"], "score": [0.9]}
+    ).write_parquet(gold / "aggregate.parquet")
+    _write_graph(gold)
+    releases = tmp_path / "releases"
+    build_fair_release(
+        "0.1.0",
+        gold_dir=gold,
+        output_root=releases,
+        required_files=("aggregate.parquet",),
+    )
+
+    first = package_fair_release("0.1.0", release_root=releases)
+    second = package_fair_release("0.1.0", release_root=releases)
+
+    assert first["archive_sha256"] == second["archive_sha256"]
+    assert first["status"] == "ready_for_external_deposit"
+    assert first["doi"] is None
+    deposit = json.loads(Path(first["deposit_path"]).read_text(encoding="utf-8"))
+    assert deposit["archive_sha256"] == first["archive_sha256"]
+    with tarfile.open(first["archive_path"], "r:gz") as archive:
+        names = archive.getnames()
+    assert names == sorted(names)
+    assert all(name.startswith("canceromicslake-derived-data-v0.1.0/") for name in names)
+
+
+def test_package_fair_release_rejects_tampered_resource(tmp_path: Path) -> None:
+    gold = tmp_path / "gold"
+    gold.mkdir()
+    pl.DataFrame({"score": [1.0]}).write_parquet(gold / "aggregate.parquet")
+    releases = tmp_path / "releases"
+    payload = build_fair_release(
+        "0.1.0",
+        gold_dir=gold,
+        output_root=releases,
+        required_files=("aggregate.parquet",),
+    )
+    release = Path(payload["release_directory"])
+    (release / "data/aggregate.parquet").write_bytes(b"tampered")
+
+    with pytest.raises(RuntimeError, match="checksum mismatch"):
+        package_fair_release("0.1.0", release_root=releases)

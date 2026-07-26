@@ -7,6 +7,7 @@ tables. The release gate deliberately excludes raw biomedical data and individua
 
 ```bash
 make build-fair-release RELEASE_VERSION=0.1.0
+make package-fair-release RELEASE_VERSION=0.1.0
 cd outputs/releases/v0.1.0
 sha256sum -c checksums.sha256
 ```
@@ -24,12 +25,21 @@ entities are removed with the shared public-graph policy before release.
 - Frictionless-style `datapackage.json`
 - `checksums.sha256` and a release-specific README
 
+The packaging command re-verifies every resource hash and creates:
+
+- `outputs/releases/canceromicslake-derived-data-v0.1.0.tar.gz`
+- `outputs/releases/canceromicslake-derived-data-v0.1.0.deposit.json`
+
+Archive file ordering, ownership, permissions, timestamps, and gzip metadata are normalized so
+repeated packaging of an unchanged release produces the same SHA-256. The deposit JSON deliberately
+records `doi: null`; archive readiness must never be interpreted as DOI registration.
+
 ## DOI deposit checklist
 
 1. Run strict quality, dbt, demo, benchmark, and FAIR release gates from the intended Git commit.
 2. Verify every checksum and inspect the identifier-safety and graph-publication audit sections.
 3. Create a tagged GitHub release using the same semantic version.
-4. Deposit the generated bundle in a DOI-minting research repository such as Zenodo or OSF.
+4. Upload the deterministic archive to a DOI-minting research repository such as Zenodo or OSF.
 5. Add the DOI to `CITATION.cff`, README, manuscript, and release notes.
 6. Cite GDC/TCGA, GTEx, recount3, Reactome, and the CancerOmicsLake software separately.
 

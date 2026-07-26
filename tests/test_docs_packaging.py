@@ -61,6 +61,7 @@ def test_manuscript_reproducibility_documents_strict_evidence_gates() -> None:
     assert "make run-demo-check-strict" in manuscript
     assert "make run-reference-ablation" in manuscript
     assert "make build-fair-release" in manuscript
+    assert "make package-fair-release" in manuscript
     assert "make build-manuscript-package" in manuscript
     assert "evidence_ledger.json" in manuscript
     assert "configs/manuscript_metadata.yml" in manuscript

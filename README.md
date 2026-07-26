@@ -245,6 +245,8 @@ The confidence model and pre-publication validation plan are documented in `docs
 Run `make build-fair-release RELEASE_VERSION=0.1.0` to create a versioned, checksummed bundle in
 `outputs/releases/v0.1.0/`. The strict release gate packages only aggregate research marts, rebuilds
 the graph through the public node policy, and fails on individual-level identifier columns or values.
+Run `make package-fair-release RELEASE_VERSION=0.1.0` to create a deterministic DOI-deposit archive
+and machine-readable deposit manifest; this does not mint or imply a DOI.
 See [`docs/fair_release.md`](docs/fair_release.md) for verification and DOI-deposit steps.
 
 ## Multi-Reference Ablation Evaluation

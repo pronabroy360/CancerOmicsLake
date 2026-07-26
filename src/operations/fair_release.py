@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+import gzip
 import hashlib
 import json
 from pathlib import Path
 import re
 import shutil
 import subprocess
+import tarfile
 from typing import Any, Sequence
 
 import polars as pl
@@ -303,3 +305,83 @@ def build_fair_release(
         shutil.rmtree(release_dir)
     build_dir.replace(release_dir)
     return {**payload, "release_directory": str(release_dir)}
+
+
+def package_fair_release(
+    version: str,
+    release_root: str | Path = "outputs/releases",
+) -> dict[str, Any]:
+    if not SEMVER_PATTERN.fullmatch(version):
+        raise ValueError("Release version must be semantic versioning, for example 0.1.0")
+    root = Path(release_root)
+    release_dir = root / f"v{version}"
+    manifest_path = release_dir / "manifest.json"
+    if not manifest_path.is_file():
+        raise RuntimeError(f"FAIR release manifest is missing: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest, dict) or manifest.get("release_version") != version:
+        raise RuntimeError("FAIR release manifest version does not match the requested archive")
+    if manifest.get("identifier_safety", {}).get("status") != "passed":
+        raise RuntimeError("FAIR release identifier-safety audit has not passed")
+    resources = manifest.get("resources", [])
+    if not isinstance(resources, list) or not resources:
+        raise RuntimeError("FAIR release manifest contains no resources")
+    for resource in resources:
+        if not isinstance(resource, dict) or not resource.get("path") or not resource.get(
+            "sha256"
+        ):
+            raise RuntimeError("FAIR release contains an invalid resource entry")
+        path = (release_dir / str(resource["path"])).resolve()
+        if not path.is_relative_to(release_dir.resolve()):
+            raise RuntimeError(f"FAIR resource path escapes release root: {resource['path']}")
+        if not path.is_file() or _sha256(path) != resource["sha256"]:
+            raise RuntimeError(f"FAIR resource checksum mismatch: {resource['path']}")
+
+    archive_name = f"canceromicslake-derived-data-v{version}.tar.gz"
+    archive_path = root / archive_name
+    temporary = archive_path.with_suffix(f"{archive_path.suffix}.tmp")
+    archive_root = f"canceromicslake-derived-data-v{version}"
+    files = sorted(path for path in release_dir.rglob("*") if path.is_file())
+    root.mkdir(parents=True, exist_ok=True)
+    with temporary.open("wb") as raw:
+        with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed:
+            with tarfile.open(
+                fileobj=compressed,
+                mode="w",
+                format=tarfile.PAX_FORMAT,
+            ) as archive:
+                for path in files:
+                    arcname = f"{archive_root}/{path.relative_to(release_dir).as_posix()}"
+                    info = archive.gettarinfo(str(path), arcname=arcname)
+                    info.uid = 0
+                    info.gid = 0
+                    info.uname = ""
+                    info.gname = ""
+                    info.mtime = 0
+                    info.mode = 0o644
+                    with path.open("rb") as handle:
+                        archive.addfile(info, handle)
+    temporary.replace(archive_path)
+
+    deposit = {
+        "schema_version": "1.0",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "status": "ready_for_external_deposit",
+        "release_version": version,
+        "git_commit": manifest.get("git_commit"),
+        "archive": archive_path.name,
+        "archive_bytes": archive_path.stat().st_size,
+        "archive_sha256": _sha256(archive_path),
+        "archive_file_count": len(files),
+        "source_manifest": str(manifest_path),
+        "source_manifest_sha256": _sha256(manifest_path),
+        "identifier_safety": manifest["identifier_safety"],
+        "doi": None,
+        "claim_boundary": (
+            "Archive readiness does not indicate DOI registration, repository deposit, "
+            "biological approval, or manuscript submission readiness."
+        ),
+    }
+    deposit_path = root / f"canceromicslake-derived-data-v{version}.deposit.json"
+    deposit_path.write_text(json.dumps(deposit, indent=2), encoding="utf-8")
+    return {**deposit, "archive_path": str(archive_path), "deposit_path": str(deposit_path)}

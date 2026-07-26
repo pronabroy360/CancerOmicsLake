@@ -53,7 +53,7 @@ from src.operations.project_completion import (
     write_project_completion_report,
 )
 from src.operations.research_benchmark import run_research_benchmark
-from src.operations.fair_release import build_fair_release
+from src.operations.fair_release import build_fair_release, package_fair_release
 from src.operations.submission_readiness import (
     build_submission_readiness_report,
     write_submission_readiness_report,
@@ -281,6 +281,10 @@ def main() -> None:
     parser_release.add_argument("--gold-dir", default="data/gold")
     parser_release.add_argument("--output-root", default="outputs/releases")
     parser_release.add_argument("--creator", default="Pronab Chandra Roy")
+
+    parser_release_archive = subparsers.add_parser("package-fair-release")
+    parser_release_archive.add_argument("--version", required=True)
+    parser_release_archive.add_argument("--release-root", default="outputs/releases")
 
     parser_manuscript = subparsers.add_parser("build-manuscript-package")
     parser_manuscript.add_argument("--config", required=True)
@@ -781,6 +785,21 @@ def main() -> None:
             payload["git_commit"],
         )
         print("Manuscript evidence package completed.")
+        return
+    if args.command == "package-fair-release":
+        payload = package_fair_release(
+            version=args.version,
+            release_root=args.release_root,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "FAIR deposit archive built: version=%s files=%s bytes=%s sha256=%s",
+            payload["release_version"],
+            payload["archive_file_count"],
+            payload["archive_bytes"],
+            payload["archive_sha256"],
+        )
+        print("FAIR deposit archive completed.")
         return
     if args.command == "run-submission-readiness":
         payload = build_submission_readiness_report(

@@ -11,6 +11,7 @@ make run-reference-ablation
 make run-project-completion
 make run-research-benchmark
 make build-fair-release RELEASE_VERSION=0.1.0
+make package-fair-release RELEASE_VERSION=0.1.0
 make build-manuscript-package
 ```
 
