@@ -39,6 +39,7 @@ from src.operations.ingestion_traceability import (
     build_ingestion_traceability_report,
     write_ingestion_traceability_report,
 )
+from src.operations.manuscript_package import build_manuscript_package
 from src.operations.project_completion import (
     build_project_completion_report,
     write_project_completion_report,
@@ -268,6 +269,13 @@ def main() -> None:
     parser_release.add_argument("--gold-dir", default="data/gold")
     parser_release.add_argument("--output-root", default="outputs/releases")
     parser_release.add_argument("--creator", default="Pronab Chandra Roy")
+
+    parser_manuscript = subparsers.add_parser("build-manuscript-package")
+    parser_manuscript.add_argument("--config", required=True)
+    parser_manuscript.add_argument("--output-dir", default="manuscript")
+    parser_manuscript.add_argument(
+        "--fair-manifest", default="outputs/releases/v0.1.0/manifest.json"
+    )
 
     parser_flow = subparsers.add_parser("run-flow")
     parser_flow.add_argument("--config", required=True)
@@ -716,6 +724,22 @@ def main() -> None:
             payload["release_directory"],
         )
         print("FAIR release bundle completed.")
+        return
+    if args.command == "build-manuscript-package":
+        load_config(args.config)
+        payload = build_manuscript_package(
+            output_dir=args.output_dir,
+            fair_manifest_path=args.fair_manifest,
+        )
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Manuscript package built: files=%s claims=%s path=%s commit=%s",
+            payload["file_count"],
+            payload["claim_count"],
+            payload["output_directory"],
+            payload["git_commit"],
+        )
+        print("Manuscript evidence package completed.")
         return
     if args.command == "run-flow":
         from src.orchestration.pipeline_flow import run_pipeline_with_fallback

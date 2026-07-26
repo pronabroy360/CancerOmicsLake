@@ -258,6 +258,13 @@ The current real-data evaluation finds moderate genome-wide effect-rank associat
 regulated-direction and top-list agreement, reinforcing that the candidate layer must remain
 multi-reference and hypothesis-generating.
 
+## Manuscript Evidence Package
+
+Run `make build-manuscript-package` after rebuilding the FAIR release from the current commit. This
+generates a journal-neutral manuscript, editable SVG figures, aggregate CSV tables, supplements,
+and a claim-level SHA-256 evidence ledger in `manuscript/`. See
+[`docs/manuscript_reproducibility.md`](docs/manuscript_reproducibility.md).
+
 ## Ingestion Traceability
 
 Generate a download-to-silver traceability report:

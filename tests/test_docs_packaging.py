@@ -35,6 +35,7 @@ def test_readme_documents_reviewer_entrypoints() -> None:
     assert "make run-gtex-live" in readme
     assert "make run-external-validation" in readme
     assert "Manual Ingestion" in readme
+    assert "make build-manuscript-package" in readme
 
 
 def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
@@ -51,6 +52,17 @@ def test_reproducibility_documents_run_profiles_and_artifacts() -> None:
     assert "make run-graph-export" in reproducibility
     assert "make run-external-validation" in reproducibility
     assert "manual_ingestion.yml" in reproducibility
+
+
+def test_manuscript_reproducibility_documents_strict_evidence_gates() -> None:
+    manuscript = read_text("docs/manuscript_reproducibility.md")
+
+    assert "make test-dbt" in manuscript
+    assert "make run-demo-check-strict" in manuscript
+    assert "make run-reference-ablation" in manuscript
+    assert "make build-fair-release" in manuscript
+    assert "make build-manuscript-package" in manuscript
+    assert "evidence_ledger.json" in manuscript
 
 
 def test_sample_queries_cover_core_marts() -> None:
