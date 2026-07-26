@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-26T04:25:31.539093+00:00",
-  "git_commit": "8474ef5bc23b5c6739c206e00f72edc279988710",
+  "generated_at": "2026-07-26T04:36:25.528059+00:00",
+  "git_commit": "b7f32eb30916c2efeaa6fb11156bd2f2c44aa0d0",
   "status": "passed",
   "file_count": 14,
   "hashed_file_count": 13,
@@ -14,7 +14,7 @@
     {
       "path": "evidence_ledger.json",
       "bytes": 5713,
-      "sha256": "93cc9e957f963d997ec8729f0575b4a60e70a52e80ed901cd14e9d6d18b0a452"
+      "sha256": "ca2e44be5576a8a40c062d1639dda8a2e0613f4ba3c62c31970f3fdf7147c4fa"
     },
     {
       "path": "figures/figure_1_architecture.svg",
@@ -33,13 +33,13 @@
     },
     {
       "path": "manuscript.md",
-      "bytes": 12685,
-      "sha256": "49c7b66b09619ac0226ec849fa3e493e7a5b4b517949cbc8f7b00b2f169d424a"
+      "bytes": 13058,
+      "sha256": "7db82cb0f1505037ef493062f69d7ee22ead2a08b51f8f3dfe5efa5eb2850d4d"
     },
     {
       "path": "supplement/reproducibility_checklist.md",
       "bytes": 720,
-      "sha256": "1366d8eb3f449cadc150e86ea2facdb43e6d7fd0ab2094be4b6cf2b7ab565a67"
+      "sha256": "9cebb851eed416f48ccf0479130392f21c5857928763e4c929ef6d414b8fc7d1"
     },
     {
       "path": "supplement/table_s1_reference_comparison_all_k.csv",

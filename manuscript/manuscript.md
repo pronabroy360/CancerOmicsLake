@@ -1,6 +1,6 @@
 # CancerOmicsLake: a provenance-aware multi-reference data lakehouse for reproducible cancer-omics research
 
-**Manuscript status:** Methods/data-engineering draft generated from validated artifacts on 2026-07-26T04:25:31.539093+00:00.
+**Manuscript status:** Methods/data-engineering draft generated from validated artifacts on 2026-07-26T04:36:25.528059+00:00.
 
 **Author:** Pronab Chandra Roy
 
@@ -172,7 +172,7 @@ The quality gate recorded 58 passed checks and
 0 warnings. The dbt model/test gate,
 29 strict demo checks, and 9 project
 milestones passed. Six warm DuckDB workloads had median
-latencies of 0.280-10.531 ms in the
+latencies of 0.264-4.758 ms in the
 recorded single-machine environment. These timings demonstrate local responsiveness and are not a
 cross-system performance comparison.
 
@@ -220,6 +220,13 @@ not redistributed. A versioned aggregate-derived bundle can be generated with
 
 Only open-access public resources were used. Controlled-access data were excluded. Public graph and
 release surfaces remove Patient and Sample entities and block individual-like identifiers.
+
+## Generative AI Disclosure
+
+[AI DISCLOSURE TO COMPLETE] List the tools and model versions used for code, tests, documentation,
+and manuscript drafting; describe the scope of assistance; and confirm that the human author
+reviewed, edited, and validated all assisted outputs and retained responsibility for design choices,
+scientific interpretation, and the submitted work.
 
 ## Author Contributions
 

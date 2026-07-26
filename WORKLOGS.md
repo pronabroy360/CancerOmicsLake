@@ -607,3 +607,22 @@ Impact values:
 - Verified `198` Python tests, 88 dbt tests, 58 passing quality checks, 29 strict-demo checks,
   9/9 milestones, six benchmark workloads, 18 FAIR resources, all package hashes, all SVGs, and
   identifier safety.
+
+## 2026-07-26 - Fail-Closed Submission Readiness
+
+- Added a nine-check submission audit with normal reporting and strict failure modes for package
+  hashes, claim evidence, author fields, AI disclosure, DOI, biological approval, comparative
+  evaluation, publication documents, and open-source licensing.
+- Ranked GigaScience Technical Note as the primary target, with Bioinformatics Advances and
+  Database as conditional alternatives; documented why JOSS is a later option rather than an
+  immediate submission route.
+- Preregistered 15 comparator-task evaluations across TCGAbiolinks, UCSC Xena, and cBioPortal,
+  including versioned evidence requirements and safeguards against unfair hosted-versus-local
+  performance rankings.
+- Added an independent biological review checklist and an intentionally unapproved attestation
+  template; the gate cannot infer or fabricate scientific sign-off.
+- Added an explicit generative-AI disclosure placeholder to the generated manuscript and rebuilt
+  the evidence package against commit `b7f32eb`.
+- Current status is intentionally `not_ready`: four checks pass and five blockers remain for author
+  and AI fields, DOI deposit, independent biological review, and comparative evaluation.
+- Verified `202` Python tests and successful manuscript package regeneration.
