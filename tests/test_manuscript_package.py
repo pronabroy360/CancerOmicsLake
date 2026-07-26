@@ -206,6 +206,9 @@ def test_build_manuscript_package_writes_evidence_linked_outputs(
     ledger = json.loads((output / "evidence_ledger.json").read_text(encoding="utf-8"))
     assert ledger["status"] == "passed"
     assert all(len(resource["sha256"]) == 64 for resource in ledger["resources"])
+    manifest = json.loads((output / "package_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["file_count"] == 14
+    assert manifest["hashed_file_count"] == len(manifest["files"]) == 13
 
 
 def test_build_manuscript_package_fails_on_missing_evidence(tmp_path: Path) -> None:

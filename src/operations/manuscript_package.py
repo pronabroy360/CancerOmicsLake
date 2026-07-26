@@ -315,8 +315,11 @@ def _manuscript_text(evidence: dict[str, Any]) -> str:
     return f"""# CancerOmicsLake: a provenance-aware multi-reference data lakehouse for reproducible cancer-omics research
 
 **Manuscript status:** Methods/data-engineering draft generated from validated artifacts on {generated_at}.
+
 **Author:** Pronab Chandra Roy
+
 **Affiliation:** [AUTHOR TO COMPLETE]
+
 **Corresponding email:** [AUTHOR TO COMPLETE]
 
 ## Abstract
@@ -464,7 +467,8 @@ universe. Absolute-effect associations were moderate to high
 ({results['spearman_min']:.3f}-{results['spearman_max']:.3f}), but regulated-direction agreement
 ({results['regulated_direction_min']:.3f}-{results['regulated_direction_max']:.3f}) and candidate-set
 Jaccard ({results['reference_jaccard_min']:.3f}-{results['reference_jaccard_max']:.3f}) were lower.
-All {results['reference_comparisons']} direct comparisons were classified limited under the
+{results['limited_reference_comparisons']} of {results['reference_comparisons']} direct comparisons
+were classified limited under the
 predefined engineering tier (Figure 2; Supplementary Table S1).
 
 ### 3.4 Consensus ablation
@@ -478,7 +482,8 @@ descriptively and did not determine robustness tiers.
 
 ### 3.5 Operational evidence
 
-All {verification['quality_checks']} standard quality checks, the dbt model/test gate,
+The quality gate recorded {verification['quality_passed']} passed checks and
+{verification['quality_warnings']} warnings. The dbt model/test gate,
 {verification['demo_checks']} strict demo checks, and {verification['milestones']} project
 milestones passed. Six warm DuckDB workloads had median
 latencies of {verification['benchmark_min_ms']:.3f}-{verification['benchmark_max_ms']:.3f} ms in the
@@ -630,6 +635,9 @@ def build_manuscript_package(
         "results": {
             "common_gene_count": int(reference.get_column("common_gene_count").min()),
             "reference_comparisons": reference.height,
+            "limited_reference_comparisons": reference.filter(
+                pl.col("agreement_tier") == "limited"
+            ).height,
             "reference_jaccard_min": float(reference_jaccard.min()),
             "reference_jaccard_max": float(reference_jaccard.max()),
             "regulated_direction_min": float(regulated_direction.min()),
@@ -658,6 +666,12 @@ def build_manuscript_package(
         },
         "verification": {
             "quality_checks": len(quality_checks),
+            "quality_passed": sum(
+                check.get("status") == "passed" for check in quality_checks
+            ),
+            "quality_warnings": sum(
+                check.get("status") == "warning" for check in quality_checks
+            ),
             "dbt_status": str(reports["dbt"]["status"]),
             "demo_checks": int(reports["demo"]["check_count"]),
             "milestones": int(reports["completion"]["completed_milestones"]),
@@ -704,7 +718,14 @@ def build_manuscript_package(
     ablation_rows = _summarize_ablation_table(ablation)
     verification_rows = [
         {"gate": "dbt model/test gate", "result": reports["dbt"].get("action", "test"), "status": evidence["verification"]["dbt_status"]},
-        {"gate": "Quality checks", "result": evidence["verification"]["quality_checks"], "status": "passed"},
+        {
+            "gate": "Quality checks",
+            "result": (
+                f"{evidence['verification']['quality_passed']} passed; "
+                f"{evidence['verification']['quality_warnings']} warnings"
+            ),
+            "status": reports["quality"]["status"],
+        },
         {"gate": "Strict demo checks", "result": evidence["verification"]["demo_checks"], "status": "passed"},
         {"gate": "PRD milestones", "result": evidence["verification"]["milestones"], "status": "complete"},
         {"gate": "Benchmark workloads", "result": len(benchmark_medians), "status": "passed"},
@@ -868,7 +889,7 @@ def build_manuscript_package(
         _claim(
             "C10",
             "Passing standard quality checks",
-            evidence["verification"]["quality_checks"],
+            evidence["verification"]["quality_passed"],
             "report:quality",
         ),
     ]
@@ -912,7 +933,8 @@ after any evidence-producing pipeline change.
         "generated_at": evidence["generated_at"],
         "git_commit": git_commit,
         "status": "passed",
-        "file_count": len(output_files),
+        "file_count": len(output_files) + 1,
+        "hashed_file_count": len(output_files),
         "files": [
             {
                 "path": path.relative_to(build).as_posix(),
@@ -933,7 +955,7 @@ after any evidence-producing pipeline change.
         "generated_at": evidence["generated_at"],
         "git_commit": git_commit,
         "output_directory": str(output),
-        "file_count": package_manifest["file_count"] + 1,
+        "file_count": package_manifest["file_count"],
         "claim_count": len(claims),
         "reference_comparison_rows": reference.height,
         "consensus_ablation_rows": ablation.height,
