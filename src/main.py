@@ -38,9 +38,9 @@ from src.operations.dbt_runner import run_dbt_command
 from src.operations.comparative_evaluation import (
     build_comparative_evaluation_report,
     collect_canceromicslake_baseline,
-    collect_cbioportal_t1,
+    collect_cbioportal_tasks,
     collect_tcgabiolinks,
-    collect_xena_t1,
+    collect_xena_tasks,
     write_comparative_evaluation_report,
 )
 from src.operations.ingestion_traceability import (
@@ -802,11 +802,11 @@ def main() -> None:
         if args.collect_local:
             collect_canceromicslake_baseline(output_root=args.evidence_root)
         if args.collect_cbioportal:
-            collect_cbioportal_t1(output_root=args.evidence_root)
+            collect_cbioportal_tasks(output_root=args.evidence_root)
         if args.collect_tcgabiolinks:
             collect_tcgabiolinks(output_root=args.evidence_root)
         if args.collect_xena:
-            collect_xena_t1(output_root=args.evidence_root)
+            collect_xena_tasks(output_root=args.evidence_root)
         payload = build_comparative_evaluation_report(
             publication_config_path=args.publication_config,
             evidence_root=args.evidence_root,

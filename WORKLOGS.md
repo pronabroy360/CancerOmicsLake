@@ -655,3 +655,19 @@ Impact values:
   rather than proof of unsupported capability.
 - Added CLI and Make targets, evidence checksums, image identity, execution timing, tests, and
   protocol documentation without promoting partial capability evidence to a biological result.
+
+## 2026-07-26 - Complete External Comparative Matrix
+
+- Expanded the live UCSC Xena collector from cohort discovery to uniformly reprocessed BRCA TP53
+  tumor-versus-GTEx breast expression, LUAD MC3 protein-altering TP53 frequency, reproducibility
+  metadata, and identifier-safe aggregate export.
+- Expanded the cBioPortal collector to inventory BRCA expression/GTEx scope, calculate LUAD TP53
+  mutation frequency against the portal sequenced-sample denominator, record hosted-service
+  reproducibility limits, and export an aggregate-safe cancer-gene edge.
+- Completed all 20 preregistered rows with 13 passed, seven partial, zero missing, and zero failed;
+  partial rows remain explicit rather than being promoted to equivalently completed analyses.
+- Preserved source-specific results: Xena MC3 reported 257/507 protein-altering LUAD TP53 samples
+  and cBioPortal GDC reported 277/559, demonstrating why denominators and processing provenance
+  must accompany mutation-frequency comparisons.
+- Kept individual sample identifiers in memory only; persisted external evidence contains aggregate
+  counts, versions, checksums, limitations, and aggregate relationship tables.

@@ -89,9 +89,10 @@ make run-comparative-evaluation-strict
 ```
 
 `setup-comparative` installs xenaPython from the exact Git commit recorded in
-`requirements-comparative.txt`. The normal run collects the local CancerOmicsLake baseline,
-cBioPortal T1 through its public REST API, and UCSC Xena T1 through its pinned Python client. The
-strict command does not collect new evidence; it fails unless the assembled matrix is complete.
+`requirements-comparative.txt`. The normal run collects the local CancerOmicsLake baseline and all
+five cBioPortal and UCSC Xena tasks through their public APIs. TCGAbiolinks remains a separate
+containerized command so normal runs do not implicitly build an R environment. The strict command
+does not collect new evidence; it fails unless the assembled matrix is complete.
 
 TCGAbiolinks executes in a base-image-digest-pinned Bioconductor 3.21 container. The build uses the
 official Posit Bioconductor mirror to avoid redirect timeouts, installs TCGAbiolinks 2.36.0, and
@@ -100,20 +101,21 @@ queries and does not download expression or mutation files.
 
 ## Current Checkpoint
 
-The live collection completed 12 of 20 required rows with zero failed results:
+The live collection completed all 20 required rows with 13 passed, seven partial, and zero failed
+results:
 
-- CancerOmicsLake T1-T5: passed.
-- UCSC Xena T1: passed using xenaPython 1.0.14 pinned at `f243bbf`.
-- cBioPortal T1: passed using its public OpenAPI-described REST service.
-- TCGAbiolinks T1: passed using live open GDC metadata.
-- TCGAbiolinks T2-T4: partial because GTEx integration, mutation numerator computation, and an
-  independent second rebuild remain outside the captured run.
-- TCGAbiolinks T5: partial/unverified because no graph-named API was found and the requested
-  aggregate export was not produced; absence from the inventory is not proof of impossibility.
-- UCSC Xena and cBioPortal T2-T5: pending.
+- CancerOmicsLake T1-T5 passed.
+- TCGAbiolinks T1 passed; T2-T5 remained partial because the GTEx summary, mutation numerator,
+  second rebuild, and aggregate graph export were not produced.
+- UCSC Xena T1-T3 and T5 passed; T4 remained partial because its hosted hub was not rebuilt in a
+  clean local environment.
+- cBioPortal T1, T3, and T5 passed; T2 remained partial because no GTEx study was present, and T4
+  remained partial because the hosted service cannot be rebuilt equivalently.
+- Xena reported 257 of 507 LUAD samples with protein-altering TP53 events; cBioPortal reported 277
+  of 559. These source-specific denominators and processing paths must not be pooled.
 
-This checkpoint is not a completed comparison and must not appear as a comparative performance
-claim in the manuscript.
+The matrix is complete as a capability and reproducibility comparison. It is not a comparative
+performance ranking, and partial rows must remain visible in manuscript reporting.
 
 ## Required Report Contract
 
