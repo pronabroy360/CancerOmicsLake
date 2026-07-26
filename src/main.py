@@ -22,6 +22,7 @@ from src.analytics.external_validation import build_external_expression_validati
 from src.analytics.expression_statistics import build_expression_statistical_support
 from src.analytics.paired_expression import build_paired_expression_support
 from src.analytics.pathway_enrichment import build_pathway_enrichment
+from src.analytics.reference_ablation import build_reference_ablation_evaluation
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
@@ -206,6 +207,12 @@ def main() -> None:
 
     parser_consensus = subparsers.add_parser("run-consensus-candidates")
     parser_consensus.add_argument("--config", required=True)
+
+    parser_reference_ablation = subparsers.add_parser("run-reference-ablation")
+    parser_reference_ablation.add_argument("--config", required=True)
+    parser_reference_ablation.add_argument(
+        "--top-k-values", default="25,50,100,250"
+    )
 
     parser_expression_statistics = subparsers.add_parser("run-expression-statistics")
     parser_expression_statistics.add_argument("--config", required=True)
@@ -547,6 +554,24 @@ def main() -> None:
             consensus_summary["path"],
         )
         print("Consensus candidate build completed.")
+        return
+    if args.command == "run-reference-ablation":
+        load_config(args.config)
+        top_k_values = [
+            int(value.strip())
+            for value in args.top_k_values.split(",")
+            if value.strip()
+        ]
+        evaluation = build_reference_ablation_evaluation(top_k_values=top_k_values)
+        logger = get_logger("canceromicslake")
+        logger.info(
+            "Reference ablation: status=%s comparisons=%s ablations=%s top_k_values=%s",
+            evaluation["status"],
+            evaluation["reference_comparison_rows"],
+            evaluation["consensus_ablation_rows"],
+            evaluation["top_k_values"],
+        )
+        print("Reference ablation evaluation completed.")
         return
     if args.command == "run-expression-statistics":
         load_config(args.config)

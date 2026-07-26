@@ -337,6 +337,26 @@ LIMIT 50;
 This table summarizes pathway-level hypotheses over consensus candidate sets. It depends on the tested
 background and should not be interpreted as mechanistic proof.
 
+## Multi-Reference and Consensus Ablation
+
+```sql
+SELECT
+    cancer_type,
+    top_k,
+    method_a,
+    method_b,
+    top_k_jaccard,
+    regulated_direction_concordance,
+    spearman_abs_effect,
+    agreement_tier
+FROM read_parquet('data/gold/gold_reference_method_comparison.parquet')
+ORDER BY cancer_type, top_k, method_a, method_b;
+```
+
+Use `gold_consensus_ablation_stability.parquet` alongside this comparison to quantify whether
+candidate rankings change after explicit reference-related score components are removed. These are
+sensitivity metrics, not evidence that any reference is biologically correct.
+
 ## Quality Checks That Need Attention
 
 ```sql

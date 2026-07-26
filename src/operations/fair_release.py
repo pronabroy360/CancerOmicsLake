@@ -28,6 +28,8 @@ PUBLIC_AGGREGATE_FILES = (
     "gold_paired_tcga_expression_support.parquet",
     "gold_pathway_enrichment.parquet",
     "gold_reference_triangulation.parquet",
+    "gold_reference_method_comparison.parquet",
+    "gold_consensus_ablation_stability.parquet",
     "gold_tumor_vs_normal_expression.parquet",
 )
 

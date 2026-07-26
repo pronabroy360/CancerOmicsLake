@@ -566,3 +566,27 @@ Impact values:
 - Public graph release retained 55,209 safe nodes and 255,215 safe edges while excluding 4,780 individual nodes and
   5,533 connected edges.
 - Verified pytest (`186 passed`), dbt build (`26 models`), and dbt tests (`86 passed`).
+
+## 2026-07-26 - Multi-Reference and Consensus Ablation Evaluation
+
+- Added a common-universe comparison of native GTEx, TCGA adjacent-normal, and uniformly processed
+  recount3 tumor-normal effects for BRCA, COAD, and LUAD.
+- Added deterministic top-k evaluation at 25, 50, 100, and 250 genes using Jaccard overlap,
+  top-list direction agreement, regulated-union direction agreement, absolute-effect Spearman
+  association, and effect-magnitude differences.
+- Added four consensus sensitivity scenarios with explicit component removal, retained-weight
+  renormalization, top-k stability, score association, rank displacement, score deltas, and
+  descriptive fixed-threshold retention.
+- Centralized consensus component weights so production scoring and ablation cannot drift.
+- Real evaluation covered 36,004 common genes per cancer, producing 36 pairwise comparisons and
+  48 consensus ablations.
+- Direct-reference top-k Jaccard ranged from 0.010 to 0.370, regulated-direction concordance from
+  0.124 to 0.396, and absolute-effect Spearman association from 0.618 to 0.812. All direct
+  comparisons were reference-sensitive under the predefined engineering tier.
+- Removing all three explicit reference components produced score associations of 0.672-0.700 and
+  top-k Jaccard values of 0.020-0.575, supporting conservative multi-reference filtering rather
+  than single-reference candidate claims.
+- Added CLI/Make execution, two gold marts, a JSON report, reviewer SQL, methodology and dictionary
+  documentation, FAIR release inclusion, and four standard quality checks.
+- Verified pytest (`193 passed`), dbt (`86 tests`), quality (`58 checks`), strict demo (`29 checks`),
+  research benchmark (`6 workloads`), project completion (`9/9`), and an 18-resource FAIR bundle.

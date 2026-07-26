@@ -66,6 +66,8 @@ def test_sample_queries_cover_core_marts() -> None:
     assert "gold_reference_triangulation" in sample_queries
     assert "gold_candidate_bootstrap_stability" in sample_queries
     assert "gold_external_expression_validation" in sample_queries
+    assert "gold_reference_method_comparison" in sample_queries
+    assert "gold_consensus_ablation_stability" in sample_queries
 
 
 def test_publish_safe_sql_query_files_exist() -> None:
@@ -82,6 +84,7 @@ def test_publish_safe_sql_query_files_exist() -> None:
     assert (query_dir / "09_reference_triangulation.sql").exists()
     assert (query_dir / "10_bootstrap_stability.sql").exists()
     assert (query_dir / "11_external_expression_validation.sql").exists()
+    assert (query_dir / "13_reference_ablation.sql").exists()
 
 
 def test_research_api_and_dashboard_docs_are_packaged() -> None:
@@ -104,3 +107,4 @@ def test_research_api_and_dashboard_docs_are_packaged() -> None:
     assert (ROOT / "docs" / "reference_triangulation.md").exists()
     assert (ROOT / "docs" / "bootstrap_stability.md").exists()
     assert (ROOT / "docs" / "external_validation.md").exists()
+    assert (ROOT / "docs" / "reference_ablation.md").exists()

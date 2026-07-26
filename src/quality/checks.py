@@ -491,6 +491,33 @@ def run_silver_quality_checks(
             "enrichment_tier": pl.Utf8,
         },
     )
+    gold_reference_comparison = _read_or_empty(
+        gold_root / "gold_reference_method_comparison.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "method_a": pl.Utf8,
+            "method_b": pl.Utf8,
+            "common_gene_count": pl.Int64,
+            "top_k": pl.Int64,
+            "top_k_jaccard": pl.Float64,
+            "regulated_direction_concordance": pl.Float64,
+            "spearman_abs_effect": pl.Float64,
+            "agreement_tier": pl.Utf8,
+        },
+    )
+    gold_consensus_ablation = _read_or_empty(
+        gold_root / "gold_consensus_ablation_stability.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "ablation_scenario": pl.Utf8,
+            "common_gene_count": pl.Int64,
+            "top_k": pl.Int64,
+            "top_k_jaccard": pl.Float64,
+            "spearman_consensus_score": pl.Float64,
+            "fixed_threshold_retention_rate": pl.Float64,
+            "sensitivity_tier": pl.Utf8,
+        },
+    )
     gold_graph_nodes = _read_or_empty(
         gold_root / "gold_graph_nodes.parquet",
         {"node_id": pl.Utf8, "node_label": pl.Utf8, "name": pl.Utf8, "primary_site": pl.Utf8, "source": pl.Utf8},
@@ -906,6 +933,69 @@ def run_silver_quality_checks(
             | ~pl.col("enrichment_score").is_between(0.0, 1.0)
             | ~pl.col("enrichment_tier").is_in(["fdr_enriched", "nominal", "limited"])
         ).height
+    missing_gold_reference_comparison_cols = _missing_columns(
+        gold_reference_comparison,
+        [
+            "cancer_type",
+            "method_a",
+            "method_b",
+            "common_gene_count",
+            "top_k",
+            "top_k_jaccard",
+            "regulated_direction_concordance",
+            "spearman_abs_effect",
+            "agreement_tier",
+        ],
+    )
+    invalid_gold_reference_comparison_values = 0
+    if not gold_reference_comparison.is_empty() and {
+        "common_gene_count",
+        "top_k",
+        "top_k_jaccard",
+        "regulated_direction_concordance",
+        "spearman_abs_effect",
+        "agreement_tier",
+    }.issubset(gold_reference_comparison.columns):
+        invalid_gold_reference_comparison_values = gold_reference_comparison.filter(
+            (pl.col("common_gene_count") <= 0)
+            | (pl.col("top_k") <= 0)
+            | ~pl.col("top_k_jaccard").is_between(0.0, 1.0)
+            | ~pl.col("regulated_direction_concordance").is_between(0.0, 1.0)
+            | ~pl.col("spearman_abs_effect").is_between(-1.0, 1.0)
+            | ~pl.col("agreement_tier").is_in(["high", "moderate", "limited"])
+        ).height
+    missing_gold_consensus_ablation_cols = _missing_columns(
+        gold_consensus_ablation,
+        [
+            "cancer_type",
+            "ablation_scenario",
+            "common_gene_count",
+            "top_k",
+            "top_k_jaccard",
+            "spearman_consensus_score",
+            "fixed_threshold_retention_rate",
+            "sensitivity_tier",
+        ],
+    )
+    invalid_gold_consensus_ablation_values = 0
+    if not gold_consensus_ablation.is_empty() and {
+        "common_gene_count",
+        "top_k",
+        "top_k_jaccard",
+        "spearman_consensus_score",
+        "fixed_threshold_retention_rate",
+        "sensitivity_tier",
+    }.issubset(gold_consensus_ablation.columns):
+        invalid_gold_consensus_ablation_values = gold_consensus_ablation.filter(
+            (pl.col("common_gene_count") <= 0)
+            | (pl.col("top_k") <= 0)
+            | ~pl.col("top_k_jaccard").is_between(0.0, 1.0)
+            | ~pl.col("spearman_consensus_score").is_between(-1.0, 1.0)
+            | ~pl.col("fixed_threshold_retention_rate").is_between(0.0, 1.0)
+            | ~pl.col("sensitivity_tier").is_in(
+                ["robust", "moderate", "sensitive"]
+            )
+        ).height
     missing_gold_graph_node_cols = _missing_columns(gold_graph_nodes, ["node_id", "node_label", "name"])
     missing_gold_graph_edge_cols = _missing_columns(
         gold_graph_edges,
@@ -1230,6 +1320,48 @@ def run_silver_quality_checks(
             check_name="gold_pathway_enrichment_values_supported",
             status="passed" if invalid_gold_pathway_enrichment_values == 0 else "failed",
             failed_rows=int(invalid_gold_pathway_enrichment_values),
+        ),
+        CheckResult(
+            check_name="gold_reference_method_comparison_schema_columns_present",
+            status=(
+                "passed"
+                if (
+                    gold_reference_comparison.is_empty()
+                    or missing_gold_reference_comparison_cols == 0
+                )
+                else "failed"
+            ),
+            failed_rows=int(missing_gold_reference_comparison_cols),
+        ),
+        CheckResult(
+            check_name="gold_reference_method_comparison_values_supported",
+            status=(
+                "passed"
+                if invalid_gold_reference_comparison_values == 0
+                else "failed"
+            ),
+            failed_rows=int(invalid_gold_reference_comparison_values),
+        ),
+        CheckResult(
+            check_name="gold_consensus_ablation_stability_schema_columns_present",
+            status=(
+                "passed"
+                if (
+                    gold_consensus_ablation.is_empty()
+                    or missing_gold_consensus_ablation_cols == 0
+                )
+                else "failed"
+            ),
+            failed_rows=int(missing_gold_consensus_ablation_cols),
+        ),
+        CheckResult(
+            check_name="gold_consensus_ablation_stability_values_supported",
+            status=(
+                "passed"
+                if invalid_gold_consensus_ablation_values == 0
+                else "failed"
+            ),
+            failed_rows=int(invalid_gold_consensus_ablation_values),
         ),
         CheckResult(
             check_name="gold_graph_nodes_schema_columns_present",

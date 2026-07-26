@@ -247,6 +247,17 @@ Run `make build-fair-release RELEASE_VERSION=0.1.0` to create a versioned, check
 the graph through the public node policy, and fails on individual-level identifier columns or values.
 See [`docs/fair_release.md`](docs/fair_release.md) for verification and DOI-deposit steps.
 
+## Multi-Reference Ablation Evaluation
+
+Run `make run-reference-ablation` after the reference triangulation, recount3 validation, and
+consensus marts are available. The evaluation compares GTEx-native, TCGA-adjacent, and recount3
+effect rankings on a shared per-cancer gene universe, then measures consensus sensitivity after
+removing explicit reference-related score components. See
+[`docs/reference_ablation.md`](docs/reference_ablation.md) for estimands and limitations.
+The current real-data evaluation finds moderate genome-wide effect-rank association but low
+regulated-direction and top-list agreement, reinforcing that the candidate layer must remain
+multi-reference and hypothesis-generating.
+
 ## Ingestion Traceability
 
 Generate a download-to-silver traceability report:

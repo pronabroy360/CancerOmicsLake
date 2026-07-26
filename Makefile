@@ -13,7 +13,7 @@ endif
 
 RELEASE_VERSION ?= 0.1.0
 
-.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-ci-smoke run-download-tcga-medium run-download-tcga-aggressive run-download-tcga-normals run-download-tcga-paired run-gtex-live run-recount3-expression run-silver run-gold run-quality run-graph-export run-graph-metrics run-evidence-confidence run-bootstrap-stability run-external-validation run-expression-statistics run-paired-expression run-consensus-candidates run-pathway-enrichment fetch-reactome-gmt run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-research-benchmark build-fair-release run-api run-dashboard validate-config
+.PHONY: setup test run-metadata run-metadata-strict run-metadata-strict-smoke run-download-tcga run-download-tcga-ci-smoke run-download-tcga-medium run-download-tcga-aggressive run-download-tcga-normals run-download-tcga-paired run-gtex-live run-recount3-expression run-silver run-gold run-quality run-graph-export run-graph-metrics run-evidence-confidence run-bootstrap-stability run-external-validation run-expression-statistics run-paired-expression run-consensus-candidates run-reference-ablation run-pathway-enrichment fetch-reactome-gmt run-ingestion-traceability run-demo run-demo-aggressive run-demo-check run-demo-check-strict run-flow run-flow-medium run-flow-aggressive run-dbt test-dbt run-project-completion run-research-benchmark build-fair-release run-api run-dashboard validate-config
 
 setup:
 	python3 -m venv $(VENV)
@@ -91,6 +91,9 @@ run-paired-expression:
 
 run-consensus-candidates:
 	$(PYTHON) -m src.main run-consensus-candidates --config configs/project_config.yml
+
+run-reference-ablation:
+	$(PYTHON) -m src.main run-reference-ablation --config configs/project_config.yml --top-k-values 25,50,100,250
 
 fetch-reactome-gmt:
 	@bash scripts/fetch_reactome_gmt.sh

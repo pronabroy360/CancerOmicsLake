@@ -55,6 +55,17 @@ CONSENSUS_CANDIDATE_SCHEMA = {
     "consensus_caveat": pl.Utf8,
 }
 
+CONSENSUS_COMPONENT_WEIGHTS = {
+    "paired_component": 0.20,
+    "statistical_component": 0.20,
+    "external_component": 0.15,
+    "reference_component": 0.10,
+    "bootstrap_component": 0.10,
+    "confidence_component": 0.10,
+    "priority_component": 0.10,
+    "mutation_component": 0.05,
+}
+
 
 def _empty_consensus_candidates() -> pl.DataFrame:
     return pl.DataFrame(schema=CONSENSUS_CANDIDATE_SCHEMA)
@@ -329,14 +340,10 @@ def build_consensus_candidates(
             .with_columns((pl.col("evidence_component_count") / 8.0).round(6).alias("evidence_completeness"))
             .with_columns(
                 (
-                    pl.col("paired_component") * 0.20
-                    + pl.col("statistical_component") * 0.20
-                    + pl.col("external_component") * 0.15
-                    + pl.col("reference_component") * 0.10
-                    + pl.col("bootstrap_component") * 0.10
-                    + pl.col("confidence_component") * 0.10
-                    + pl.col("priority_component") * 0.10
-                    + pl.col("mutation_component") * 0.05
+                    sum(
+                        pl.col(component) * weight
+                        for component, weight in CONSENSUS_COMPONENT_WEIGHTS.items()
+                    )
                 )
                 .clip(0.0, 1.0)
                 .round(6)

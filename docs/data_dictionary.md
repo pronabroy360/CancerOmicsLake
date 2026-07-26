@@ -363,6 +363,36 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `enrichment_tier`: `fdr_enriched`, `nominal`, or `limited`.
 - `pathway_caveat`: required hypothesis-generation warning.
 
+### `gold_reference_method_comparison.parquet`
+
+- `cancer_type`: TCGA project evaluated independently.
+- `method_a`, `method_b`: pair drawn from `gtex_native`, `tcga_adjacent`, and `recount3_uniform`.
+- `common_gene_count`: genes available under all three methods for the cancer.
+- `top_k`, `top_k_a_count`, `top_k_b_count`: deterministic candidate-set sizes.
+- `top_k_overlap_count`, `top_k_jaccard`: overlap and Jaccard agreement between absolute-effect rankings.
+- `top_k_direction_concordance`: direction agreement among overlapping top-k genes.
+- `universe_direction_concordance`: direction agreement across the common gene universe.
+- `regulated_union_gene_count`, `regulated_direction_concordance`: direction agreement among genes
+  called up or down by at least one method, preventing stable-stable pairs from inflating the summary tier.
+- `spearman_abs_effect`: Spearman association between absolute effect magnitudes.
+- `median_abs_effect_delta`: median absolute difference in absolute effect magnitude.
+- `agreement_tier`: transparent engineering tier of `high`, `moderate`, or `limited`.
+- `evaluation_caveat`: required warning against interpreting agreement as batch correction or biological validation.
+
+### `gold_consensus_ablation_stability.parquet`
+
+- `cancer_type`, `ablation_scenario`: cancer and explicit component-removal scenario.
+- `omitted_components`, `retained_weight`: removed consensus components and retained weight before renormalization.
+- `common_gene_count`, `top_k`: evaluated universe and deterministic candidate-set size.
+- `top_k_overlap_count`, `top_k_jaccard`: baseline-versus-ablated top-k stability.
+- `spearman_consensus_score`: baseline-versus-ablated score association.
+- `median_baseline_top_k_rank_shift`: median rank displacement among baseline top-k genes.
+- `median_absolute_score_delta`, `max_absolute_score_delta`: score sensitivity summaries.
+- `baseline_prioritized_count`, `fixed_threshold_retained_count`, `fixed_threshold_retention_rate`: retention under
+  the original full-model `0.75` threshold; this threshold is not recalibrated for ablated models.
+- `sensitivity_tier`: `robust`, `moderate`, or `sensitive`.
+- `evaluation_caveat`: warning that non-ablated components can retain upstream source dependence.
+
 ### `reactome_gmt_acquisition_report.json`
 
 - `status`: `downloaded`, `cached`, or `cached_fallback`.
