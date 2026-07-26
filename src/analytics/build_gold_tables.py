@@ -561,6 +561,18 @@ def build_gold_cohort_summary(
         if not mutations.is_empty()
         else 0
     )
+    expression_gene_ids = [
+        frame.select(pl.col("gene_id").drop_nulls().unique())
+        for frame in (expr_tcga, expr_gtex)
+        if not frame.is_empty()
+    ]
+    gene_count = (
+        pl.concat(expression_gene_ids)
+        .select(pl.col("gene_id").n_unique())
+        .item(0, 0)
+        if expression_gene_ids
+        else 0
+    )
 
     summary = pl.DataFrame(
         [
@@ -582,7 +594,7 @@ def build_gold_cohort_summary(
                 else 0,
                 "tcga_expression_row_count": expr_tcga.height,
                 "gtex_expression_row_count": expr_gtex.height,
-                "gene_count": 0,
+                "gene_count": gene_count,
                 "mutation_record_count": mutations.height,
                 "protein_altering_mutation_record_count": protein_altering_record_count,
                 "mutation_profiled_sample_count": mutation_profiled_sample_count,
@@ -787,6 +799,7 @@ def build_gold_cohort_summary(
         "gtex_expression_sample_count": int(summary["gtex_expression_sample_count"][0]),
         "tcga_expression_row_count": int(summary["tcga_expression_row_count"][0]),
         "gtex_expression_row_count": int(summary["gtex_expression_row_count"][0]),
+        "gene_count": int(summary["gene_count"][0]),
         "mutation_record_count": int(summary["mutation_record_count"][0]),
         "mutation_gene_rows": int(mutation_by_gene.height),
         "mutation_cancer_rows": int(mutation_by_cancer.height),

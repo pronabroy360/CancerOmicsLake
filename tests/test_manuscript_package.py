@@ -233,3 +233,20 @@ def test_build_manuscript_package_fails_on_stale_provenance(
             output_dir=tmp_path / "manuscript",
             strict_provenance=True,
         )
+
+
+def test_build_manuscript_package_rejects_zero_gene_inventory(tmp_path: Path) -> None:
+    gold, reports, fair = _write_fixture(tmp_path)
+    cohort_path = gold / "gold_cohort_summary.parquet"
+    pl.read_parquet(cohort_path).with_columns(pl.lit(0).alias("gene_count")).write_parquet(
+        cohort_path
+    )
+
+    with pytest.raises(RuntimeError, match="non-zero cohort gene count"):
+        build_manuscript_package(
+            gold_dir=gold,
+            reports_dir=reports,
+            fair_manifest_path=fair,
+            output_dir=tmp_path / "manuscript",
+            strict_provenance=False,
+        )

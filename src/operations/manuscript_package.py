@@ -65,7 +65,11 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         raise RuntimeError(f"Refusing to write empty manuscript table: {path.name}")
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=list(rows[0]),
+            lineterminator="\n",
+        )
         writer.writeheader()
         writer.writerows(rows)
 
@@ -598,6 +602,8 @@ def build_manuscript_package(
     if cohort_frame.height != 1 or mutation.is_empty() or reference.is_empty() or ablation.is_empty():
         raise RuntimeError("Manuscript package requires non-empty aggregate gold evidence")
     cohort = cohort_frame.row(0, named=True)
+    if int(cohort.get("gene_count", 0)) <= 0:
+        raise RuntimeError("Manuscript package requires a non-zero cohort gene count")
 
     reference_jaccard = reference.get_column("top_k_jaccard")
     regulated_direction = reference.get_column("regulated_direction_concordance")

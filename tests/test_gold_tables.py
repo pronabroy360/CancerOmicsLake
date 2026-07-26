@@ -106,6 +106,7 @@ def test_build_gold_cohort_summary_from_silver(tmp_path: Path) -> None:
     assert summary["tcga_sample_count"] == 2
     assert summary["tcga_file_count"] == 2
     assert summary["gtex_expression_sample_count"] == 2
+    assert summary["gene_count"] == 2
     assert summary["mutation_record_count"] == 2
     assert (gold_dir / "gold_cohort_summary.parquet").exists()
     assert (gold_dir / "gold_mutation_frequency_by_gene.parquet").exists()

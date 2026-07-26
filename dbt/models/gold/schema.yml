@@ -9,6 +9,9 @@ models:
       - name: tcga_sample_count
         tests:
           - not_null
+      - name: gene_count
+        tests:
+          - not_null
 
   - name: gold_mutation_frequency_by_gene
     columns:
