@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import subprocess
 from types import SimpleNamespace
 
 import polars as pl
 import yaml
+
+import src.operations.comparative_evaluation as comparative_evaluation
 
 from src.operations.comparative_evaluation import (
     TASK_IDS,
@@ -18,6 +21,24 @@ from src.operations.comparative_evaluation import (
 
 
 TOOLS = ("CancerOmicsLake", "TCGAbiolinks", "UCSC Xena", "cBioPortal")
+
+
+def test_git_commit_prefers_valid_injected_provenance(monkeypatch) -> None:
+    monkeypatch.setenv("CANCEROMICSLAKE_GIT_COMMIT", "A" * 40)
+
+    assert comparative_evaluation._git_commit() == "a" * 40
+
+
+def test_git_commit_handles_runtime_without_git(monkeypatch) -> None:
+    monkeypatch.delenv("CANCEROMICSLAKE_GIT_COMMIT", raising=False)
+
+    def missing_git(*args, **kwargs):
+        del args, kwargs
+        raise FileNotFoundError("git")
+
+    monkeypatch.setattr(subprocess, "run", missing_git)
+
+    assert comparative_evaluation._git_commit() == "unknown"
 
 
 def _config(root: Path) -> Path:

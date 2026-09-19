@@ -104,7 +104,9 @@ does not collect new evidence; it fails unless the assembled matrix is complete.
 The containerized evaluation command first builds the application image, then creates a disposable
 container; it is the required route for a `passed` CancerOmicsLake T4 result. A normal host run still
 writes two-run checksum evidence, but records T4 as `partial` because it cannot attest
-dependency-environment isolation.
+dependency-environment isolation. The host commit is injected into the slim image for provenance;
+Git is not required inside the runtime container. Existing external-tool evidence is retained rather
+than recollected during this local rebuild check.
 
 TCGAbiolinks executes in a base-image-digest-pinned Bioconductor 3.21 container. The build uses the
 official Posit Bioconductor mirror to avoid redirect timeouts, installs TCGAbiolinks 2.36.0, and

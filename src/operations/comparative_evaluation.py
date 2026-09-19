@@ -5,6 +5,7 @@ import hashlib
 from importlib.metadata import PackageNotFoundError, version
 import json
 import math
+import os
 from pathlib import Path
 import platform
 import re
@@ -40,12 +41,18 @@ PUBLIC_IDENTIFIER_PATTERN = re.compile(
 
 
 def _git_commit() -> str:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    injected = os.getenv("CANCEROMICSLAKE_GIT_COMMIT", "").strip()
+    if re.fullmatch(r"[0-9a-fA-F]{40}", injected):
+        return injected.lower()
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return "unknown"
     return result.stdout.strip() if result.returncode == 0 else "unknown"
 
 
