@@ -1,6 +1,8 @@
 from pathlib import Path
 
 import polars as pl
+import pytest
+from scipy.stats import hypergeom
 
 from src.analytics.pathway_enrichment import (
     PATHWAY_ENRICHMENT_SCHEMA,
@@ -70,6 +72,48 @@ def test_build_pathway_enrichment_scores_candidate_overlap(tmp_path: Path) -> No
     assert rows[("prioritized", "Cell cycle")]["overlap_gene_count"] == 3
     assert rows[("prioritized", "Cell cycle")]["p_value"] <= 1.0
     assert rows[("prioritized", "Cell cycle")]["enrichment_score"] > 0.0
+
+
+def test_pathway_fdr_includes_eligible_pathways_below_output_overlap_threshold(tmp_path: Path) -> None:
+    consensus = tmp_path / "consensus.parquet"
+    gmt = tmp_path / "reactome.gmt"
+    output = tmp_path / "pathway.parquet"
+    genes = [f"GENE{i}" for i in range(1, 101)]
+    pl.DataFrame(
+        {
+            "cancer_type": ["TCGA-BRCA"] * len(genes),
+            "gene_symbol": genes,
+            "consensus_decision": ["prioritized"] * 5 + ["deprioritized"] * 95,
+            "publication_tier": ["exploratory"] * len(genes),
+        }
+    ).write_parquet(consensus)
+    gmt.write_text(
+        "\n".join(
+            [
+                "Signal\tR-HSA-1\tGENE1\tGENE2\tGENE3\tGENE51\tGENE52",
+                *[
+                    f"Background {index}\tR-HSA-{index + 2}\t"
+                    + "\t".join(f"GENE{gene}" for gene in range(index + 6, index + 11))
+                    for index in range(90)
+                ],
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    build_pathway_enrichment(
+        consensus_path=consensus,
+        pathway_gmt_path=gmt,
+        output_path=output,
+        report_path=tmp_path / "report.json",
+        min_overlap=2,
+    )
+
+    result = pl.read_parquet(output)
+    signal = result.filter(pl.col("pathway_name") == "Signal").row(0, named=True)
+    raw_p_value = hypergeom.sf(2, 100, 5, 5)
+    # 91 size-eligible pathways are in the BH family, although only Signal is displayed.
+    assert signal["fdr_q_value"] == pytest.approx(raw_p_value * 91)
 
 
 def test_pathway_enrichment_query_filters_rows(tmp_path: Path) -> None:

@@ -134,8 +134,6 @@ def _enrichment_rows(
                     continue
                 overlap = sorted(candidates & pathway_genes)
                 overlap_count = len(overlap)
-                if overlap_count < min_overlap:
-                    continue
                 expected = (candidate_size * pathway_size) / background_size
                 p_value = max(float(hypergeom.sf(overlap_count - 1, background_size, pathway_size, candidate_size)), 1e-300)
                 rows.append(
@@ -163,6 +161,12 @@ def _enrichment_rows(
         q_values = _benjamini_hochberg(group.get_column("p_value").to_numpy())
         adjusted_parts.append(group.with_columns(pl.Series("fdr_q_value", q_values)))
     adjusted = pl.concat(adjusted_parts, how="vertical")
+    # Adjust across every size-eligible pathway. Filtering by observed overlap
+    # before BH would shrink the tested family and understate q-values.
+    adjusted = adjusted.filter(pl.col("overlap_gene_count") >= min_overlap)
+    if adjusted.is_empty():
+        return _empty_pathway_enrichment()
+
     q_score = (-pl.col("fdr_q_value").clip(1e-300, 1.0).log10() / 10.0).clip(0.0, 1.0)
     overlap_score = (pl.col("overlap_gene_count") / 10.0).clip(0.0, 1.0)
     ratio_score = (pl.col("enrichment_ratio") / 5.0).clip(0.0, 1.0)

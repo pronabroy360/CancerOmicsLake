@@ -358,7 +358,8 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `enrichment_ratio`: observed overlap divided by expected overlap under the tested background.
 - `odds_ratio`: contingency-table odds ratio.
 - `p_value`: hypergeometric over-representation p-value.
-- `fdr_q_value`: Benjamini-Hochberg adjusted value within cancer and candidate set.
+- `fdr_q_value`: Benjamini-Hochberg adjusted value within cancer and candidate set over all
+  size-eligible pathways, including low-overlap pathways omitted from this mart.
 - `enrichment_score`: bounded reviewer ranking score from FDR, overlap, and enrichment ratio.
 - `enrichment_tier`: `fdr_enriched`, `nominal`, or `limited`.
 - `pathway_caveat`: required hypothesis-generation warning.

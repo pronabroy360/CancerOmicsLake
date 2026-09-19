@@ -90,14 +90,16 @@ The one-tailed hypergeometric over-representation p-value is:
 p = hypergeom.sf(k - 1, M, K, n)
 ```
 
-Pathways with `K < 5` or `K > 500` (post-intersection) are excluded. Triples with `k < 2`
-are excluded.
+Pathways with `K < 5` or `K > 500` (post-intersection) are excluded from the hypothesis
+family. Rows with `k < 2` remain in that family for FDR calculation but are omitted from the
+published mart because they do not meet the minimum evidence-display threshold.
 
 ## Multiple Testing Correction
 
 Benjamini-Hochberg FDR is applied **independently within each `(cancer_type, candidate_set)`
 group**, not across the full result set. This matches the biological interpretation: each
-candidate set defines its own family of hypotheses.
+candidate set defines its own family of hypotheses. The family includes every size-eligible
+pathway, including pathways omitted from the displayed output for low overlap.
 
 ## Tiering
 
