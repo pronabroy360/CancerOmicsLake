@@ -6,9 +6,13 @@ from importlib.metadata import PackageNotFoundError, version
 import json
 import math
 from pathlib import Path
+import platform
 import re
 from statistics import fmean, median
 import subprocess
+import sys
+import tempfile
+import time
 from typing import Any
 from urllib.request import Request, urlopen
 import warnings
@@ -124,6 +128,54 @@ def _identifier_hits(path: Path) -> int:
     return len(PUBLIC_IDENTIFIER_PATTERN.findall(path.read_text(encoding="utf-8")))
 
 
+def _is_container_runtime() -> bool:
+    return Path("/.dockerenv").exists()
+
+
+def _run_rebuild_probe(root: Path, evidence_path: Path) -> dict[str, Any]:
+    probe = Path(__file__).with_name("rebuild_probe.py").resolve()
+    with tempfile.TemporaryDirectory(prefix="canceromicslake-rebuild-") as workspace:
+        temporary_output = Path(workspace) / "result.json"
+        command = [
+            sys.executable,
+            str(probe),
+            "--root",
+            str(root),
+            "--output",
+            str(temporary_output),
+        ]
+        started = time.perf_counter()
+        completed = subprocess.run(
+            command,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        elapsed = time.perf_counter() - started
+        if completed.returncode == 0 and temporary_output.exists():
+            evidence_path.parent.mkdir(parents=True, exist_ok=True)
+            evidence_path.write_bytes(temporary_output.read_bytes())
+            output_sha256 = _sha256(evidence_path)
+        else:
+            output_sha256 = None
+        return {
+            "return_code": completed.returncode,
+            "wall_time_seconds": round(elapsed, 6),
+            "output_sha256": output_sha256,
+            "stdout": completed.stdout[-4000:],
+            "stderr": completed.stderr[-4000:],
+            "command": [
+                sys.executable,
+                str(probe),
+                "--root",
+                str(root),
+                "--output",
+                "<isolated-temporary-directory>/result.json",
+            ],
+        }
+
+
 def collect_canceromicslake_baseline(
     root_dir: str | Path = ".",
     output_root: str | Path = "outputs/comparative",
@@ -131,7 +183,6 @@ def collect_canceromicslake_baseline(
     root = Path(root_dir).resolve()
     output = root / Path(output_root) / "CancerOmicsLake"
     gold = root / "data/gold"
-    reports = root / "outputs/reports"
     graph = root / "outputs/graph_exports/neo4j"
     commit = _git_commit()
     tool_version = f"0.1.0+{commit[:7]}"
@@ -208,35 +259,55 @@ def collect_canceromicslake_baseline(
         )
     )
 
-    benchmark_path = reports / "research_benchmark_report.json"
-    ledger_path = root / "manuscript/evidence_ledger.json"
-    benchmark = _read_json(benchmark_path)
-    ledger = _read_json(ledger_path)
-    t4_passed = benchmark.get("status") == "passed" and ledger.get("status") == "passed"
+    t4_directory = output / "T4"
+    first_rebuild_path = t4_directory / "rebuild_1.json"
+    second_rebuild_path = t4_directory / "rebuild_2.json"
+    rebuild_runs = [
+        _run_rebuild_probe(root, first_rebuild_path),
+        _run_rebuild_probe(root, second_rebuild_path),
+    ]
+    runs_succeeded = all(run["return_code"] == 0 for run in rebuild_runs)
+    output_reproduced = (
+        runs_succeeded
+        and rebuild_runs[0]["output_sha256"] is not None
+        and rebuild_runs[0]["output_sha256"] == rebuild_runs[1]["output_sha256"]
+    )
+    clean_environment = _is_container_runtime()
+    t4_passed = output_reproduced and clean_environment
     t4_result = output / "T4/result.json"
     t4_summary = {
-        "benchmark_status": benchmark.get("status"),
-        "benchmark_workloads": len(benchmark.get("workloads", [])),
-        "evidence_ledger_status": ledger.get("status"),
-        "evidence_claims": len(ledger.get("claims", [])),
-        "benchmark_sha256": _sha256(benchmark_path),
-        "ledger_sha256": _sha256(ledger_path),
+        "rebuild_result": "reproduced" if output_reproduced else "not_reproduced",
+        "clean_environment_rebuild": clean_environment,
+        "environment_isolation": "fresh_container" if clean_environment else "fresh_process_only",
+        "python_version": platform.python_version(),
+        "polars_version": pl.__version__,
+        "probe_sha256": _sha256(Path(__file__).with_name("rebuild_probe.py")),
+        "requirements_sha256": _sha256(root / "requirements.txt"),
+        "runs": rebuild_runs,
+        "failure_retry_behavior": "No retry; both isolated runs execute independently.",
     }
     _write_json(t4_result, t4_summary)
     records.append(
         _task_payload(
             "CancerOmicsLake",
             "T4",
-            "passed" if t4_passed else "failed",
+            "passed" if t4_passed else "partial" if output_reproduced else "failed",
             tool_version,
-            "local Make/CLI",
+            "containerized CLI" if clean_environment else "local CLI",
             [
                 _relative(t4_result, root),
-                _relative(benchmark_path, root),
-                _relative(ledger_path, root),
+                *(
+                    [_relative(first_rebuild_path, root), _relative(second_rebuild_path, root)]
+                    if runs_succeeded
+                    else []
+                ),
             ],
             t4_summary,
-            ["Timing evidence is single-machine and not a cross-tool performance claim."],
+            [
+                "The probe reconstructs registered comparison results from fixed gold inputs; it does not redownload raw sources.",
+                "A host run is partial because fresh processes do not prove dependency-environment isolation.",
+                "Timing evidence is single-machine and not a cross-tool performance claim.",
+            ],
         )
     )
 

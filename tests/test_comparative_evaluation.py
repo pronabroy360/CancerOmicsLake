@@ -95,6 +95,7 @@ def test_comparative_report_preserves_incomplete_and_failed_results(
 
 
 def _write_baseline_fixture(root: Path) -> None:
+    (root / "requirements.txt").write_text("polars==fixture\n", encoding="utf-8")
     gold = root / "data/gold"
     gold.mkdir(parents=True)
     pl.DataFrame(
@@ -180,14 +181,52 @@ def test_local_baseline_collector_writes_five_safe_tasks(
         "src.operations.comparative_evaluation._git_commit",
         lambda: "a" * 40,
     )
+    monkeypatch.setattr(
+        "src.operations.comparative_evaluation._is_container_runtime",
+        lambda: False,
+    )
 
     records = collect_canceromicslake_baseline(root_dir=tmp_path)
 
     assert len(records) == 5
-    assert all(record["task_status"] == "passed" for record in records)
+    assert [record["task_status"] for record in records] == [
+        "passed",
+        "passed",
+        "passed",
+        "partial",
+        "passed",
+    ]
     assert {record["task_id"] for record in records} == set(TASK_IDS)
+    t4 = next(record for record in records if record["task_id"] == "T4")
+    assert t4["result_summary"]["rebuild_result"] == "reproduced"
+    assert t4["result_summary"]["clean_environment_rebuild"] is False
+    assert (
+        t4["result_summary"]["runs"][0]["output_sha256"]
+        == t4["result_summary"]["runs"][1]["output_sha256"]
+    )
     t5 = next(record for record in records if record["task_id"] == "T5")
     assert t5["result_summary"]["individual_identifier_hits"] == 0
+
+
+def test_local_baseline_t4_passes_only_in_clean_container(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    _write_baseline_fixture(tmp_path)
+    monkeypatch.setattr(
+        "src.operations.comparative_evaluation._git_commit",
+        lambda: "a" * 40,
+    )
+    monkeypatch.setattr(
+        "src.operations.comparative_evaluation._is_container_runtime",
+        lambda: True,
+    )
+
+    records = collect_canceromicslake_baseline(root_dir=tmp_path)
+
+    t4 = next(record for record in records if record["task_id"] == "T4")
+    assert t4["task_status"] == "passed"
+    assert t4["result_summary"]["clean_environment_rebuild"] is True
 
 
 def test_tcgabiolinks_collector_preserves_partial_scope(

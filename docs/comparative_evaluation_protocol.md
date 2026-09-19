@@ -43,6 +43,12 @@ and consequence-filter definition.
 Starting from a clean environment, regenerate the requested result and capture commands, versions,
 wall time, peak memory when available, output checksum, and failure/retry behavior.
 
+For CancerOmicsLake, the registered comparison result is rebuilt twice in separate temporary output
+workspaces and fresh Python processes. Matching checksums prove task-level deterministic
+reconstruction from fixed gold inputs. T4 is `passed` only when those runs execute in a fresh
+container; the same successful probe on a host environment is conservatively recorded as `partial`.
+This task does not claim to redownload the upstream public source datasets.
+
 ### T5. Publication-safe export
 
 Export an aggregate cancer-gene relationship table and verify that no patient, donor, or sample
@@ -85,6 +91,7 @@ make setup-comparative
 make build-tcgabiolinks-comparator
 make run-tcgabiolinks-comparison
 make run-comparative-evaluation
+make run-comparative-evaluation-containerized
 make run-comparative-evaluation-strict
 ```
 
@@ -93,6 +100,11 @@ make run-comparative-evaluation-strict
 five cBioPortal and UCSC Xena tasks through their public APIs. TCGAbiolinks remains a separate
 containerized command so normal runs do not implicitly build an R environment. The strict command
 does not collect new evidence; it fails unless the assembled matrix is complete.
+
+The containerized evaluation command first builds the application image, then creates a disposable
+container; it is the required route for a `passed` CancerOmicsLake T4 result. A normal host run still
+writes two-run checksum evidence, but records T4 as `partial` because it cannot attest
+dependency-environment isolation.
 
 TCGAbiolinks executes in a base-image-digest-pinned Bioconductor 3.21 container. The build uses the
 official Posit Bioconductor mirror to avoid redirect timeouts, installs TCGAbiolinks 2.36.0, and
@@ -104,7 +116,8 @@ queries and does not download expression or mutation files.
 The live collection completed all 20 required rows with 13 passed, seven partial, and zero failed
 results:
 
-- CancerOmicsLake T1-T5 passed.
+- CancerOmicsLake T1-T3 and T5 passed. T4 passes only after the containerized two-run rebuild;
+  host-only evidence remains partial.
 - TCGAbiolinks T1 passed; T2-T5 remained partial because the GTEx summary, mutation numerator,
   second rebuild, and aggregate graph export were not produced.
 - UCSC Xena T1-T3 and T5 passed; T4 remained partial because its hosted hub was not rebuilt in a
