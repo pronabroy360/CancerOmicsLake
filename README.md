@@ -169,7 +169,9 @@ make run-demo-check-strict
 - The expanded local profile now produces 37.0 million TCGA expression rows, including paired primary-tumor coverage
   and 60 BRCA, 59 LUAD, and 41 COAD adjacent-normal samples, plus 45,588 mutation records.
 - Mutation candidate evidence excludes synonymous and non-coding/regulatory events. Frequencies use the downloaded
-  mutation-profile cohort as their denominator; they do not classify drivers or pathogenic variants. See
+  mutation-profile cohort as their denominator. A separate functional-recurrence mart stratifies conservative MAF
+  classes and exact-locus recurrence while explicitly setting driver classification to `not_assessed`; neither layer
+  classifies drivers or pathogenic variants. See
   [`docs/mutation_semantics.md`](docs/mutation_semantics.md).
 
 ## GTEx V8 Live Profile

@@ -717,3 +717,15 @@ Impact values:
   questions, evidence locations, attestation instructions, and explicit non-clinical claim limits.
 - Registered both handoff packets as required publication documents while preserving human control
   over DOI minting, reviewer approval, authorship, and scientific sign-off.
+
+## 2026-09-20 - Functional and Recurrent Mutation Evidence
+
+- Added a separate gold mart that stratifies protein-altering mutation support into putative
+  loss-of-function, missense, in-frame, and other conservative MAF classes.
+- Added exact chromosome/start/reference/alternate recurrence features using a preregistered
+  minimum of two distinct samples, without promoting recurrence to pathogenicity or driver status.
+- Fixed `driver_classification` to `not_assessed` and excluded the new evidence from candidate
+  scoring until an externally reviewed integration and validation method is available.
+- Verified exact Python/dbt parity across 18,972 cancer-gene rows; the partial real cohort contained
+  142 recurrent loci across 133 cancer-gene pairs.
+- Passed 60 runtime quality checks, 27 dbt models, 94 dbt tests, and 219 Python tests.

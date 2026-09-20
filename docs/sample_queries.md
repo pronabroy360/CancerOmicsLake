@@ -67,6 +67,26 @@ LIMIT 20;
 Mutation frequencies use only protein-altering events and divide by samples represented by downloaded mutation-profile
 files. They are partial-cohort engineering summaries, not driver prevalence or clinical pathogenicity estimates.
 
+## Recurrent mutation loci with functional-class support
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    putative_loss_of_function_sample_count,
+    missense_sample_count,
+    recurrent_locus_count,
+    max_locus_sample_count,
+    recurrent_locus_sample_fraction,
+    driver_classification
+FROM read_parquet('data/gold/gold_mutation_functional_evidence/*.parquet')
+WHERE recurrent_locus_count > 0
+ORDER BY max_locus_sample_count DESC, recurrent_locus_sample_fraction DESC;
+```
+
+`driver_classification` is intentionally `not_assessed`: exact-locus recurrence is supporting evidence, not a driver,
+pathogenicity, clonality, or actionability call.
+
 ## Cancer-Gene Graph Edges
 
 ```sql

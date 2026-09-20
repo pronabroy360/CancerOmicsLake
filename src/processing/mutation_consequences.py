@@ -39,6 +39,31 @@ NON_CODING_OR_REGULATORY_CLASSIFICATIONS = frozenset(
     }
 )
 
+PUTATIVE_LOSS_OF_FUNCTION_CLASSIFICATIONS = frozenset(
+    {
+        "FRAME_SHIFT_DEL",
+        "FRAME_SHIFT_INS",
+        "NONSENSE_MUTATION",
+        "NONSTOP_MUTATION",
+        "SPLICE_SITE",
+        "TRANSLATION_START_SITE",
+    }
+)
+
+MISSENSE_CLASSIFICATIONS = frozenset({"MISSENSE_MUTATION"})
+
+INFRAME_CLASSIFICATIONS = frozenset(
+    {
+        "DE_NOVO_START_INFRAME",
+        "IN_FRAME_DEL",
+        "IN_FRAME_INS",
+        "START_CODON_DEL",
+        "START_CODON_INS",
+        "STOP_CODON_DEL",
+        "STOP_CODON_INS",
+    }
+)
+
 
 def normalize_variant_classification(value: object) -> str:
     return str(value or "").strip().upper().replace(" ", "_")
@@ -53,3 +78,17 @@ def classify_variant_consequence(value: object) -> tuple[str, bool]:
     if normalized in NON_CODING_OR_REGULATORY_CLASSIFICATIONS:
         return "non_coding_or_regulatory", False
     return "unclassified", False
+
+
+def classify_protein_impact(value: object) -> str:
+    """Provide auditable MAF-class groupings without inferring pathogenicity."""
+    normalized = normalize_variant_classification(value)
+    if normalized in PUTATIVE_LOSS_OF_FUNCTION_CLASSIFICATIONS:
+        return "putative_loss_of_function"
+    if normalized in MISSENSE_CLASSIFICATIONS:
+        return "missense"
+    if normalized in INFRAME_CLASSIFICATIONS:
+        return "inframe"
+    if normalized in PROTEIN_ALTERING_CLASSIFICATIONS:
+        return "other_protein_altering"
+    return "not_protein_altering"

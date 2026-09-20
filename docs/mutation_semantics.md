@@ -35,10 +35,23 @@ Audit columns preserve the distinction:
 
 The cancer-level mart uses the same profiled-sample denominator and preserves all-event audit counts.
 
+`gold_mutation_functional_evidence.parquet` adds a separate, non-ranking evidence layer with:
+
+- unique sample counts for putative loss-of-function, missense, in-frame, and other protein-altering classes;
+- exact genomic loci observed in at least two distinct samples;
+- the maximum sample recurrence at one locus and the fraction of profiled samples carrying a recurrent locus;
+- fixed labels `driver_evidence_scope=consequence_and_exact_locus_recurrence` and
+  `driver_classification=not_assessed`.
+
+Exact-locus recurrence is a reproducible prioritization feature, not proof that a variant or gene is a cancer driver.
+This mart is deliberately excluded from the existing candidate score until an externally reviewed integration method
+and independent validation source are available.
+
 ## Important Limitations
 
 - Protein-altering does not mean oncogenic, pathogenic, clonal, or causal.
-- No VEP impact score, population-frequency filter, copy-number evidence, driver model, or hotspot model is applied.
+- No VEP impact score, population-frequency filter, copy-number evidence, curated driver model, or protein-coordinate
+  hotspot model is applied. Exact genomic recurrence can be split across codons or transcripts.
 - Capped acquisition produces a deterministic partial cohort, not full TCGA cohort prevalence.
 - Frequencies describe the downloaded open-access profile represented by the release.
 - MAF preprocessing and caller choices remain inherited from GDC source workflows.

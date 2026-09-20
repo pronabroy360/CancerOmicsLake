@@ -44,6 +44,28 @@ models:
               arguments:
                 values: ['protein_altering_only']
 
+  - name: gold_mutation_functional_evidence
+    columns:
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: cancer_type
+        tests:
+          - not_null
+      - name: recurrent_locus_sample_fraction
+        tests:
+          - not_null
+      - name: driver_evidence_scope
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['consequence_and_exact_locus_recurrence']
+      - name: driver_classification
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['not_assessed']
+
   - name: gold_tumor_vs_normal_expression
     columns:
       - name: gene_symbol

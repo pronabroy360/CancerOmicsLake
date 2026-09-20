@@ -59,6 +59,12 @@ def test_gold_mutation_frequency_uses_profile_denominator_and_protein_altering_e
     assert row["synonymous_event_count"] == 1
     assert row["mutation_scope"] == "protein_altering_only"
 
+    functional = pl.read_parquet(gold_dir / "gold_mutation_functional_evidence.parquet")
+    functional_row = functional.row(0, named=True)
+    assert functional_row["missense_sample_count"] == 1
+    assert functional_row["recurrent_locus_count"] == 0
+    assert functional_row["driver_classification"] == "not_assessed"
+
     by_cancer = pl.read_parquet(gold_dir / "gold_mutation_frequency_by_cancer.parquet")
     cancer = by_cancer.filter(pl.col("cancer_type") == "TCGA-LUAD").row(0, named=True)
     assert cancer["mutation_event_count"] == 1
@@ -74,3 +80,4 @@ def test_gold_mutation_frequency_uses_profile_denominator_and_protein_altering_e
     assert quality["silver_mutation_consequence_semantics_valid"].status == "passed"
     assert quality["silver_mutation_profile_rows_valid"].status == "passed"
     assert quality["gold_mutation_frequency_semantics_valid"].status == "passed"
+    assert quality["gold_mutation_functional_evidence_semantics_valid"].status == "passed"

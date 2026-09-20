@@ -191,6 +191,20 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `mutation_frequency`: fraction of profiled samples with any protein-altering event.
 - `mutation_scope`: fixed to `protein_altering_only`.
 
+### `gold_mutation_functional_evidence.parquet`
+
+- `cancer_type`, `gene_symbol`: TCGA project and gene pair.
+- `total_profiled_sample_count`: mutation-profile denominator.
+- `protein_altering_mutated_sample_count`: unique samples with a protein-altering event.
+- `putative_loss_of_function_sample_count`, `missense_sample_count`, `inframe_sample_count`,
+  `other_protein_altering_sample_count`: non-exclusive sample support by conservative MAF class group.
+- `recurrent_locus_count`: exact chromosome/start/reference/alternate loci present in at least two samples.
+- `max_locus_sample_count`: largest distinct-sample count for one exact locus.
+- `samples_with_recurrent_locus_count`, `recurrent_locus_sample_fraction`: sample support for recurrent loci.
+- `recurrence_threshold_samples`: fixed reproducibility threshold, currently `2`.
+- `driver_evidence_scope`: fixed to `consequence_and_exact_locus_recurrence`.
+- `driver_classification`: fixed to `not_assessed`; the mart does not call drivers or pathogenic variants.
+
 ### `gold_candidate_gene_priority.parquet`
 
 - `cancer_type`: TCGA project ID.

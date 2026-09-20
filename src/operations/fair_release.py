@@ -27,6 +27,7 @@ PUBLIC_AGGREGATE_FILES = (
     "gold_external_expression_validation.parquet",
     "gold_mutation_frequency_by_cancer.parquet",
     "gold_mutation_frequency_by_gene.parquet",
+    "gold_mutation_functional_evidence.parquet",
     "gold_paired_tcga_expression_support.parquet",
     "gold_pathway_enrichment.parquet",
     "gold_reference_triangulation.parquet",

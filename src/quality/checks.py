@@ -390,6 +390,26 @@ def run_silver_quality_checks(
             "mutation_scope": pl.Utf8,
         },
     )
+    gold_mut_functional = _read_or_empty(
+        gold_root / "gold_mutation_functional_evidence.parquet",
+        {
+            "gene_symbol": pl.Utf8,
+            "cancer_type": pl.Utf8,
+            "total_profiled_sample_count": pl.Int64,
+            "protein_altering_mutated_sample_count": pl.Int64,
+            "putative_loss_of_function_sample_count": pl.Int64,
+            "missense_sample_count": pl.Int64,
+            "inframe_sample_count": pl.Int64,
+            "other_protein_altering_sample_count": pl.Int64,
+            "recurrent_locus_count": pl.Int64,
+            "max_locus_sample_count": pl.Int64,
+            "samples_with_recurrent_locus_count": pl.Int64,
+            "recurrent_locus_sample_fraction": pl.Float64,
+            "recurrence_threshold_samples": pl.Int64,
+            "driver_evidence_scope": pl.Utf8,
+            "driver_classification": pl.Utf8,
+        },
+    )
     gold_batch_sensitivity = _read_or_empty(
         gold_root / "gold_batch_effect_sensitivity.parquet",
         {
@@ -713,6 +733,38 @@ def run_silver_quality_checks(
             | (pl.col("protein_altering_event_count") > pl.col("all_somatic_event_count"))
             | (pl.col("top_variant_classification").str.to_uppercase() == "SILENT")
             | (pl.col("mutation_scope") != "protein_altering_only")
+        ).height
+    required_mut_functional_cols = [
+        "gene_symbol",
+        "cancer_type",
+        "total_profiled_sample_count",
+        "protein_altering_mutated_sample_count",
+        "putative_loss_of_function_sample_count",
+        "missense_sample_count",
+        "inframe_sample_count",
+        "other_protein_altering_sample_count",
+        "recurrent_locus_count",
+        "max_locus_sample_count",
+        "samples_with_recurrent_locus_count",
+        "recurrent_locus_sample_fraction",
+        "recurrence_threshold_samples",
+        "driver_evidence_scope",
+        "driver_classification",
+    ]
+    missing_mut_functional_cols = _missing_columns(gold_mut_functional, required_mut_functional_cols)
+    invalid_mut_functional_values = 0
+    if not gold_mut_functional.is_empty() and not missing_mut_functional_cols:
+        invalid_mut_functional_values = gold_mut_functional.filter(
+            ~pl.col("recurrent_locus_sample_fraction").is_between(0.0, 1.0)
+            | (pl.col("protein_altering_mutated_sample_count") > pl.col("total_profiled_sample_count"))
+            | (
+                pl.col("samples_with_recurrent_locus_count")
+                > pl.col("protein_altering_mutated_sample_count")
+            )
+            | (pl.col("max_locus_sample_count") > pl.col("protein_altering_mutated_sample_count"))
+            | (pl.col("recurrence_threshold_samples") < 2)
+            | (pl.col("driver_evidence_scope") != "consequence_and_exact_locus_recurrence")
+            | (pl.col("driver_classification") != "not_assessed")
         ).height
     missing_gold_batch_cols = _missing_columns(
         gold_batch_sensitivity,
@@ -1226,6 +1278,20 @@ def run_silver_quality_checks(
             check_name="gold_mutation_frequency_semantics_valid",
             status="passed" if invalid_gold_mutation_values == 0 else "failed",
             failed_rows=int(invalid_gold_mutation_values),
+        ),
+        CheckResult(
+            check_name="gold_mutation_functional_evidence_schema_columns_present",
+            status=(
+                "passed"
+                if (gold_mut_functional.is_empty() or missing_mut_functional_cols == 0)
+                else "failed"
+            ),
+            failed_rows=int(missing_mut_functional_cols),
+        ),
+        CheckResult(
+            check_name="gold_mutation_functional_evidence_semantics_valid",
+            status="passed" if invalid_mut_functional_values == 0 else "failed",
+            failed_rows=int(invalid_mut_functional_values),
         ),
         CheckResult(
             check_name="gold_batch_effect_sensitivity_schema_columns_present",
