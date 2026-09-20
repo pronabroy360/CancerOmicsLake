@@ -446,6 +446,10 @@ def run_silver_quality_checks(
             "validation_score": pl.Float64,
             "validation_tier": pl.Utf8,
             "top_k_jaccard_by_cancer": pl.Float64,
+            "evidence_scope": pl.Utf8,
+            "sample_overlap_status": pl.Utf8,
+            "tcga_sample_overlap_count": pl.Int64,
+            "gtex_sample_overlap_count": pl.Int64,
         },
     )
     gold_expression_statistics = _read_or_empty(
@@ -813,6 +817,10 @@ def run_silver_quality_checks(
             "validation_score",
             "validation_tier",
             "top_k_jaccard_by_cancer",
+            "evidence_scope",
+            "sample_overlap_status",
+            "tcga_sample_overlap_count",
+            "gtex_sample_overlap_count",
         ],
     )
     invalid_gold_external_validation_values = 0
@@ -821,12 +829,22 @@ def run_silver_quality_checks(
         "validation_score",
         "validation_tier",
         "top_k_jaccard_by_cancer",
+        "evidence_scope",
+        "sample_overlap_status",
+        "tcga_sample_overlap_count",
+        "gtex_sample_overlap_count",
     }.issubset(gold_external_validation.columns):
         invalid_gold_external_validation_values = gold_external_validation.filter(
             ~pl.col("direction_agreement").is_in(["concordant", "inconclusive", "discordant"])
             | ~pl.col("validation_score").is_between(0.0, 1.0)
             | ~pl.col("top_k_jaccard_by_cancer").is_between(0.0, 1.0)
             | ~pl.col("validation_tier").is_in(["high", "moderate", "limited", "discordant"])
+            | ~pl.col("evidence_scope").str.contains("not_independent_validation")
+            | ~pl.col("sample_overlap_status").is_in(
+                ["observed_overlap", "no_observed_overlap", "not_audited"]
+            )
+            | (pl.col("tcga_sample_overlap_count") < 0)
+            | (pl.col("gtex_sample_overlap_count") < 0)
         ).height
     missing_gold_expression_statistics_cols = _missing_columns(
         gold_expression_statistics,

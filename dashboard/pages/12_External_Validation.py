@@ -5,10 +5,10 @@ import streamlit as st
 from src.analytics.dashboard_data import external_expression_validation_data
 
 
-st.title("External Expression Validation")
-st.caption("Compares native TCGA/GTEx effects with a uniformly processed recount3 expression extract.")
+st.title("recount3 Reprocessing Corroboration")
+st.caption("Compares native TCGA/GTEx effects with a uniformly reprocessed view of the same source studies.")
 st.warning(
-    "This is an external reproducibility check. Agreement strengthens candidate confidence, but it is not clinical validation."
+    "This is not independent validation. Samples and source cohorts may overlap; use the overlap fields when interpreting concordance."
 )
 
 controls = st.columns(5)
@@ -28,10 +28,10 @@ data = external_expression_validation_data(
 )
 
 if data.is_empty():
-    st.info("No external validation output. Run `make run-external-validation` after adding a recount3 extract.")
+    st.info("No recount3 corroboration output. Run `make run-external-validation` after adding a recount3 extract.")
 else:
     metrics = st.columns(4)
-    metrics[0].metric("Validated pairs", int(data.height))
+    metrics[0].metric("Assessed pairs", int(data.height))
     metrics[1].metric("Median score", f"{data['validation_score'].median():.3f}")
     metrics[2].metric("Concordant", int(data.filter(data["direction_agreement"] == "concordant").height))
     metrics[3].metric("Top-k overlap", int(data.filter(data["top_k_overlap"]).height))

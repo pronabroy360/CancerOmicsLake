@@ -98,7 +98,7 @@ tests for case-matched TCGA tumor-adjacent pairs. Benjamini-Hochberg correction 
 cancer. Expression-effect rank uncertainty was assessed with 200 deterministic bootstrap iterations
 over each cancer's full eligible gene universe, followed by candidate-only output filtering. This did
 not bootstrap the complete consensus-selection algorithm.
-Consensus scores combined eight transparent components; discordant reference, external, statistical,
+Consensus scores combined eight transparent components; discordant reference, reprocessing, statistical,
 or paired evidence could explicitly reject a candidate.
 
 ### 2.6 Multi-reference and component-ablation evaluation
@@ -107,7 +107,7 @@ For each cancer, genes present under native GTEx, TCGA adjacent-normal, and reco
 intersected. Genes were ranked by absolute log2 fold change with gene-symbol tie breaking.
 Pairwise top-list Jaccard, regulated-direction concordance, whole-universe absolute-effect Spearman
 association, and effect differences were computed at K=25, 50, 100, and 250. Consensus sensitivity
-was measured after removing reference-triangulation, external-validation, paired-support, or all
+was measured after removing reference-triangulation, reprocessing-corroboration, paired-support, or all
 three explicit reference components and renormalizing retained weights. Non-ablated components can
 retain upstream source dependence; therefore this is a component sensitivity analysis, not complete
 source removal.
@@ -140,7 +140,7 @@ CancerOmicsLake processed 3,444 TCGA files into
 
 ### 3.2 Validation and candidate triage
 
-External validation evaluated 108,012 cancer-gene pairs and marked
+Uniform reprocessing corroboration evaluated 108,012 cancer-gene pairs and marked
 1,815 as directionally discordant. Matched TCGA analysis
 evaluated 178,281 cancer-gene rows, including
 25,544 paired-replicated results. The consensus layer evaluated

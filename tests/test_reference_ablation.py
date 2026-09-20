@@ -41,7 +41,7 @@ def _consensus_fixture() -> pl.DataFrame:
         }
         for component in CONSENSUS_COMPONENT_WEIGHTS:
             row[component] = 1.0 - index * 0.08
-        row["external_component"] = 0.0 if gene == "A" else row["external_component"]
+        row["reprocessing_component"] = 0.0 if gene == "A" else row["reprocessing_component"]
         rows.append(row)
     return pl.DataFrame(rows)
 
@@ -69,7 +69,7 @@ def test_consensus_ablation_renormalizes_and_reports_rank_sensitivity() -> None:
 
     assert result.height == 4
     external = result.filter(
-        pl.col("ablation_scenario") == "without_external_validation"
+        pl.col("ablation_scenario") == "without_reprocessing_corroboration"
     ).row(0, named=True)
     assert external["retained_weight"] == pytest.approx(0.85)
     assert 0.0 <= external["top_k_jaccard"] <= 1.0

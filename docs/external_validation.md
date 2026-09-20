@@ -1,15 +1,17 @@
-# External Expression Validation
+# recount3 Reprocessing Corroboration
 
 ## Purpose
 
-`gold_external_expression_validation` is the next publication-readiness layer for CancerOmicsLake. It compares
-native TCGA/GTEx tumor-vs-normal effects against an external uniformly processed expression source, starting with
-recount3.
+`gold_external_expression_validation` is retained as a compatibility name. Scientifically, the mart compares native
+TCGA/GTEx tumor-vs-normal effects against uniformly reprocessed recount3 views of the same source studies.
 
 This answers a stricter question than the current batch-sensitivity and bootstrap layers:
 
-> Do prioritized cancer-gene expression directions replicate when TCGA and GTEx are re-read from a uniformly
-> processed resource?
+> Are prioritized cancer-gene expression directions robust to a different processing pipeline over TCGA and GTEx?
+
+This is reprocessing corroboration, not independent cohort validation. The pipeline audits exact normalized sample
+identifiers and reports overlap for TCGA and GTEx separately. Even when exact sample overlap is absent, both analyses
+still originate from the same source studies and cannot establish independent replication.
 
 ## Why recount3
 
@@ -100,23 +102,28 @@ Key fields:
 - `absolute_rank_delta`
 - `top_k_overlap`
 - `top_k_jaccard_by_cancer`
-- `validation_score`
-- `validation_tier`: `high`, `moderate`, `limited`, or `discordant`
+- `validation_score` and `validation_tier`: legacy-compatible names for a bounded reprocessing-concordance calibration.
+- `evidence_scope`: explicitly marks the evidence as same-study reprocessing corroboration.
+- `sample_overlap_status`, TCGA/GTEx overlap counts, and recount3 sample counts: identifier-based overlap audit.
 
 ## Interpretation
 
-Use this layer as an external reproducibility filter before making biological claims. A strong candidate should ideally
+Use this layer as a processing-sensitivity filter before making biological claims. A strong candidate should ideally
 show:
 
 - high evidence confidence,
 - high bootstrap stability,
 - stable TCGA-adjacent versus GTEx reference triangulation,
-- concordant external recount3 validation.
+- concordant recount3 reprocessing evidence.
 
-This still does not establish clinical validity. It only reduces one major reproducibility risk: dependence on one
-expression processing path.
+This does not establish independent replication or clinical validity. It only reduces one reproducibility risk:
+dependence on one expression processing path.
 
-Current real-data validation covers 108,012 gene-cancer pairs. It classifies 84,531 as high tier, 12,056 as moderate,
-9,610 as limited, and 1,815 as discordant. These tiers are engineering reproducibility evidence, not biological or
+Current real-data corroboration covers 108,012 gene-cancer pairs. It classifies 84,542 as high tier, 12,070 as moderate,
+9,585 as limited, and 1,815 as discordant. These tiers are engineering reproducibility evidence, not biological or
 clinical significance. Uniform recount3 processing reduces computational pipeline differences but does not remove
 cohort composition, tissue collection, ischemic-time, tumor-purity, or other biological confounding.
+
+The identifier audit found no exact native/recount3 TCGA sample overlap among the 30 recount3 tumors per cancer, but
+found 29 of 30 recount3 GTEx samples overlapping the native GTEx reference for each cancer. Exact sample non-overlap
+does not establish donor independence, and both sides still derive from TCGA and GTEx.

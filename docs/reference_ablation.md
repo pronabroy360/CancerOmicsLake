@@ -35,7 +35,7 @@ The agreement tier uses regulated-union direction concordance rather than stable
 The baseline consensus score has eight explicit weighted components. Four scenarios are evaluated:
 
 - remove reference triangulation,
-- remove external recount3 validation,
+- remove recount3 reprocessing corroboration,
 - remove paired TCGA support,
 - remove all three explicit reference-related components.
 

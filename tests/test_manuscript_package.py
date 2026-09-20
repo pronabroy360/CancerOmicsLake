@@ -74,7 +74,7 @@ def _write_fixture(
     ablation_rows = []
     scenarios = [
         "without_reference_triangulation",
-        "without_external_validation",
+        "without_reprocessing_corroboration",
         "without_paired_support",
         "without_explicit_reference_components",
     ]

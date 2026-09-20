@@ -177,7 +177,7 @@ def test_build_consensus_candidates_prioritizes_only_concordant_evidence(tmp_pat
     assert rows["STRONG"]["rejection_reasons"] == "none"
     assert rows["STRONG"]["statistical_component"] == 0.95
     assert rows["BADREF"]["consensus_decision"] == "deprioritized"
-    assert "external_validation_discordant" in rows["BADREF"]["rejection_reasons"]
+    assert "reprocessing_corroboration_discordant" in rows["BADREF"]["rejection_reasons"]
     assert "reference_sensitive_or_discordant" in rows["BADREF"]["rejection_reasons"]
     assert "statistical_support_discordant" in rows["BADREF"]["rejection_reasons"]
     assert "paired_support_discordant" in rows["BADREF"]["rejection_reasons"]

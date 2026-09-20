@@ -31,6 +31,12 @@ EXTERNAL_VALIDATION_SCHEMA = {
     "validation_tier": pl.Utf8,
     "external_source": pl.Utf8,
     "external_annotation": pl.Utf8,
+    "evidence_scope": pl.Utf8,
+    "sample_overlap_status": pl.Utf8,
+    "tcga_sample_overlap_count": pl.Int64,
+    "tcga_recount3_sample_count": pl.Int64,
+    "gtex_sample_overlap_count": pl.Int64,
+    "gtex_recount3_sample_count": pl.Int64,
     "validation_caveat": pl.Utf8,
 }
 
@@ -138,8 +144,83 @@ def _build_recount3_contrasts(recount3: pl.DataFrame) -> pl.DataFrame:
     return pl.concat(contrasts, how="diagonal_relaxed")
 
 
+def _normalized_sample_ids(frame: pl.DataFrame, column: str) -> set[str]:
+    if frame.is_empty() or column not in frame.columns:
+        return set()
+    normalized = (
+        frame.select(
+            pl.col(column)
+            .cast(pl.Utf8, strict=False)
+            .str.to_uppercase()
+            .str.replace(r"\.\d+$", "")
+            .alias("sample_id")
+        )
+        .filter(pl.col("sample_id").is_not_null() & (pl.col("sample_id") != ""))
+        .unique()
+        .get_column("sample_id")
+        .to_list()
+    )
+    return set(normalized)
+
+
+def _sample_overlap_audit(recount3: pl.DataFrame, silver_root: Path) -> pl.DataFrame:
+    tcga_path = silver_root / "silver_expression_tcga.parquet"
+    gtex_path = silver_root / "silver_expression_gtex.parquet"
+    native_tcga = pl.read_parquet(tcga_path) if tcga_path.exists() else pl.DataFrame()
+    native_gtex = pl.read_parquet(gtex_path) if gtex_path.exists() else pl.DataFrame()
+    rows: list[dict[str, object]] = []
+    for cancer_type, tissues in PROJECT_TISSUES.items():
+        recount_tcga = recount3.filter(
+            (pl.col("source") == "TCGA")
+            & (pl.col("project_id") == cancer_type)
+            & (pl.col("sample_type").str.to_lowercase() == "primary tumor")
+        )
+        recount_gtex = recount3.filter(
+            (pl.col("source") == "GTEX") & pl.col("tissue_site").is_in(tissues)
+        )
+        native_tcga_project = (
+            native_tcga.filter(
+                (pl.col("project_id") == cancer_type)
+                & (pl.col("sample_type").str.to_lowercase() == "primary tumor")
+            )
+            if not native_tcga.is_empty()
+            else pl.DataFrame()
+        )
+        native_gtex_tissue = (
+            native_gtex.filter(pl.col("tissue_site").is_in(tissues))
+            if not native_gtex.is_empty()
+            else pl.DataFrame()
+        )
+        recount_tcga_ids = _normalized_sample_ids(recount_tcga, "sample_id")
+        recount_gtex_ids = _normalized_sample_ids(recount_gtex, "sample_id")
+        native_tcga_ids = _normalized_sample_ids(native_tcga_project, "sample_id")
+        native_gtex_ids = _normalized_sample_ids(native_gtex_tissue, "gtex_sample_id")
+        tcga_overlap = len(recount_tcga_ids & native_tcga_ids)
+        gtex_overlap = len(recount_gtex_ids & native_gtex_ids)
+        audited = tcga_path.exists() and gtex_path.exists()
+        rows.append(
+            {
+                "cancer_type": cancer_type,
+                "evidence_scope": "same-study_reprocessing_corroboration_not_independent_validation",
+                "sample_overlap_status": (
+                    "observed_overlap"
+                    if audited and (tcga_overlap + gtex_overlap) > 0
+                    else "no_observed_overlap"
+                    if audited
+                    else "not_audited"
+                ),
+                "tcga_sample_overlap_count": tcga_overlap,
+                "tcga_recount3_sample_count": len(recount_tcga_ids),
+                "gtex_sample_overlap_count": gtex_overlap,
+                "gtex_recount3_sample_count": len(recount_gtex_ids),
+            }
+        )
+    return pl.DataFrame(rows)
+
+
 def build_external_expression_validation(
     gold_dir: str | Path = "data/gold",
+    silver_dir: str | Path = "data/silver",
     recount3_expression_path: str | Path = "data/silver/silver_expression_recount3.parquet",
     output_path: str | Path = "data/gold/gold_external_expression_validation.parquet",
     report_path: str | Path = "outputs/reports/external_expression_validation_report.json",
@@ -162,11 +243,12 @@ def build_external_expression_validation(
         native = pl.read_parquet(native_path)
         recount3 = _read_recount3_expression(Path(recount3_expression_path))
         recount3_contrasts = _build_recount3_contrasts(recount3)
+        overlap_audit = _sample_overlap_audit(recount3, Path(silver_dir))
         if native.is_empty() or recount3_contrasts.is_empty():
             result = _empty_external_validation()
             status = "skipped_no_overlap"
         else:
-            result = _score_validation(native, recount3_contrasts, top_k=top_k)
+            result = _score_validation(native, recount3_contrasts, overlap_audit, top_k=top_k)
             status = "completed"
 
     result.write_parquet(output)
@@ -182,6 +264,10 @@ def build_external_expression_validation(
         "top_k": int(top_k),
         "tier_counts": tier_counts,
         "external_source": "recount3",
+        "evidence_scope": "same-study reprocessing corroboration, not independent validation",
+        "sample_overlap_audit": (
+            overlap_audit.to_dicts() if "overlap_audit" in locals() else []
+        ),
         "input_path": str(recount3_expression_path),
         "path": str(output),
         "elapsed_seconds": round(time.monotonic() - started, 3),
@@ -190,7 +276,12 @@ def build_external_expression_validation(
     return summary
 
 
-def _score_validation(native: pl.DataFrame, recount3_contrasts: pl.DataFrame, top_k: int) -> pl.DataFrame:
+def _score_validation(
+    native: pl.DataFrame,
+    recount3_contrasts: pl.DataFrame,
+    overlap_audit: pl.DataFrame,
+    top_k: int,
+) -> pl.DataFrame:
     native_required = {
         "cancer_type",
         "gene_symbol",
@@ -276,6 +367,7 @@ def _score_validation(native: pl.DataFrame, recount3_contrasts: pl.DataFrame, to
 
     return (
         joined.join(jaccard_df, on="cancer_type", how="left")
+        .join(overlap_audit, on="cancer_type", how="left")
         .with_columns(
             [
                 (pl.col("native_top_k") & pl.col("recount3_top_k")).alias("top_k_overlap"),
@@ -307,7 +399,7 @@ def _score_validation(native: pl.DataFrame, recount3_contrasts: pl.DataFrame, to
                 pl.lit(int(top_k)).alias("top_k"),
                 pl.lit("recount3").alias("external_source"),
                 pl.lit(
-                    "External validation against uniformly processed recount3 expression; agreement strengthens reproducibility but does not establish clinical validity."
+                    "Uniformly reprocessed recount3 corroboration over the same source studies; observed sample overlap and shared cohorts mean this is not independent validation."
                 ).alias("validation_caveat"),
             ]
         )
@@ -357,8 +449,8 @@ def external_expression_validation(
         "row_count": int(min(total_matching, limit)),
         "total_matching_rows": total_matching,
         "warning": (
-            "External recount3 validation is a reproducibility check over a uniformly processed expression source; "
-            "it is not clinical validation."
+            "recount3 provides same-study reprocessing corroboration, not independent or clinical validation; "
+            "inspect the reported sample-overlap audit before interpretation."
         ),
         "rows": filtered.head(limit).to_dicts(),
     }

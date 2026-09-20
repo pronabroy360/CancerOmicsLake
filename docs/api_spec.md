@@ -132,7 +132,8 @@ interval, top-k selection, and reference-concordance stability metrics.
 
 `GET /research/external-expression-validation` accepts `cancer_type`, `gene_query`, `validation_tier`,
 `direction_agreement`, `min_validation_score`, and `limit`. It compares native TCGA/GTEx effects with
-a normalized recount3 extract when available. It is an external reproducibility check, not clinical validation.
+a normalized recount3 extract when available. The legacy endpoint name is retained for compatibility; responses label
+the evidence as same-study reprocessing corroboration and report sample overlap, not independent validation.
 
 `GET /research/consensus-candidates` accepts `cancer_type`, `gene_query`, `decision`,
 `publication_tier`, `min_consensus_score`, and `limit`. It returns the final publication-triage

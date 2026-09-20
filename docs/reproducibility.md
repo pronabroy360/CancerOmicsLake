@@ -175,7 +175,8 @@ Reports include `run_mode` where available:
 - Set `tcga.require_live_gdc: true` to fail fast if live GDC query is unavailable.
 - Silver quality checks write `outputs/reports/silver_data_quality_report.json`.
 - Tumor-vs-normal comparisons are exploratory because TCGA and GTEx have cross-study and pipeline batch effects.
-- Run `make run-recount3-expression` followed by `make run-external-validation` for the real external validation.
+- Run `make run-recount3-expression` followed by `make run-external-validation` for real recount3
+  reprocessing corroboration; the command name is retained for compatibility.
 - Run `make run-expression-statistics` before rebuilding consensus candidates to add sample-level effect sizes and FDR support.
 - Run `make run-metadata-strict`, `make run-download-tcga-paired`, and `make run-silver` to maximize matched cases before `make run-paired-expression`.
 - Run `make fetch-reactome-gmt` to acquire pinned Reactome release 97 with checksums and provenance, then run `make run-pathway-enrichment`. The enrichment target performs the fetch automatically unless `SKIP_GMT_FETCH=1` is set.

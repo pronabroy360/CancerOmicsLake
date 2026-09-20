@@ -587,13 +587,13 @@ def main() -> None:
         )
         logger = get_logger("canceromicslake")
         logger.info(
-            "External expression validation: status=%s rows=%s tiers=%s path=%s",
+            "recount3 reprocessing corroboration: status=%s rows=%s tiers=%s path=%s",
             validation_summary["status"],
             validation_summary["row_count"],
             validation_summary["tier_counts"],
             validation_summary["path"],
         )
-        print("External expression validation build completed.")
+        print("recount3 reprocessing corroboration build completed.")
         return
     if args.command == "run-consensus-candidates":
         load_config(args.config)

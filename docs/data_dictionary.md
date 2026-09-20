@@ -277,7 +277,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 
 ### `gold_external_expression_validation.parquet`
 
-- `cancer_type`, `gene_symbol`: externally validated cancer-gene pair.
+- `cancer_type`, `gene_symbol`: cancer-gene pair assessed for reprocessing concordance.
 - `native_log2_fold_change`: native TCGA tumor versus GTEx normal effect from the project mart.
 - `recount3_log2_fold_change`: effect recomputed from a normalized recount3 extract.
 - `effect_delta`: absolute native-versus-recount3 effect difference.
@@ -289,8 +289,12 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `native_sample_count_tumor`, `native_sample_count_normal`: native support counts.
 - `recount3_sample_count_tumor`, `recount3_sample_count_normal`: recount3 support counts.
 - `validation_score`, `validation_tier`: bounded reproducibility calibration.
-- `external_source`, `external_annotation`: external source provenance.
-- `validation_caveat`: required external-validation interpretation warning.
+- `external_source`, `external_annotation`: recount3 processing-source provenance.
+- `evidence_scope`: same-study reprocessing classification that explicitly rejects independent-validation wording.
+- `sample_overlap_status`: `observed_overlap`, `no_observed_overlap`, or `not_audited`.
+- `tcga_sample_overlap_count`, `gtex_sample_overlap_count`: exact normalized identifier overlaps.
+- `tcga_recount3_sample_count`, `gtex_recount3_sample_count`: recount3 cohort sizes used by the audit.
+- `validation_caveat`: required sample-overlap and non-independent interpretation warning.
 
 ### `gold_consensus_candidate_genes.parquet`
 
@@ -298,7 +302,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `consensus_score`: bounded publication-triage score from multiple evidence layers.
 - `consensus_decision`: `prioritized`, `watchlist`, or `deprioritized`.
 - `publication_tier`: `strong_candidate`, `research_candidate`, `exploratory`, or `deprioritized`.
-- `rejection_reasons`: semicolon-delimited reasons such as external discordance or reference sensitivity.
+- `rejection_reasons`: semicolon-delimited reasons such as reprocessing discordance or reference sensitivity.
 - `priority_score`, `priority_tier`: upstream exploratory priority score.
 - `overall_confidence`, `confidence_tier`: evidence-confidence calibration.
 - `mutation_frequency`, `mutated_sample_count`, `total_profiled_sample_count`: mutation support.
@@ -312,7 +316,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `paired_support_score`, `paired_support_tier`: matched TCGA tumor-normal support when paired cases are available.
 - `paired_fdr_q_value`, `paired_rank_biserial`, `matched_case_count`: paired Wilcoxon evidence and case support.
 - `evidence_component_count`, `evidence_completeness`: number and fraction of available evidence components.
-- `priority_component`, `confidence_component`, `reference_component`, `bootstrap_component`, `external_component`, `statistical_component`, `paired_component`, `mutation_component`: transparent score inputs.
+- `priority_component`, `confidence_component`, `reference_component`, `bootstrap_component`, `reprocessing_component`, `statistical_component`, `paired_component`, `mutation_component`: transparent score inputs.
 - `consensus_caveat`: required interpretation warning.
 
 ### `gold_expression_statistical_support.parquet`
@@ -339,7 +343,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `wilcoxon_statistic`, `paired_p_value`, `paired_fdr_q_value`: two-sided Wilcoxon signed-rank test and cancer-wise FDR.
 - `paired_rank_biserial`: signed paired nonparametric effect size.
 - `effect_direction`: thresholded paired direction.
-- `recount3_direction`: external recount3 direction used for replication screening.
+- `recount3_direction`: uniformly reprocessed recount3 direction used for processing-concordance screening.
 - `paired_direction_agreement`: `concordant`, `discordant`, or `inconclusive`.
 - `paired_support_score`: bounded score from FDR, effect size, sample support, and direction agreement.
 - `paired_support_tier`: `paired_replicated`, `paired_internal_fdr`, `limited`, or `paired_discordant`.

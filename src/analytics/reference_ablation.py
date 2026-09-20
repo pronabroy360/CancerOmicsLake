@@ -65,11 +65,11 @@ DEFAULT_TOP_K_VALUES = (25, 50, 100, 250)
 
 ABLATION_SCENARIOS = {
     "without_reference_triangulation": ("reference_component",),
-    "without_external_validation": ("external_component",),
+    "without_reprocessing_corroboration": ("reprocessing_component",),
     "without_paired_support": ("paired_component",),
     "without_explicit_reference_components": (
         "reference_component",
-        "external_component",
+        "reprocessing_component",
         "paired_component",
     ),
 }

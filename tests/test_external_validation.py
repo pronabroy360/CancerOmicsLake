@@ -54,6 +54,19 @@ def _write_fixture(root: Path) -> tuple[Path, Path]:
             )
     path = silver / "silver_expression_recount3.parquet"
     pl.DataFrame(rows).write_parquet(path)
+    pl.DataFrame(
+        {
+            "project_id": ["TCGA-BRCA"] * 12,
+            "sample_id": [f"TCGA-{index}" for index in range(12)],
+            "sample_type": ["Primary Tumor"] * 12,
+        }
+    ).write_parquet(silver / "silver_expression_tcga.parquet")
+    pl.DataFrame(
+        {
+            "gtex_sample_id": [f"GTEX-{index}" for index in range(12)],
+            "tissue_site": ["Breast - Mammary Tissue"] * 12,
+        }
+    ).write_parquet(silver / "silver_expression_gtex.parquet")
     return gold, path
 
 
@@ -62,6 +75,7 @@ def test_build_external_expression_validation_scores_concordance(tmp_path: Path)
     output = gold / "external.parquet"
     summary = build_external_expression_validation(
         gold_dir=gold,
+        silver_dir=recount3_path.parent,
         recount3_expression_path=recount3_path,
         output_path=output,
         report_path=tmp_path / "report.json",
@@ -77,6 +91,10 @@ def test_build_external_expression_validation_scores_concordance(tmp_path: Path)
     assert rows["DISCORDANT"]["direction_agreement"] == "discordant"
     assert rows["DISCORDANT"]["validation_score"] < rows["STABLE_UP"]["validation_score"]
     assert rows["STABLE_UP"]["top_k_jaccard_by_cancer"] == pytest.approx(1.0)
+    assert rows["STABLE_UP"]["sample_overlap_status"] == "observed_overlap"
+    assert rows["STABLE_UP"]["tcga_sample_overlap_count"] == 12
+    assert rows["STABLE_UP"]["gtex_sample_overlap_count"] == 12
+    assert summary["sample_overlap_audit"][0]["evidence_scope"].endswith("not_independent_validation")
 
 
 def test_external_expression_validation_query_filters_rows(tmp_path: Path) -> None:
@@ -84,6 +102,7 @@ def test_external_expression_validation_query_filters_rows(tmp_path: Path) -> No
     output = gold / "external.parquet"
     build_external_expression_validation(
         gold_dir=gold,
+        silver_dir=recount3_path.parent,
         recount3_expression_path=recount3_path,
         output_path=output,
         report_path=tmp_path / "report.json",

@@ -231,7 +231,7 @@ ORDER BY bootstrap_stability_score DESC
 LIMIT 50;
 ```
 
-## Externally Validated Expression Candidates
+## recount3 Reprocessing-Corroborated Expression Candidates
 
 ```sql
 SELECT
@@ -250,7 +250,7 @@ ORDER BY validation_score DESC, effect_delta ASC
 LIMIT 50;
 ```
 
-This mart is populated only after adding a normalized recount3 extract. It is an external reproducibility
+This mart is populated only after adding a normalized recount3 extract. It is a same-study reprocessing
 check over a uniformly processed source, not clinical validation.
 
 ## Consensus Candidate Genes

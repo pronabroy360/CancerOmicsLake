@@ -7,7 +7,7 @@ from src.analytics.dashboard_data import consensus_candidates_data
 
 st.set_page_config(page_title="Consensus Candidates", page_icon="CC", layout="wide")
 st.title("Consensus Candidate Genes")
-st.caption("Ranks cancer-gene candidates after external validation, reference triangulation, bootstrap stability, and evidence confidence.")
+st.caption("Ranks cancer-gene candidates after recount3 corroboration, reference triangulation, bootstrap stability, and evidence confidence.")
 st.warning(
     "This is a publication-triage view. It is not batch-corrected differential expression, clinical validation, or causal evidence."
 )

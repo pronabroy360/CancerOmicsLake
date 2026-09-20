@@ -65,7 +65,7 @@ Tiers are `high >= 0.8`, `moderate >= 0.6`, `limited >= 0.4`, and `unstable < 0.
 - Resampling measures sensitivity to the observed samples; it cannot detect biases shared by all samples.
 - Adjacent normal is tumor-proximal tissue and is not equivalent to an independent healthy control.
 - The score is not a probability of biological truth, clinical utility, or external replication.
-- Uniformly reprocessed recount3 validation remains the next independent processing benchmark.
+- Uniformly reprocessed recount3 evidence is a processing-sensitivity benchmark, not independent cohort validation.
 
 ## Current Run
 

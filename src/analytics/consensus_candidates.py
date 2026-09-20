@@ -48,7 +48,7 @@ CONSENSUS_CANDIDATE_SCHEMA = {
     "confidence_component": pl.Float64,
     "reference_component": pl.Float64,
     "bootstrap_component": pl.Float64,
-    "external_component": pl.Float64,
+    "reprocessing_component": pl.Float64,
     "statistical_component": pl.Float64,
     "paired_component": pl.Float64,
     "mutation_component": pl.Float64,
@@ -58,7 +58,7 @@ CONSENSUS_CANDIDATE_SCHEMA = {
 CONSENSUS_COMPONENT_WEIGHTS = {
     "paired_component": 0.20,
     "statistical_component": 0.20,
-    "external_component": 0.15,
+    "reprocessing_component": 0.15,
     "reference_component": 0.10,
     "bootstrap_component": 0.10,
     "confidence_component": 0.10,
@@ -84,7 +84,7 @@ def _select_existing(df: pl.DataFrame, expressions: list[pl.Expr], schema: dict[
 def _reason_summary(row: dict[str, object]) -> str:
     reasons: list[str] = []
     if row.get("direction_agreement") == "discordant" or row.get("validation_tier") == "discordant":
-        reasons.append("external_validation_discordant")
+        reasons.append("reprocessing_corroboration_discordant")
     if row.get("reference_concordance") in {"reference_sensitive", "discordant"}:
         reasons.append("reference_sensitive_or_discordant")
     if row.get("bootstrap_stability_tier") in {"limited", "unstable"}:
@@ -303,7 +303,7 @@ def build_consensus_candidates(
                     .when(pl.col("direction_agreement") == "inconclusive")
                     .then(pl.col("validation_score") * 0.5)
                     .otherwise(0.0)
-                    .alias("external_component"),
+                    .alias("reprocessing_component"),
                     pl.when(pl.col("statistical_support_tier") == "replicated_fdr")
                     .then(pl.col("statistical_support_score"))
                     .when(pl.col("statistical_support_tier") == "recount3_fdr_supported")
