@@ -212,6 +212,7 @@ def main() -> None:
     parser_bootstrap.add_argument("--iterations", type=int, default=200)
     parser_bootstrap.add_argument("--top-k", type=int, default=50)
     parser_bootstrap.add_argument("--random-seed", type=int, default=20260710)
+    parser_bootstrap.add_argument("--workers", type=int, default=4)
 
     parser_external_validation = subparsers.add_parser("run-external-validation")
     parser_external_validation.add_argument("--config", required=True)
@@ -566,6 +567,7 @@ def main() -> None:
             iterations=args.iterations,
             top_k=args.top_k,
             random_seed=args.random_seed,
+            workers=args.workers,
         )
         logger = get_logger("canceromicslake")
         logger.info(

@@ -249,6 +249,8 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `candidate_priority_rank`, `priority_score`: upstream candidate rank and score.
 - `evidence_confidence_tier`, `candidate_selection_reason`: reason the candidate entered the bootstrap cohort.
 - `bootstrap_iterations`, `top_k`, `random_seed`: reproducibility parameters.
+- `ranking_universe_gene_count`: genes jointly available to both reference contrasts and included in
+  expression-effect ranking before candidate-only output filtering.
 - `tcga_direction_stability`, `gtex_direction_stability`: baseline-direction retention rates.
 - `reference_concordance_rate`, `opposite_direction_rate`: cross-reference directional behavior.
 - `tcga_top_k_selection_rate`, `gtex_top_k_selection_rate`: bootstrap top-k inclusion probabilities.
@@ -258,7 +260,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `tcga_log2_fc_ci_low/high`, `gtex_log2_fc_ci_low/high`: 95% percentile effect intervals.
 - `rank_precision`: normalized inverse rank-interval width.
 - `bootstrap_stability_score`, `bootstrap_stability_tier`: transparent bounded stability calibration.
-- `bootstrap_caveat`: required candidate-restricted and non-validation warning.
+- `bootstrap_caveat`: required full-ranking-universe, candidate-output, and non-validation warning.
 
 ### `silver_expression_recount3.parquet`
 

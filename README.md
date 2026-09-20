@@ -116,7 +116,8 @@ Research surface:
 - Expand the TCGA adjacent-normal bridge cohort with `make run-download-tcga-normals`.
 - API: `GET /research/bootstrap-stability?cancer_type=TCGA-BRCA&stability_tier=high&limit=20`
 - Dashboard: `Bootstrap Stability` page for deterministic candidate rank and direction resampling results.
-- Run the 200-iteration candidate experiment with `make run-bootstrap-stability`.
+- Run the 200-iteration full-eligible-universe expression-rank experiment with
+  `make run-bootstrap-stability`; the published mart remains candidate-focused.
 - API: `GET /research/external-expression-validation?cancer_type=TCGA-BRCA&validation_tier=high&limit=20`
 - Dashboard: `External Validation` page comparing native effects with an optional recount3 extract.
 - Run the recount3 validation contract with `make run-external-validation` after exporting `data/silver/silver_expression_recount3.parquet`.

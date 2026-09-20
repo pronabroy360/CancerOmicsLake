@@ -83,7 +83,7 @@ run-evidence-confidence:
 	$(PYTHON) -m src.main run-evidence-confidence --config configs/project_config.yml
 
 run-bootstrap-stability:
-	$(PYTHON) -m src.main run-bootstrap-stability --config configs/project_config.yml --candidates-per-cancer 500 --iterations 200 --top-k 50 --random-seed 20260710
+	$(PYTHON) -m src.main run-bootstrap-stability --config configs/project_config.yml --candidates-per-cancer 500 --iterations 200 --top-k 50 --random-seed 20260710 --workers 4
 
 run-external-validation:
 	$(PYTHON) -m src.main run-external-validation --config configs/project_config.yml --recount3-expression-path data/silver/silver_expression_recount3.parquet --top-k 100

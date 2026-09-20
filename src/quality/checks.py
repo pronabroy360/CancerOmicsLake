@@ -430,6 +430,7 @@ def run_silver_quality_checks(
             "cancer_type": pl.Utf8,
             "gene_symbol": pl.Utf8,
             "bootstrap_iterations": pl.Int64,
+            "ranking_universe_gene_count": pl.Int64,
             "reference_concordance_rate": pl.Float64,
             "opposite_direction_rate": pl.Float64,
             "bootstrap_stability_score": pl.Float64,
@@ -779,6 +780,7 @@ def run_silver_quality_checks(
             "cancer_type",
             "gene_symbol",
             "bootstrap_iterations",
+            "ranking_universe_gene_count",
             "reference_concordance_rate",
             "opposite_direction_rate",
             "bootstrap_stability_score",
@@ -788,6 +790,7 @@ def run_silver_quality_checks(
     invalid_gold_bootstrap_values = 0
     if not gold_bootstrap_stability.is_empty() and {
         "bootstrap_iterations",
+        "ranking_universe_gene_count",
         "reference_concordance_rate",
         "opposite_direction_rate",
         "bootstrap_stability_score",
@@ -795,6 +798,7 @@ def run_silver_quality_checks(
     }.issubset(gold_bootstrap_stability.columns):
         invalid_gold_bootstrap_values = gold_bootstrap_stability.filter(
             (pl.col("bootstrap_iterations") < 20)
+            | (pl.col("ranking_universe_gene_count") < 1)
             | ~pl.col("reference_concordance_rate").is_between(0.0, 1.0)
             | ~pl.col("opposite_direction_rate").is_between(0.0, 1.0)
             | ~pl.col("bootstrap_stability_score").is_between(0.0, 1.0)

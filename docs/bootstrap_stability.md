@@ -16,6 +16,11 @@ Each output row records `candidate_selection_reason` as `top_priority`, `high_co
 `top_priority_and_high_confidence`. This prevents strong mutation-supported candidates from
 silently escaping expression-stability review.
 
+Candidate selection controls which rows are published, not which genes participate in ranking.
+Every gene available in the cancer-specific priority table and all three expression matrices forms
+the eligible ranking universe. The output records its post-intersection size as
+`ranking_universe_gene_count`.
+
 ## Resampling
 
 For each cancer, 200 deterministic nonparametric bootstrap iterations independently sample with
@@ -26,8 +31,11 @@ replacement from:
 - Mapped GTEx normal tissues.
 
 Each iteration recomputes median TPM, tumor-versus-normal log2 fold change, effect-magnitude rank,
-direction, and top-50 membership under both normal references. The default seed is `20260710`, with
-fixed project-specific offsets.
+direction, and top-50 membership under both normal references. Ranks and top-k membership are
+calculated over the full eligible gene universe before candidate rows are selected for output. The
+default seed is `20260710`, with fixed project-specific offsets.
+Random draws are generated before execution and evaluated with four workers by default, preserving
+deterministic results while parallelizing the expensive full-universe median calculations.
 
 ## Outputs
 
@@ -51,7 +59,9 @@ Tiers are `high >= 0.8`, `moderate >= 0.6`, `limited >= 0.4`, and `unstable < 0.
 
 ## Guardrails
 
-- This is a candidate-restricted bootstrap, not a genome-wide differential-expression test.
+- Output is candidate-restricted, but expression-effect ranking uses the full eligible gene universe.
+- This does not bootstrap the upstream priority score, evidence tiers, mutation component, or complete
+  consensus-selection algorithm, and it is not a genome-wide differential-expression test.
 - Resampling measures sensitivity to the observed samples; it cannot detect biases shared by all samples.
 - Adjacent normal is tumor-proximal tissue and is not equivalent to an independent healthy control.
 - The score is not a probability of biological truth, clinical utility, or external replication.
@@ -59,6 +69,7 @@ Tiers are `high >= 0.8`, `moderate >= 0.6`, `limited >= 0.4`, and `unstable < 0.
 
 ## Current Run
 
-The current 200-iteration run contains 1,536 candidates: 677 high, 841 moderate, and 18 limited.
-All 42 existing high-confidence candidates were included; 26 are bootstrap-high, 15 moderate, and
-one limited.
+The current 200-iteration run ranks 36,004 jointly available genes per cancer before publishing 500
+candidate rows per cancer. Across the 1,500 published rows, 713 are bootstrap-high, 782 moderate,
+and five limited. The current evidence-confidence mart contains no `high` rows requiring forced
+inclusion outside the top-500 cohort.

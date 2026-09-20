@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 import json
 from pathlib import Path
@@ -18,6 +19,7 @@ BOOTSTRAP_STABILITY_SCHEMA = {
     "candidate_selection_reason": pl.Utf8,
     "bootstrap_iterations": pl.Int64,
     "top_k": pl.Int64,
+    "ranking_universe_gene_count": pl.Int64,
     "tcga_direction_stability": pl.Float64,
     "gtex_direction_stability": pl.Float64,
     "reference_concordance_rate": pl.Float64,
@@ -87,13 +89,15 @@ def _ranks(values: np.ndarray) -> np.ndarray:
 def _bootstrap_project(
     cancer_type: str,
     candidate: pl.DataFrame,
+    ranking_genes: list[str],
     tcga: pl.DataFrame,
     gtex: pl.DataFrame,
     iterations: int,
     top_k: int,
     random_seed: int,
+    workers: int,
 ) -> pl.DataFrame:
-    ordered_genes = candidate.get_column("gene_symbol").to_list()
+    ordered_genes = ranking_genes
     tumor = tcga.filter(pl.col("sample_type").str.to_lowercase() == "primary tumor")
     adjacent = tcga.filter(pl.col("sample_type").str.to_lowercase() == "solid tissue normal")
     tumor_genes, tumor_matrix = _expression_matrix(tumor, "sample_id", ordered_genes)
@@ -135,24 +139,30 @@ def _bootstrap_project(
     tcga_ranks = np.empty((iterations, gene_count), dtype=np.int64)
     gtex_ranks = np.empty((iterations, gene_count), dtype=np.int64)
     rng = np.random.default_rng(random_seed)
+    tumor_draws = rng.integers(0, tumor_matrix.shape[1], (iterations, tumor_matrix.shape[1]))
+    adjacent_draws = rng.integers(0, adjacent_matrix.shape[1], (iterations, adjacent_matrix.shape[1]))
+    gtex_draws = rng.integers(0, gtex_matrix.shape[1], (iterations, gtex_matrix.shape[1]))
 
-    for iteration in range(iterations):
+    def bootstrap_iteration(iteration: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         tumor_median = np.median(
-            tumor_matrix[:, rng.integers(0, tumor_matrix.shape[1], tumor_matrix.shape[1])],
+            tumor_matrix[:, tumor_draws[iteration]],
             axis=1,
         )
         adjacent_median = np.median(
-            adjacent_matrix[:, rng.integers(0, adjacent_matrix.shape[1], adjacent_matrix.shape[1])],
+            adjacent_matrix[:, adjacent_draws[iteration]],
             axis=1,
         )
         gtex_median = np.median(
-            gtex_matrix[:, rng.integers(0, gtex_matrix.shape[1], gtex_matrix.shape[1])],
+            gtex_matrix[:, gtex_draws[iteration]],
             axis=1,
         )
-        tcga_fcs[iteration] = np.log2((tumor_median + 1.0) / (adjacent_median + 1.0))
-        gtex_fcs[iteration] = np.log2((tumor_median + 1.0) / (gtex_median + 1.0))
-        tcga_ranks[iteration] = _ranks(tcga_fcs[iteration])
-        gtex_ranks[iteration] = _ranks(gtex_fcs[iteration])
+        tcga_fc = np.log2((tumor_median + 1.0) / (adjacent_median + 1.0))
+        gtex_fc = np.log2((tumor_median + 1.0) / (gtex_median + 1.0))
+        return tcga_fc, gtex_fc, _ranks(tcga_fc), _ranks(gtex_fc)
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        for iteration, values in enumerate(executor.map(bootstrap_iteration, range(iterations))):
+            tcga_fcs[iteration], gtex_fcs[iteration], tcga_ranks[iteration], gtex_ranks[iteration] = values
 
     tcga_directions = _directions(tcga_fcs)
     gtex_directions = _directions(gtex_fcs)
@@ -180,6 +190,7 @@ def _bootstrap_project(
             "gene_symbol": common,
             "bootstrap_iterations": [iterations] * gene_count,
             "top_k": [effective_top_k] * gene_count,
+            "ranking_universe_gene_count": [gene_count] * gene_count,
             "tcga_direction_stability": tcga_direction_stability,
             "gtex_direction_stability": gtex_direction_stability,
             "reference_concordance_rate": concordance_rate,
@@ -215,10 +226,11 @@ def _bootstrap_project(
                 .otherwise(pl.lit("unstable"))
                 .alias("bootstrap_stability_tier"),
                 pl.lit(
-                    "Candidate-restricted nonparametric bootstrap; stability measures sampling robustness, not external biological validity."
+                    "Expression-effect ranks use the full eligible gene universe; published rows are candidate-restricted, and stability does not establish external biological validity."
                 ).alias("bootstrap_caveat"),
             ]
         )
+        .filter(pl.col("candidate_priority_rank").is_not_null())
         .select(list(BOOTSTRAP_STABILITY_SCHEMA))
         .with_columns(pl.col(pl.Float64).round(6))
     )
@@ -233,11 +245,14 @@ def build_bootstrap_stability(
     iterations: int = 200,
     top_k: int = 50,
     random_seed: int = 20260710,
+    workers: int = 4,
 ) -> dict[str, object]:
     if iterations < 20:
         raise ValueError("iterations must be at least 20")
     if candidates_per_cancer < 1:
         raise ValueError("candidates_per_cancer must be positive")
+    if workers < 1:
+        raise ValueError("workers must be positive")
     started = time.monotonic()
     silver_root = Path(silver_dir)
     gold_root = Path(gold_dir)
@@ -291,14 +306,15 @@ def build_bootstrap_stability(
                     pl.col("evidence_confidence_tier").fill_null("not_high"),
                 )
             )
-            genes = candidate.get_column("gene_symbol").drop_nulls().unique().to_list()
-            if not genes:
+            candidate_genes = candidate.get_column("gene_symbol").drop_nulls().unique().to_list()
+            ranking_genes = project_candidates.get_column("gene_symbol").drop_nulls().unique().to_list()
+            if not candidate_genes or not ranking_genes:
                 continue
             tcga = (
                 pl.scan_parquet(tcga_path)
                 .filter(
                     (pl.col("project_id") == cancer_type)
-                    & pl.col("gene_symbol").is_in(genes)
+                    & pl.col("gene_symbol").is_in(ranking_genes)
                     & pl.col("sample_type").is_in(["Primary Tumor", "Solid Tissue Normal"])
                     & (pl.col("expression_unit").str.to_uppercase() == "TPM")
                 )
@@ -307,7 +323,7 @@ def build_bootstrap_stability(
             )
             gtex = (
                 pl.scan_parquet(gtex_path)
-                .filter(pl.col("tissue_site").is_in(tissues) & pl.col("gene_symbol").is_in(genes))
+                .filter(pl.col("tissue_site").is_in(tissues) & pl.col("gene_symbol").is_in(ranking_genes))
                 .select(["gtex_sample_id", "gene_symbol", "expression_value"])
                 .collect()
             )
@@ -315,11 +331,13 @@ def build_bootstrap_stability(
                 _bootstrap_project(
                     cancer_type=cancer_type,
                     candidate=candidate,
+                    ranking_genes=ranking_genes,
                     tcga=tcga,
                     gtex=gtex,
                     iterations=iterations,
                     top_k=top_k,
                     random_seed=random_seed + PROJECT_SEED_OFFSETS[cancer_type],
+                    workers=workers,
                 )
             )
         non_empty = [frame for frame in outputs if not frame.is_empty()]
@@ -349,8 +367,20 @@ def build_bootstrap_stability(
         "iterations": iterations,
         "top_k": top_k,
         "random_seed": random_seed,
+        "workers": workers,
         "tier_counts": tier_counts,
         "forced_high_confidence_count": forced_high_confidence_count,
+        "ranking_scope": "full eligible gene universe; candidate-restricted output",
+        "ranking_universe_gene_counts": (
+            {
+                str(row[0]): int(row[1])
+                for row in result.group_by("cancer_type")
+                .agg(pl.col("ranking_universe_gene_count").max())
+                .rows()
+            }
+            if not result.is_empty()
+            else {}
+        ),
         "elapsed_seconds": round(time.monotonic() - started, 3),
     }
     report_out = Path(report_path)
@@ -399,5 +429,5 @@ def bootstrap_stability(
         "rows": capped.to_dicts(),
         "row_count": capped.height,
         "total_matching_rows": filtered.height,
-        "warning": "Candidate-restricted bootstrap stability is exploratory and is not external validation.",
+        "warning": "Ranks use the full eligible gene universe, but published rows are candidate-restricted; bootstrap stability is exploratory and is not external validation.",
     }

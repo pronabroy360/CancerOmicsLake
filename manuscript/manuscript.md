@@ -95,7 +95,9 @@ consequence filter does not distinguish drivers from passengers or establish pat
 
 Expression support used Mann-Whitney tests for independent source groups and Wilcoxon signed-rank
 tests for case-matched TCGA tumor-adjacent pairs. Benjamini-Hochberg correction was applied within
-cancer. Candidate rank uncertainty was assessed with 200 deterministic bootstrap iterations.
+cancer. Expression-effect rank uncertainty was assessed with 200 deterministic bootstrap iterations
+over each cancer's full eligible gene universe, followed by candidate-only output filtering. This did
+not bootstrap the complete consensus-selection algorithm.
 Consensus scores combined eight transparent components; discordant reference, external, statistical,
 or paired evidence could explicitly reject a candidate.
 

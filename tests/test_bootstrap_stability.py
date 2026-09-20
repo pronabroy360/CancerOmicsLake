@@ -13,9 +13,9 @@ def _write_fixture(root: Path) -> tuple[Path, Path]:
     gold.mkdir()
     pl.DataFrame(
         {
-            "cancer_type": ["TCGA-BRCA", "TCGA-BRCA"],
-            "gene_symbol": ["STABLE_UP", "VARIABLE"],
-            "priority_score": [0.9, 0.8],
+            "cancer_type": ["TCGA-BRCA", "TCGA-BRCA", "TCGA-BRCA"],
+            "gene_symbol": ["STABLE_UP", "VARIABLE", "RANKING_ONLY"],
+            "priority_score": [0.9, 0.8, 0.1],
         }
     ).write_parquet(gold / "gold_candidate_gene_priority.parquet")
     pl.DataFrame(
@@ -32,6 +32,7 @@ def _write_fixture(root: Path) -> tuple[Path, Path]:
         for gene, tumor, normal, healthy in [
             ("STABLE_UP", 20.0, 1.0, 1.0),
             ("VARIABLE", 2.0 if index % 2 else 10.0, 3.0, 3.0),
+            ("RANKING_ONLY", 100.0, 1.0, 1.0),
         ]:
             tcga_rows.extend(
                 [
@@ -97,6 +98,10 @@ def test_build_bootstrap_stability_is_deterministic(tmp_path: Path) -> None:
     assert stable["tcga_direction_stability"] == 1.0
     assert stable["gtex_direction_stability"] == 1.0
     assert stable["reference_concordance_rate"] == 1.0
+    assert stable["ranking_universe_gene_count"] == 3
+    assert stable["tcga_median_rank"] == 2.0
+    assert summary["ranking_universe_gene_counts"] == {"TCGA-BRCA": 3}
+    assert "RANKING_ONLY" not in pl.read_parquet(first).get_column("gene_symbol").to_list()
 
 
 def test_bootstrap_stability_query_filters_results(tmp_path: Path) -> None:
