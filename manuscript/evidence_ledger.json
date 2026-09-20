@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-26T06:58:49.646891+00:00",
-  "git_commit": "011de8b54019f7836893d1d2228b25f8eba041af",
+  "generated_at": "2026-09-20T03:48:47.797672+00:00",
+  "git_commit": "085dcf335aaa4b1bd58293b25899974fac7b6c4b",
   "status": "passed",
   "scope": "aggregate_publication_evidence",
   "resources": [
@@ -9,7 +9,7 @@
       "name": "report:quality",
       "path": "outputs/reports/silver_data_quality_report.json",
       "bytes": 12225,
-      "sha256": "0ed88bd7d2cbc7cd91b528d532cd32783567b6274ffc9615ea630f1b39fa08c0"
+      "sha256": "2d93200d2667767ba9fd95ce9f463daf6c2e229bd4e7bd48c2a823d2539a33a6"
     },
     {
       "name": "report:dbt",
@@ -32,26 +32,26 @@
     {
       "name": "report:benchmark",
       "path": "outputs/reports/research_benchmark_report.json",
-      "bytes": 3804,
-      "sha256": "9a27eabe134e4fb0e4330889bdb2ccee963ce149d3b8a3756d8b207662a6b668"
+      "bytes": 3805,
+      "sha256": "352241c3a7d775869e3a8452c586d7dc76de9e5e3075a2467cd76e5185c2f990"
     },
     {
       "name": "report:reference_ablation",
       "path": "outputs/reports/reference_ablation_report.json",
-      "bytes": 78718,
-      "sha256": "9d037bec080e0571316ebd3ec57abe33d61dffe474baba8b097be4e172d23251"
+      "bytes": 78772,
+      "sha256": "253297a47529d52be437ec1fde9d84fcf84b924a0b6e280206a153de2769db85"
     },
     {
       "name": "report:graph",
       "path": "outputs/reports/graph_metrics_report.json",
       "bytes": 6643,
-      "sha256": "c0491bc8f573d6200324c8898fc17312c7e71500ad62bc10a5109d2a62cc109a"
+      "sha256": "127acd33d21dd9bf3a7a9e85ffff21568fbb47b43afa39803580b999fcf71ffb"
     },
     {
       "name": "report:consensus",
       "path": "outputs/reports/consensus_candidate_report.json",
-      "bytes": 760,
-      "sha256": "d52c9bf077f6e3f739efa809a86c949a9baac08c739d5ed2efbb34b2a969ba23"
+      "bytes": 761,
+      "sha256": "e0541c14dc83d705c25c2b61bfab517446099e3ece12b88e5a2aa9f04ff93218"
     },
     {
       "name": "report:external",
@@ -69,7 +69,7 @@
       "name": "report:pathway",
       "path": "outputs/reports/pathway_enrichment_report.json",
       "bytes": 877,
-      "sha256": "271bb39fc3b67d036b2b8ee2d454b26f8f3b63af9d07d1705617147614fde42a"
+      "sha256": "5a4cbfe88d2441ec9a780a5dbaa0b56c9cc69ead015ae26b8cadbbd9790027d3"
     },
     {
       "name": "gold:cohort",
@@ -95,15 +95,15 @@
     {
       "name": "gold:consensus_ablation",
       "path": "data/gold/gold_consensus_ablation_stability.parquet",
-      "bytes": 9112,
-      "sha256": "e79a35dc9c46792d0534123fc60b8152e269111643c2e2916da2360b6219f3da",
+      "bytes": 9151,
+      "sha256": "57f8699ec1d000aee7500c5eebfcacfde348728c2a362790b1d5cc11a37edf2e",
       "row_count": 48
     },
     {
       "name": "fair_manifest",
       "path": "outputs/releases/v0.1.0/manifest.json",
-      "bytes": 48912,
-      "sha256": "4f3f272de86d278f47c5bd2cf2d421d318f3099e8bab8c9df213c4ddc8017420"
+      "bytes": 49046,
+      "sha256": "6e498a54a04c84d9b965b31a7370376a130b4fa85df164b71daa86857453ee02"
     }
   ],
   "claims": [
@@ -161,7 +161,7 @@
     {
       "claim_id": "C08",
       "statement": "Prioritized consensus candidates",
-      "value": 194,
+      "value": 213,
       "source": "report:consensus"
     },
     {

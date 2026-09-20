@@ -1,6 +1,6 @@
 # CancerOmicsLake: a provenance-aware multi-reference data lakehouse for reproducible cancer-omics research
 
-**Manuscript status:** Methods/data-engineering draft generated from validated artifacts on 2026-07-26T06:58:49.646891+00:00.
+**Manuscript status:** Methods/data-engineering draft generated from validated artifacts on 2026-09-20T03:48:47.797672+00:00.
 
 **Author:** Pronab Chandra Roy
 
@@ -144,8 +144,8 @@ External validation evaluated 108,012 cancer-gene pairs and marked
 1,815 as directionally discordant. Matched TCGA analysis
 evaluated 178,281 cancer-gene rows, including
 25,544 paired-replicated results. The consensus layer evaluated
-108,600 rows and retained 194
-prioritized candidates and 4,875 watchlist candidates. These labels
+108,600 rows and retained 213
+prioritized candidates and 4,858 watchlist candidates. These labels
 are prioritization states rather than validated biomarkers.
 
 ### 3.3 Reference sensitivity
@@ -162,7 +162,7 @@ predefined engineering tier (Figure 2; Supplementary Table S1).
 ### 3.4 Consensus ablation
 
 Removing all explicit reference-related components yielded top-list Jaccard values of
-0.020-0.575 and score
+0.042-0.613 and score
 associations of 0.672-0.700.
 Single-component removals were less disruptive but remained list-size and cancer dependent
 (Figure 3; Supplementary Table S2). Fixed full-model threshold retention was reported
@@ -174,7 +174,7 @@ The quality gate recorded 58 passed checks and
 0 warnings. The dbt model/test gate,
 29 strict demo checks, and 9 project
 milestones passed. Six warm DuckDB workloads had median
-latencies of 0.267-4.594 ms in the
+latencies of 0.272-4.345 ms in the
 recorded single-machine environment. These timings demonstrate local responsiveness and are not a
 cross-system performance comparison.
 
