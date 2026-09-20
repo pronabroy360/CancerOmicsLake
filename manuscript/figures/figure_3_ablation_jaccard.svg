@@ -16,7 +16,7 @@
 <text x="560.0" y="143" text-anchor="middle" class="value" style="fill:#ffffff">0.626</text>
 <rect x="618" y="118" width="108" height="38" rx="3" fill="#609594"/>
 <text x="672.0" y="143" text-anchor="middle" class="value" style="fill:#ffffff">0.553</text>
-<text x="268" y="184" text-anchor="end" class="label">TCGA-BRCA | Remove external validation</text>
+<text x="268" y="184" text-anchor="end" class="label">TCGA-BRCA | Remove reprocessing corroboration</text>
 <rect x="282" y="160" width="108" height="38" rx="3" fill="#a2c1b8"/>
 <text x="336.0" y="185" text-anchor="middle" class="value" style="fill:#17343a">0.316</text>
 <rect x="394" y="160" width="108" height="38" rx="3" fill="#6b9c99"/>
@@ -52,7 +52,7 @@
 <text x="560.0" y="311" text-anchor="middle" class="value" style="fill:#ffffff">0.681</text>
 <rect x="618" y="286" width="108" height="38" rx="3" fill="#8cb2ac"/>
 <text x="672.0" y="311" text-anchor="middle" class="value" style="fill:#17343a">0.397</text>
-<text x="268" y="352" text-anchor="end" class="label">TCGA-COAD | Remove external validation</text>
+<text x="268" y="352" text-anchor="end" class="label">TCGA-COAD | Remove reprocessing corroboration</text>
 <rect x="282" y="328" width="108" height="38" rx="3" fill="#6b9c99"/>
 <text x="336.0" y="353" text-anchor="middle" class="value" style="fill:#ffffff">0.515</text>
 <rect x="394" y="328" width="108" height="38" rx="3" fill="#307679"/>
@@ -88,7 +88,7 @@
 <text x="560.0" y="479" text-anchor="middle" class="value" style="fill:#ffffff">0.681</text>
 <rect x="618" y="454" width="108" height="38" rx="3" fill="#558e8d"/>
 <text x="672.0" y="479" text-anchor="middle" class="value" style="fill:#ffffff">0.592</text>
-<text x="268" y="520" text-anchor="end" class="label">TCGA-LUAD | Remove external validation</text>
+<text x="268" y="520" text-anchor="end" class="label">TCGA-LUAD | Remove reprocessing corroboration</text>
 <rect x="282" y="496" width="108" height="38" rx="3" fill="#77a4a0"/>
 <text x="336.0" y="521" text-anchor="middle" class="value" style="fill:#ffffff">0.471</text>
 <rect x="394" y="496" width="108" height="38" rx="3" fill="#6b9c99"/>

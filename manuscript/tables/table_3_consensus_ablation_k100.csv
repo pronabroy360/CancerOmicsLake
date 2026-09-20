@@ -1,13 +1,13 @@
 cancer_type,ablation_scenario,retained_weight,top_k_overlap_count,top_k_jaccard,spearman_consensus_score,median_baseline_top_k_rank_shift,fixed_threshold_retention_rate,sensitivity_tier
 TCGA-BRCA,without_explicit_reference_components,0.55,67,0.503759,0.671579,49.0,0.0,sensitive
-TCGA-BRCA,without_external_validation,0.85,84,0.724138,0.886071,21.5,0.19802,moderate
 TCGA-BRCA,without_paired_support,0.8,93,0.869159,0.779921,8.0,0.049505,moderate
 TCGA-BRCA,without_reference_triangulation,0.9,77,0.626016,0.942307,32.0,0.712871,moderate
+TCGA-BRCA,without_reprocessing_corroboration,0.85,84,0.724138,0.886071,21.5,0.19802,moderate
 TCGA-COAD,without_explicit_reference_components,0.55,76,0.612903,0.694674,36.5,0.0,sensitive
-TCGA-COAD,without_external_validation,0.85,91,0.834862,0.881246,13.0,0.0,moderate
 TCGA-COAD,without_paired_support,0.8,91,0.834862,0.809449,6.0,0.166667,moderate
 TCGA-COAD,without_reference_triangulation,0.9,81,0.680672,0.93778,23.5,0.0,moderate
+TCGA-COAD,without_reprocessing_corroboration,0.85,91,0.834862,0.881246,13.0,0.0,moderate
 TCGA-LUAD,without_explicit_reference_components,0.55,62,0.449275,0.700405,30.5,0.0,sensitive
-TCGA-LUAD,without_external_validation,0.85,82,0.694915,0.902316,18.0,0.198113,moderate
 TCGA-LUAD,without_paired_support,0.8,89,0.801802,0.788402,10.5,0.207547,moderate
 TCGA-LUAD,without_reference_triangulation,0.9,81,0.680672,0.956439,25.0,0.773585,moderate
+TCGA-LUAD,without_reprocessing_corroboration,0.85,82,0.694915,0.902316,18.0,0.198113,moderate

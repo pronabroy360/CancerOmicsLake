@@ -1,6 +1,6 @@
 # CancerOmicsLake: a provenance-aware multi-reference data lakehouse for reproducible cancer-omics research
 
-**Manuscript status:** Methods/data-engineering draft generated from validated artifacts on 2026-09-20T03:48:47.797672+00:00.
+**Manuscript status:** Methods/data-engineering draft generated from validated artifacts on 2026-09-20T04:10:31.738156+00:00.
 
 **Author:** Pronab Chandra Roy
 
@@ -83,6 +83,8 @@ units and source workflows were explicitly labeled. Tumor-normal effects used lo
 pseudocount of one. Native TCGA-GTEx effects were triangulated against TCGA adjacent normal and
 uniformly processed recount3 effects. Adjacent normal was treated as a distinct reference that can
 contain field effects, not as healthy tissue.
+Native and recount3 sample identifiers were normalized and intersected by cancer and source. This
+audit detects exact sample reuse but cannot prove donor independence when identifiers differ.
 
 ### 2.4 Mutation evidence
 
@@ -141,7 +143,11 @@ CancerOmicsLake processed 3,444 TCGA files into
 ### 3.2 Validation and candidate triage
 
 Uniform reprocessing corroboration evaluated 108,012 cancer-gene pairs and marked
-1,815 as directionally discordant. Matched TCGA analysis
+1,815 as directionally discordant. The identifier audit found
+0 of 90
+recount3 TCGA samples and 87 of
+90 recount3 GTEx samples overlapping the native cohorts;
+therefore this evidence was not treated as independent validation. Matched TCGA analysis
 evaluated 178,281 cancer-gene rows, including
 25,544 paired-replicated results. The consensus layer evaluated
 108,600 rows and retained 213
@@ -174,7 +180,7 @@ The quality gate recorded 58 passed checks and
 0 warnings. The dbt model/test gate,
 29 strict demo checks, and 9 project
 milestones passed. Six warm DuckDB workloads had median
-latencies of 0.272-4.345 ms in the
+latencies of 0.285-4.326 ms in the
 recorded single-machine environment. These timings demonstrate local responsiveness and are not a
 cross-system performance comparison.
 

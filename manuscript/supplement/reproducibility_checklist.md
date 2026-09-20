@@ -1,6 +1,6 @@
 # Reproducibility Checklist
 
-- [x] Git commit recorded: `085dcf335aaa4b1bd58293b25899974fac7b6c4b`
+- [x] Git commit recorded: `93cca76c4644da8734138adf84e06739d4804bd3`
 - [x] Open-access-only acquisition policy
 - [x] Source and derived-file checksums
 - [x] Configuration-driven cohort selection

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-09-20T03:48:47.797672+00:00",
-  "git_commit": "085dcf335aaa4b1bd58293b25899974fac7b6c4b",
+  "generated_at": "2026-09-20T04:10:31.738156+00:00",
+  "git_commit": "93cca76c4644da8734138adf84e06739d4804bd3",
   "status": "passed",
   "scope": "aggregate_publication_evidence",
   "resources": [
@@ -9,7 +9,7 @@
       "name": "report:quality",
       "path": "outputs/reports/silver_data_quality_report.json",
       "bytes": 12225,
-      "sha256": "2d93200d2667767ba9fd95ce9f463daf6c2e229bd4e7bd48c2a823d2539a33a6"
+      "sha256": "e9626c219d09d55ef2e49a5041a87755fffebeb5e349a3bfd40504f4005965cf"
     },
     {
       "name": "report:dbt",
@@ -32,14 +32,14 @@
     {
       "name": "report:benchmark",
       "path": "outputs/reports/research_benchmark_report.json",
-      "bytes": 3805,
-      "sha256": "352241c3a7d775869e3a8452c586d7dc76de9e5e3075a2467cd76e5185c2f990"
+      "bytes": 3804,
+      "sha256": "5a829308e36c4422a21e34538861e3e1b5f111031817d0ddbd012cb656664a6c"
     },
     {
       "name": "report:reference_ablation",
       "path": "outputs/reports/reference_ablation_report.json",
-      "bytes": 78772,
-      "sha256": "253297a47529d52be437ec1fde9d84fcf84b924a0b6e280206a153de2769db85"
+      "bytes": 78971,
+      "sha256": "3d6ebb68e161477567784a1242e691f510ade648358404225b5785f77223438f"
     },
     {
       "name": "report:graph",
@@ -51,13 +51,13 @@
       "name": "report:consensus",
       "path": "outputs/reports/consensus_candidate_report.json",
       "bytes": 761,
-      "sha256": "e0541c14dc83d705c25c2b61bfab517446099e3ece12b88e5a2aa9f04ff93218"
+      "sha256": "a004ac73772bd56525fea1cd60a69566d42cfa0b01df384376bc2337c2872c36"
     },
     {
       "name": "report:external",
       "path": "outputs/reports/external_expression_validation_report.json",
-      "bytes": 608,
-      "sha256": "6744ff3107dc1eba7187ff9d8409f39fd8300c52e0e06801c60e275ae182a10d"
+      "bytes": 1767,
+      "sha256": "9a0a3d21a5a588d55ddd6c07881da4069a82eeb6fa461bf011aebdc2d419f71f"
     },
     {
       "name": "report:paired",
@@ -68,8 +68,8 @@
     {
       "name": "report:pathway",
       "path": "outputs/reports/pathway_enrichment_report.json",
-      "bytes": 877,
-      "sha256": "5a4cbfe88d2441ec9a780a5dbaa0b56c9cc69ead015ae26b8cadbbd9790027d3"
+      "bytes": 878,
+      "sha256": "fa36008701c54047c15acb40f51e0a2664108f7edec249769f87a803948e901a"
     },
     {
       "name": "gold:cohort",
@@ -95,15 +95,15 @@
     {
       "name": "gold:consensus_ablation",
       "path": "data/gold/gold_consensus_ablation_stability.parquet",
-      "bytes": 9151,
-      "sha256": "57f8699ec1d000aee7500c5eebfcacfde348728c2a362790b1d5cc11a37edf2e",
+      "bytes": 9032,
+      "sha256": "fc25490b8f69832e8213354c02c3bba86967824765c5e1ad3997417f3ffa7f5d",
       "row_count": 48
     },
     {
       "name": "fair_manifest",
       "path": "outputs/releases/v0.1.0/manifest.json",
-      "bytes": 49046,
-      "sha256": "6e498a54a04c84d9b965b31a7370376a130b4fa85df164b71daa86857453ee02"
+      "bytes": 49829,
+      "sha256": "d6ba212c06b7db28ea15afe733ec6a8dc72fb0573c2f70b1ab2db624fd94dd42"
     }
   ],
   "claims": [
