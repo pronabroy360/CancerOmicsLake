@@ -491,6 +491,8 @@ units and source workflows were explicitly labeled. Tumor-normal effects used lo
 pseudocount of one. Native TCGA-GTEx effects were triangulated against TCGA adjacent normal and
 uniformly processed recount3 effects. Adjacent normal was treated as a distinct reference that can
 contain field effects, not as healthy tissue.
+Native and recount3 sample identifiers were normalized and intersected by cancer and source. This
+audit detects exact sample reuse but cannot prove donor independence when identifiers differ.
 
 ### 2.4 Mutation evidence
 
@@ -549,7 +551,11 @@ CancerOmicsLake processed {_format_int(cohort['tcga_file_count'])} TCGA files in
 ### 3.2 Validation and candidate triage
 
 Uniform reprocessing corroboration evaluated {_format_int(results['external_rows'])} cancer-gene pairs and marked
-{_format_int(results['external_discordant'])} as directionally discordant. Matched TCGA analysis
+{_format_int(results['external_discordant'])} as directionally discordant. The identifier audit found
+{_format_int(results['external_tcga_overlap'])} of {_format_int(results['external_tcga_samples'])}
+recount3 TCGA samples and {_format_int(results['external_gtex_overlap'])} of
+{_format_int(results['external_gtex_samples'])} recount3 GTEx samples overlapping the native cohorts;
+therefore this evidence was not treated as independent validation. Matched TCGA analysis
 evaluated {_format_int(results['paired_rows'])} cancer-gene rows, including
 {_format_int(results['paired_replicated'])} paired-replicated results. The consensus layer evaluated
 {_format_int(results['consensus_rows'])} rows and retained {_format_int(results['prioritized'])}
@@ -716,6 +722,7 @@ def build_manuscript_package(
         row["validation_tier"]: row["len"]
         for row in reports["external"]["tier_counts"]
     }
+    external_overlap = reports["external"].get("sample_overlap_audit", [])
     paired_tiers = {
         row["paired_support_tier"]: row["len"]
         for row in reports["paired"]["tier_counts"]
@@ -762,6 +769,18 @@ def build_manuscript_package(
             ),
             "external_rows": int(reports["external"]["row_count"]),
             "external_discordant": int(external_tiers.get("discordant", 0)),
+            "external_tcga_overlap": sum(
+                int(row.get("tcga_sample_overlap_count", 0)) for row in external_overlap
+            ),
+            "external_tcga_samples": sum(
+                int(row.get("tcga_recount3_sample_count", 0)) for row in external_overlap
+            ),
+            "external_gtex_overlap": sum(
+                int(row.get("gtex_sample_overlap_count", 0)) for row in external_overlap
+            ),
+            "external_gtex_samples": sum(
+                int(row.get("gtex_recount3_sample_count", 0)) for row in external_overlap
+            ),
             "paired_rows": int(reports["paired"]["row_count"]),
             "paired_replicated": int(paired_tiers.get("paired_replicated", 0)),
             "consensus_rows": int(reports["consensus"]["row_count"]),
