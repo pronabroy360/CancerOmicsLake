@@ -81,6 +81,7 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
   non-coding/regulatory, and unclassified records.
 - `is_protein_altering`: true only for the documented conservative protein-altering allowlist.
 - `variant_type`: MAF variant type.
+- `reference_assembly`: original MAF `NCBI_Build` value, with missing values represented as `Unknown`.
 - `chromosome`: chromosome.
 - `start_position`: variant start coordinate.
 - `end_position`: variant end coordinate.
@@ -199,6 +200,8 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `putative_loss_of_function_sample_count`, `missense_sample_count`, `inframe_sample_count`,
   `other_protein_altering_sample_count`: non-exclusive sample support by conservative MAF class group.
 - `recurrent_locus_count`: exact chromosome/start/reference/alternate loci present in at least two samples.
+- `known_assembly_event_count`, `unknown_assembly_event_count`: protein-altering event rows with and without a
+  usable reference assembly; unknown-assembly records cannot contribute to recurrence.
 - `max_locus_sample_count`: largest distinct-sample count for one exact locus.
 - `samples_with_recurrent_locus_count`, `recurrent_locus_sample_fraction`: sample support for recurrent loci.
 - `recurrence_threshold_samples`: fixed reproducibility threshold, currently `2`.

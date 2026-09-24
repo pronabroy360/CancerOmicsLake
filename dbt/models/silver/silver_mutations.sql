@@ -8,6 +8,7 @@ select
   cast(consequence_group as varchar) as consequence_group,
   cast(is_protein_altering as boolean) as is_protein_altering,
   cast(variant_type as varchar) as variant_type,
+  cast(reference_assembly as varchar) as reference_assembly,
   cast(chromosome as varchar) as chromosome,
   cast(start_position as bigint) as start_position,
   cast(end_position as bigint) as end_position,

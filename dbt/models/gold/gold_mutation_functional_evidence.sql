@@ -3,6 +3,7 @@ with protein_events as (
     project_id as cancer_type,
     sample_id,
     gene_symbol,
+    reference_assembly,
     chromosome,
     start_position,
     reference_allele,
@@ -37,16 +38,20 @@ gene_counts as (
     count(distinct case when functional_impact_group = 'missense' then sample_id end) as missense_sample_count,
     count(distinct case when functional_impact_group = 'inframe' then sample_id end) as inframe_sample_count,
     count(distinct case when functional_impact_group = 'other_protein_altering' then sample_id end)
-      as other_protein_altering_sample_count
+      as other_protein_altering_sample_count,
+    count(*) filter (where coalesce(reference_assembly, 'Unknown') != 'Unknown') as known_assembly_event_count,
+    count(*) filter (where coalesce(reference_assembly, 'Unknown') = 'Unknown') as unknown_assembly_event_count
   from protein_events
   group by 1, 2
 ),
 locus_counts as (
   select
-    cancer_type, gene_symbol, chromosome, start_position, reference_allele, tumor_seq_allele,
+    cancer_type, gene_symbol, reference_assembly, chromosome, start_position, reference_allele, tumor_seq_allele,
     count(distinct sample_id) as locus_sample_count
   from protein_events
-  group by 1, 2, 3, 4, 5, 6
+  where coalesce(reference_assembly, 'Unknown') != 'Unknown'
+    and coalesce(chromosome, 'Unknown') != 'Unknown'
+  group by 1, 2, 3, 4, 5, 6, 7
   having count(distinct sample_id) >= 2
 ),
 recurrent_summary as (
@@ -67,6 +72,7 @@ recurrent_samples as (
   inner join locus_counts l
     on p.cancer_type = l.cancer_type
     and p.gene_symbol = l.gene_symbol
+    and p.reference_assembly = l.reference_assembly
     and p.chromosome = l.chromosome
     and p.start_position = l.start_position
     and p.reference_allele = l.reference_allele
@@ -82,6 +88,8 @@ select
   g.missense_sample_count,
   g.inframe_sample_count,
   g.other_protein_altering_sample_count,
+  g.known_assembly_event_count,
+  g.unknown_assembly_event_count,
   coalesce(r.recurrent_locus_count, 0) as recurrent_locus_count,
   coalesce(r.max_locus_sample_count, 0) as max_locus_sample_count,
   coalesce(rs.samples_with_recurrent_locus_count, 0) as samples_with_recurrent_locus_count,

@@ -729,3 +729,14 @@ Impact values:
 - Verified exact Python/dbt parity across 18,972 cancer-gene rows; the partial real cohort contained
   142 recurrent loci across 133 cancer-gene pairs.
 - Passed 60 runtime quality checks, 27 dbt models, 94 dbt tests, and 219 Python tests.
+
+## 2026-09-24 - Mutation Coordinate Assembly Provenance
+
+- Confirmed the GDC masked MAF files expose `NCBI_Build`; retained this value as
+  `reference_assembly` in silver mutation records.
+- Included assembly in exact-locus recurrence keys and prevented unknown-assembly events from
+  contributing recurrence while preserving them in consequence counts.
+- Rebuilt real silver/gold and dbt outputs: all 45,588 mutation records carry `GRCh38`; the gold
+  mart retains 18,972 cancer-gene rows and 142 recurrent loci across 133 pairs.
+- Confirmed Python/dbt equality across all 18,972 rows, with 60 quality checks and 97 dbt tests
+  passing. This remains a partial downloaded cohort.

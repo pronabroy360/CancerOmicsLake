@@ -520,6 +520,7 @@ def build_gold_cohort_summary(
             "consequence_group": pl.Utf8,
             "is_protein_altering": pl.Boolean,
             "variant_type": pl.Utf8,
+            "reference_assembly": pl.Utf8,
             "chromosome": pl.Utf8,
             "start_position": pl.Int64,
             "end_position": pl.Int64,

@@ -6,5 +6,6 @@ where recurrent_locus_sample_fraction < 0.0
    or samples_with_recurrent_locus_count > protein_altering_mutated_sample_count
    or max_locus_sample_count > protein_altering_mutated_sample_count
    or recurrence_threshold_samples < 2
+   or known_assembly_event_count + unknown_assembly_event_count < protein_altering_mutated_sample_count
    or driver_evidence_scope != 'consequence_and_exact_locus_recurrence'
    or driver_classification != 'not_assessed'

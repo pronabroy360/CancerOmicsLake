@@ -22,6 +22,7 @@ def test_gold_mutation_frequency_uses_profile_denominator_and_protein_altering_e
             "consequence_group": ["protein_altering", "synonymous", "synonymous"],
             "is_protein_altering": [True, False, False],
             "variant_type": ["SNP", "SNP", "SNP"],
+            "reference_assembly": ["GRCh38", "GRCh38", "GRCh38"],
             "chromosome": ["17", "17", "7"],
             "start_position": [1, 2, 3],
             "end_position": [1, 2, 3],

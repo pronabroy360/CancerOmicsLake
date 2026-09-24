@@ -12,6 +12,7 @@ hypothesis generation. It does not classify cancer drivers, pathogenicity, clona
 - `consequence_group`: `protein_altering`, `synonymous`, `non_coding_or_regulatory`, or `unclassified`.
 - `is_protein_altering`: true only for the conservative protein-altering allowlist in
   `src/processing/mutation_consequences.py`.
+- `reference_assembly`: retained from the MAF `NCBI_Build` field. Missing values are recorded as `Unknown`.
 
 The original `variant_classification` is retained unchanged for audit. Unknown classifications are never promoted to
 protein-altering evidence.
@@ -19,6 +20,11 @@ protein-altering evidence.
 `silver_mutation_profile.parquet` contains one row per downloaded open-access somatic MAF file and records its project,
 sample, source file, checksum metadata, and processing timestamp. This table defines the denominator used by mutation
 frequency marts. It prevents expression-only or clinical-only samples from being counted as mutation-profiled samples.
+
+The GDC MAF contract defines `NCBI_Build` as the alignment reference and notes that MAF annotation reports the most
+critically affected transcript, while annotated VCF can report multiple affected transcripts. The current recurrence
+mart uses the supplied assembly and does not reconstruct transcript-level consequences. See the
+[GDC MAF format](https://docs.gdc.cancer.gov/Data/File_Formats/MAF_Format/).
 
 ## Gold Contract
 
@@ -39,6 +45,9 @@ The cancer-level mart uses the same profiled-sample denominator and preserves al
 
 - unique sample counts for putative loss-of-function, missense, in-frame, and other protein-altering classes;
 - exact genomic loci observed in at least two distinct samples;
+- recurrence is grouped by reference assembly, chromosome, start position, reference allele, and alternate allele;
+- events with unknown reference assembly remain in consequence summaries and are counted, but do not contribute to
+  recurrence;
 - the maximum sample recurrence at one locus and the fraction of profiled samples carrying a recurrent locus;
 - fixed labels `driver_evidence_scope=consequence_and_exact_locus_recurrence` and
   `driver_classification=not_assessed`.

@@ -41,6 +41,7 @@ def _empty_mutation_df() -> pl.DataFrame:
             "consequence_group": pl.Utf8,
             "is_protein_altering": pl.Boolean,
             "variant_type": pl.Utf8,
+            "reference_assembly": pl.Utf8,
             "chromosome": pl.Utf8,
             "start_position": pl.Int64,
             "end_position": pl.Int64,
@@ -105,6 +106,7 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
     gene_symbol_col = _resolve_column(raw, ["hugo_symbol", "gene_symbol", "symbol"])
     variant_class_col = _resolve_column(raw, ["variant_classification"])
     variant_type_col = _resolve_column(raw, ["variant_type"])
+    assembly_col = _resolve_column(raw, ["ncbi_build", "reference_assembly", "genome_build"])
     chr_col = _resolve_column(raw, ["chromosome", "chr"])
     start_col = _resolve_column(raw, ["start_position", "start_pos", "position"])
     end_col = _resolve_column(raw, ["end_position", "end_pos", "position"])
@@ -134,6 +136,11 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
                 if variant_type_col is not None
                 else pl.lit("Unknown", dtype=pl.Utf8)
             ).alias("variant_type"),
+            (
+                pl.col(assembly_col).cast(pl.Utf8).str.strip_chars()
+                if assembly_col is not None
+                else pl.lit("Unknown", dtype=pl.Utf8)
+            ).alias("reference_assembly"),
             (
                 pl.col(chr_col).cast(pl.Utf8)
                 if chr_col is not None
@@ -235,6 +242,7 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
             pl.col("consequence_group"),
             pl.col("is_protein_altering"),
             pl.col("variant_type").fill_null("Unknown"),
+            pl.col("reference_assembly").fill_null("Unknown").replace("", "Unknown"),
             pl.col("chromosome").fill_null("Unknown"),
             pl.col("start_position").cast(pl.Int64, strict=False),
             pl.col("end_position").cast(pl.Int64, strict=False),

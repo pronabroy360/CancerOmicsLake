@@ -55,6 +55,12 @@ models:
       - name: recurrent_locus_sample_fraction
         tests:
           - not_null
+      - name: known_assembly_event_count
+        tests:
+          - not_null
+      - name: unknown_assembly_event_count
+        tests:
+          - not_null
       - name: driver_evidence_scope
         tests:
           - accepted_values:

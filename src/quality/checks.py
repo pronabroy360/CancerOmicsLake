@@ -351,6 +351,7 @@ def run_silver_quality_checks(
             "consequence_group": pl.Utf8,
             "is_protein_altering": pl.Boolean,
             "variant_type": pl.Utf8,
+            "reference_assembly": pl.Utf8,
             "chromosome": pl.Utf8,
             "start_position": pl.Int64,
             "end_position": pl.Int64,
@@ -405,6 +406,8 @@ def run_silver_quality_checks(
             "max_locus_sample_count": pl.Int64,
             "samples_with_recurrent_locus_count": pl.Int64,
             "recurrent_locus_sample_fraction": pl.Float64,
+            "known_assembly_event_count": pl.Int64,
+            "unknown_assembly_event_count": pl.Int64,
             "recurrence_threshold_samples": pl.Int64,
             "driver_evidence_scope": pl.Utf8,
             "driver_classification": pl.Utf8,
@@ -676,6 +679,7 @@ def run_silver_quality_checks(
             "case_id",
             "sample_id",
             "gene_symbol",
+            "reference_assembly",
             "variant_classification",
             "consequence_group",
             "is_protein_altering",
@@ -747,6 +751,8 @@ def run_silver_quality_checks(
         "max_locus_sample_count",
         "samples_with_recurrent_locus_count",
         "recurrent_locus_sample_fraction",
+        "known_assembly_event_count",
+        "unknown_assembly_event_count",
         "recurrence_threshold_samples",
         "driver_evidence_scope",
         "driver_classification",
@@ -763,6 +769,10 @@ def run_silver_quality_checks(
             )
             | (pl.col("max_locus_sample_count") > pl.col("protein_altering_mutated_sample_count"))
             | (pl.col("recurrence_threshold_samples") < 2)
+            | (
+                pl.col("known_assembly_event_count") + pl.col("unknown_assembly_event_count")
+                < pl.col("protein_altering_mutated_sample_count")
+            )
             | (pl.col("driver_evidence_scope") != "consequence_and_exact_locus_recurrence")
             | (pl.col("driver_classification") != "not_assessed")
         ).height

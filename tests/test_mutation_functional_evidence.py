@@ -18,6 +18,7 @@ def test_functional_evidence_counts_classes_and_recurrent_loci() -> None:
                 "Silent",
             ],
             "is_protein_altering": [True, True, True, True, True, False],
+            "reference_assembly": ["GRCh38"] * 6,
             "chromosome": ["17", "17", "17", "17", "7", "7"],
             "start_position": [100, 100, 200, 300, 400, 500],
             "reference_allele": ["C", "C", "G", "AT", "A", "T"],
@@ -40,11 +41,55 @@ def test_functional_evidence_counts_classes_and_recurrent_loci() -> None:
     assert tp53["max_locus_sample_count"] == 2
     assert tp53["samples_with_recurrent_locus_count"] == 2
     assert tp53["recurrent_locus_sample_fraction"] == 2 / 6
+    assert tp53["known_assembly_event_count"] == 4
+    assert tp53["unknown_assembly_event_count"] == 0
     assert tp53["driver_classification"] == "not_assessed"
 
     egfr = result.filter(pl.col("gene_symbol") == "EGFR").row(0, named=True)
     assert egfr["protein_altering_mutated_sample_count"] == 1
     assert egfr["recurrent_locus_count"] == 0
+
+
+def test_unknown_assembly_does_not_create_recurrence() -> None:
+    mutations = pl.DataFrame(
+        {
+            "project_id": ["TCGA-LUAD", "TCGA-LUAD"],
+            "sample_id": ["S1", "S2"],
+            "gene_symbol": ["TP53", "TP53"],
+            "variant_classification": ["Missense_Mutation"] * 2,
+            "is_protein_altering": [True, True],
+            "reference_assembly": ["Unknown"] * 2,
+            "chromosome": ["17"] * 2,
+            "start_position": [100, 100],
+            "reference_allele": ["C"] * 2,
+            "tumor_seq_allele": ["T"] * 2,
+        }
+    )
+    profile = pl.DataFrame({"project_id": ["TCGA-LUAD"] * 2, "sample_id": ["S1", "S2"]})
+    row = build_mutation_functional_evidence(mutations, profile).row(0, named=True)
+    assert row["unknown_assembly_event_count"] == 2
+    assert row["recurrent_locus_count"] == 0
+
+
+def test_distinct_assemblies_do_not_merge_identical_coordinates() -> None:
+    mutations = pl.DataFrame(
+        {
+            "project_id": ["TCGA-LUAD"] * 2,
+            "sample_id": ["S1", "S2"],
+            "gene_symbol": ["TP53"] * 2,
+            "variant_classification": ["Missense_Mutation"] * 2,
+            "is_protein_altering": [True, True],
+            "reference_assembly": ["GRCh37", "GRCh38"],
+            "chromosome": ["17"] * 2,
+            "start_position": [100, 100],
+            "reference_allele": ["C"] * 2,
+            "tumor_seq_allele": ["T"] * 2,
+        }
+    )
+    profile = pl.DataFrame({"project_id": ["TCGA-LUAD"] * 2, "sample_id": ["S1", "S2"]})
+    row = build_mutation_functional_evidence(mutations, profile).row(0, named=True)
+    assert row["known_assembly_event_count"] == 2
+    assert row["recurrent_locus_count"] == 0
 
 
 def test_functional_evidence_rejects_single_sample_recurrence_threshold() -> None:

@@ -18,6 +18,8 @@ FUNCTIONAL_EVIDENCE_SCHEMA = {
     "max_locus_sample_count": pl.Int64,
     "samples_with_recurrent_locus_count": pl.Int64,
     "recurrent_locus_sample_fraction": pl.Float64,
+    "known_assembly_event_count": pl.Int64,
+    "unknown_assembly_event_count": pl.Int64,
     "recurrence_threshold_samples": pl.Int64,
     "driver_evidence_scope": pl.Utf8,
     "driver_classification": pl.Utf8,
@@ -26,6 +28,7 @@ FUNCTIONAL_EVIDENCE_SCHEMA = {
 _LOCUS_KEYS = [
     "project_id",
     "gene_symbol",
+    "reference_assembly",
     "chromosome",
     "start_position",
     "reference_allele",
@@ -38,12 +41,15 @@ def build_mutation_functional_evidence(
     mutation_profile: pl.DataFrame,
     recurrence_threshold_samples: int = 2,
 ) -> pl.DataFrame:
-    """Summarize functional classes and exact-locus recurrence without calling drivers."""
+    """Summarize functional classes and assembly-aware recurrence without driver calls."""
     if recurrence_threshold_samples < 2:
         raise ValueError("recurrence_threshold_samples must be at least 2")
-    required = {"project_id", "sample_id", "gene_symbol", "variant_classification", *_LOCUS_KEYS[2:]}
+    required = {"project_id", "sample_id", "gene_symbol", "variant_classification", *_LOCUS_KEYS[3:]}
     if mutations.is_empty() or not required.issubset(mutations.columns):
         return pl.DataFrame(schema=FUNCTIONAL_EVIDENCE_SCHEMA)
+
+    if "reference_assembly" not in mutations.columns:
+        mutations = mutations.with_columns(pl.lit("Unknown").alias("reference_assembly"))
 
     events = (
         mutations.filter(
@@ -81,11 +87,26 @@ def build_mutation_functional_evidence(
                     ("other_protein_altering", "other_protein_altering_sample_count"),
                 )
             ],
+            pl.col("sample_id")
+            .filter(pl.col("reference_assembly").is_not_null() & (pl.col("reference_assembly") != "Unknown"))
+            .count()
+            .cast(pl.Int64)
+            .alias("known_assembly_event_count"),
+            pl.col("sample_id")
+            .filter(pl.col("reference_assembly").is_null() | (pl.col("reference_assembly") == "Unknown"))
+            .count()
+            .cast(pl.Int64)
+            .alias("unknown_assembly_event_count"),
         ]
     )
 
     recurrent_loci = (
-        events.group_by(_LOCUS_KEYS)
+        events.filter(
+            pl.col("reference_assembly").is_not_null()
+            & (pl.col("reference_assembly") != "Unknown")
+            & (pl.col("chromosome") != "Unknown")
+        )
+        .group_by(_LOCUS_KEYS)
         .agg(pl.col("sample_id").n_unique().cast(pl.Int64).alias("locus_sample_count"))
         .filter(pl.col("locus_sample_count") >= recurrence_threshold_samples)
     )

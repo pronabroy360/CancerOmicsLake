@@ -17,8 +17,8 @@ def test_load_tcga_mutation_table_prefers_manifest_files(tmp_path: Path) -> None
 
     maf_file = mut_dir / "luad.maf"
     maf_file.write_text(
-        "Hugo_Symbol\tTumor_Sample_Barcode\tVariant_Classification\tVariant_Type\tChromosome\tStart_Position\tEnd_Position\tReference_Allele\tTumor_Seq_Allele2\n"
-        "TP53\tTCGA-LUAD-SAMPLE-0001\tMissense_Mutation\tSNP\t17\t7673803\t7673803\tC\tT\n",
+        "Hugo_Symbol\tTumor_Sample_Barcode\tVariant_Classification\tVariant_Type\tNCBI_Build\tChromosome\tStart_Position\tEnd_Position\tReference_Allele\tTumor_Seq_Allele2\n"
+        "TP53\tTCGA-LUAD-SAMPLE-0001\tMissense_Mutation\tSNP\tGRCh38\t17\t7673803\t7673803\tC\tT\n",
         encoding="utf-8",
     )
     non_mut_file = mut_dir / "not_mut.tsv"
@@ -54,6 +54,7 @@ def test_load_tcga_mutation_table_prefers_manifest_files(tmp_path: Path) -> None
     assert row["consequence_group"] == "protein_altering"
     assert row["is_protein_altering"] is True
     assert row["start_position"] == 7673803
+    assert row["reference_assembly"] == "GRCh38"
 
 
 def test_load_tcga_mutation_table_reads_gz_maf_with_comments(tmp_path: Path) -> None:
@@ -68,9 +69,9 @@ def test_load_tcga_mutation_table_reads_gz_maf_with_comments(tmp_path: Path) -> 
     with gzip.open(maf_gz, mode="wt", encoding="utf-8") as fh:
         fh.write("#version gdc-1.0.0\n")
         fh.write(
-            "Hugo_Symbol\tTumor_Sample_Barcode\tVariant_Classification\tVariant_Type\tChromosome\tStart_Position\tEnd_Position\tReference_Allele\tTumor_Seq_Allele2\n"
+            "Hugo_Symbol\tTumor_Sample_Barcode\tVariant_Classification\tVariant_Type\tNCBI_Build\tChromosome\tStart_Position\tEnd_Position\tReference_Allele\tTumor_Seq_Allele2\n"
         )
-        fh.write("PIK3CA\tTCGA-BRCA-SAMPLE-0001\tMissense_Mutation\tSNP\t3\t179218294\t179218294\tA\tG\n")
+        fh.write("PIK3CA\tTCGA-BRCA-SAMPLE-0001\tMissense_Mutation\tSNP\tGRCh38\t3\t179218294\t179218294\tA\tG\n")
 
     metadata_df = pl.DataFrame(
         {
@@ -95,6 +96,7 @@ def test_load_tcga_mutation_table_reads_gz_maf_with_comments(tmp_path: Path) -> 
     assert row["project_id"] == "TCGA-BRCA"
     assert row["gene_symbol"] == "PIK3CA"
     assert row["start_position"] == 179218294
+    assert row["reference_assembly"] == "GRCh38"
 
 
 def test_build_mutation_profile_uses_only_downloaded_open_maf_files(tmp_path: Path) -> None:

@@ -90,6 +90,9 @@ models:
       - name: is_protein_altering
         tests:
           - not_null
+      - name: reference_assembly
+        tests:
+          - not_null
 
   - name: silver_mutation_profile
     columns:
