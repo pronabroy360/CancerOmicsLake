@@ -126,7 +126,9 @@ def _graph_export_impl() -> dict[str, object]:
     neo4j = export_neo4j_from_gold_graph_tables()
     graphify = export_graphify_from_gold_graph_tables()
     metrics = build_graph_node_metrics()
-    confidence = build_evidence_confidence()
+    confidence = build_evidence_confidence(
+        calibration_report_path="outputs/reports/evidence_confidence_calibration_report.json"
+    )
     return {"neo4j": neo4j, "graphify": graphify, "metrics": metrics, "confidence": confidence}
 
 

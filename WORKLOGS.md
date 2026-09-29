@@ -780,3 +780,13 @@ Impact values:
   Passed 226 Python tests, 63 runtime quality checks, 28 dbt models, and 107 dbt tests.
 - Prior equality of case counts did not establish sample identity; this correction does not make
   capped-cohort mutation frequencies representative of full TCGA cohorts.
+
+## 2026-09-30 - Evidence Confidence Tier Reachability Audit
+
+- Found zero high-tier rows in the partial real cohort, but the score is not broken: with current
+  candidate biological support capped at 0.6053, even perfect non-biological components yield a
+  maximum overall score of 0.703975, below the fixed high-tier cutoff of 0.75.
+- Added a per-cancer calibration report exposing observed score, current-support ceiling, tier counts,
+  and reachability without changing weights or retroactively relabeling candidates.
+- Real-data report covers 108,600 cancer-gene rows: zero high, 82,033 moderate, and 26,567 limited;
+  the per-cancer upper bounds are BRCA 0.668425, COAD 0.703975, and LUAD 0.696325.

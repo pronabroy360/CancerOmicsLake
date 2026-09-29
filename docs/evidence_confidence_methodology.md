@@ -40,6 +40,14 @@ overall_confidence =
 
 Tiers are `high >= 0.75`, `moderate >= 0.50`, `limited >= 0.25`, and `low < 0.25`.
 
+Every evidence-confidence build also writes `outputs/reports/evidence_confidence_calibration_report.json`.
+For each cancer it reports the highest score attainable by current candidate rows if graph, quality,
+and traceability support were all perfect. This is a ceiling under *current biological support*, not
+a forecast after ingesting more samples or a statistical calibration against outcomes. In the current partial cohort, the largest biological score
+is 0.6053, giving an overall ceiling of 0.703975. Thus zero `high` rows is structurally expected;
+the report must not be used to relax the 0.75 threshold post hoc. Graph support is derived from the
+same underlying evidence and is not an independent validation modality.
+
 ## Guardrails
 
 - Every TCGA-GTEx comparison remains `high` or `elevated` batch risk until harmonized processing exists;

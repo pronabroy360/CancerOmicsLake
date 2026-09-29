@@ -504,7 +504,9 @@ def main() -> None:
         neo4j_summary = export_neo4j_from_gold_graph_tables()
         graphify_summary = export_graphify_from_gold_graph_tables()
         metrics_summary = build_graph_node_metrics()
-        confidence_summary = build_evidence_confidence()
+        confidence_summary = build_evidence_confidence(
+            calibration_report_path="outputs/reports/evidence_confidence_calibration_report.json"
+        )
         logger = get_logger("canceromicslake")
         logger.info(
             "Neo4j export: nodes=%s edges=%s dir=outputs/graph_exports/neo4j",
@@ -538,7 +540,9 @@ def main() -> None:
     if args.command == "run-graph-metrics":
         load_config(args.config)
         metrics_summary = build_graph_node_metrics()
-        confidence_summary = build_evidence_confidence()
+        confidence_summary = build_evidence_confidence(
+            calibration_report_path="outputs/reports/evidence_confidence_calibration_report.json"
+        )
         logger = get_logger("canceromicslake")
         logger.info(
             "Graph metrics written: rows=%s report=%s",
@@ -550,7 +554,9 @@ def main() -> None:
         return
     if args.command == "run-evidence-confidence":
         load_config(args.config)
-        confidence_summary = build_evidence_confidence()
+        confidence_summary = build_evidence_confidence(
+            calibration_report_path="outputs/reports/evidence_confidence_calibration_report.json"
+        )
         logger = get_logger("canceromicslake")
         logger.info(
             "Evidence confidence written: rows=%s high_confidence=%s path=%s",

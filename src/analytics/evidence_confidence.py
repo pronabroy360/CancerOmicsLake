@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+import json
 from pathlib import Path
 
 import polars as pl
@@ -44,6 +46,42 @@ CONFIDENCE_SCHEMA = {
 
 def _empty_confidence() -> pl.DataFrame:
     return pl.DataFrame(schema=CONFIDENCE_SCHEMA)
+
+
+def confidence_calibration_report(result: pl.DataFrame) -> dict[str, object]:
+    """Bound tier reachability with current biological support, without retuning scores."""
+    high_threshold = 0.75
+    cohorts: list[dict[str, object]] = []
+    for cancer_type, group in result.group_by("cancer_type", maintain_order=True):
+        biological = float(group.get_column("biological_confidence").max())
+        ceiling = round(0.75 * biological + 0.25, 6)
+        cohorts.append(
+            {
+                "cancer_type": cancer_type[0],
+                "candidate_count": group.height,
+                "max_biological_confidence": biological,
+                "max_observed_overall_confidence": float(group.get_column("overall_confidence").max()),
+                "overall_ceiling_with_perfect_nonbiological_support": ceiling,
+                "high_tier_reachable_with_current_biological_support": ceiling >= high_threshold,
+            }
+        )
+    cohorts.sort(key=lambda row: str(row["cancer_type"]))
+    tier_counts = result.group_by("confidence_tier").len() if not result.is_empty() else pl.DataFrame()
+    counts = {str(row["confidence_tier"]): int(row["len"]) for row in tier_counts.iter_rows(named=True)}
+    return {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "status": "no_candidates" if result.is_empty() else (
+            "ceiling_below_high" if not any(row["high_tier_reachable_with_current_biological_support"] for row in cohorts)
+            else "high_tier_reachable"
+        ),
+        "candidate_count": result.height,
+        "high_tier_threshold": high_threshold,
+        "tier_counts": {tier: counts.get(tier, 0) for tier in ("high", "moderate", "limited", "low")},
+        "ceiling_formula": "0.75 * max_observed_biological_confidence + 0.25",
+        "ceiling_scope": "current_candidate_rows_with_perfect_graph_quality_and_traceability_support",
+        "cohorts": cohorts,
+        "interpretation": "engineering_score_not_biological_probability_or_independent_validation",
+    }
 
 
 def _read_or_empty(path: Path) -> pl.DataFrame:
@@ -122,6 +160,7 @@ def build_evidence_confidence(
     gold_dir: str | Path = "data/gold",
     silver_dir: str | Path = "data/silver",
     output_path: str | Path = "data/gold/gold_cancer_gene_evidence_confidence.parquet",
+    calibration_report_path: str | Path | None = None,
 ) -> dict[str, object]:
     gold_root = Path(gold_dir)
     silver_root = Path(silver_dir)
@@ -131,6 +170,10 @@ def build_evidence_confidence(
         out = Path(output_path)
         out.parent.mkdir(parents=True, exist_ok=True)
         result.write_parquet(out)
+        if calibration_report_path is not None:
+            report = Path(calibration_report_path)
+            report.parent.mkdir(parents=True, exist_ok=True)
+            report.write_text(json.dumps(confidence_calibration_report(result), indent=2), encoding="utf-8")
         return {"path": str(out), "row_count": 0, "high_confidence_count": 0}
 
     comparison = _read_or_empty(gold_root / "gold_tumor_vs_normal_expression.parquet")
@@ -423,6 +466,10 @@ def build_evidence_confidence(
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     result.write_parquet(out)
+    if calibration_report_path is not None:
+        report = Path(calibration_report_path)
+        report.parent.mkdir(parents=True, exist_ok=True)
+        report.write_text(json.dumps(confidence_calibration_report(result), indent=2), encoding="utf-8")
     return {
         "path": str(out),
         "row_count": int(result.height),

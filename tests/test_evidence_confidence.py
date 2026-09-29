@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 import polars as pl
 
-from src.analytics.evidence_confidence import build_evidence_confidence, evidence_confidence
+from src.analytics.evidence_confidence import (
+    build_evidence_confidence,
+    confidence_calibration_report,
+    evidence_confidence,
+)
 
 
 def _write_fixture(root: Path, sensitivity_direction: str = "rank_up") -> tuple[Path, Path]:
@@ -104,11 +109,15 @@ def _write_fixture(root: Path, sensitivity_direction: str = "rank_up") -> tuple[
 def test_build_evidence_confidence_penalizes_sparse_cross_study_expression(tmp_path: Path) -> None:
     gold, silver = _write_fixture(tmp_path)
     output = gold / "confidence.parquet"
-    summary = build_evidence_confidence(gold_dir=gold, silver_dir=silver, output_path=output)
+    report_path = tmp_path / "calibration.json"
+    summary = build_evidence_confidence(
+        gold_dir=gold, silver_dir=silver, output_path=output, calibration_report_path=report_path
+    )
     result = pl.read_parquet(output)
     tp53 = result.filter(pl.col("gene_symbol") == "TP53").row(0, named=True)
 
     assert summary["row_count"] == 2
+    assert json.loads(report_path.read_text(encoding="utf-8"))["candidate_count"] == 2
     assert tp53["expression_confidence"] < 0.3
     assert tp53["batch_effect_risk"] == "elevated"
     assert tp53["batch_concordance"] == "concordant"
@@ -183,3 +192,37 @@ def test_build_evidence_confidence_writes_empty_contract_without_candidates(tmp_
 
     assert summary["row_count"] == 0
     assert "overall_confidence" in pl.read_parquet(output).columns
+
+
+def test_confidence_calibration_reports_unreachable_and_reachable_high_tier() -> None:
+    result = pl.DataFrame(
+        {
+            "cancer_type": ["TCGA-BRCA", "TCGA-LUAD"],
+            "biological_confidence": [0.60, 0.80],
+            "overall_confidence": [0.70, 0.65],
+            "confidence_tier": ["moderate", "moderate"],
+        }
+    )
+
+    report = confidence_calibration_report(result)
+
+    assert report["tier_counts"]["high"] == 0
+    assert report["status"] == "high_tier_reachable"
+    assert report["cohorts"][0]["overall_ceiling_with_perfect_nonbiological_support"] == 0.70
+    assert report["cohorts"][0]["high_tier_reachable_with_current_biological_support"] is False
+    assert report["cohorts"][1]["overall_ceiling_with_perfect_nonbiological_support"] == 0.85
+    assert report["cohorts"][1]["high_tier_reachable_with_current_biological_support"] is True
+
+
+def test_confidence_calibration_writes_report_for_empty_candidates(tmp_path: Path) -> None:
+    gold = tmp_path / "gold"
+    silver = tmp_path / "silver"
+    gold.mkdir()
+    silver.mkdir()
+    path = tmp_path / "calibration.json"
+
+    build_evidence_confidence(gold, silver, gold / "confidence.parquet", calibration_report_path=path)
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload["status"] == "no_candidates"
+    assert payload["cohorts"] == []
