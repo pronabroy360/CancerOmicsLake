@@ -4,6 +4,8 @@ from datetime import UTC, datetime
 import hashlib
 import json
 from pathlib import Path
+import re
+import subprocess
 from typing import Any
 
 import yaml
@@ -14,6 +16,7 @@ PLACEHOLDER_MARKERS = (
     "[COLLABORATOR TO COMPLETE]",
     "[AI DISCLOSURE TO COMPLETE]",
 )
+COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
 
 
 def _sha256(path: Path) -> str:
@@ -84,6 +87,56 @@ def _citation_has_doi(citation: dict[str, Any]) -> bool:
         and bool(item.get("value"))
         for item in identifiers
     )
+
+
+def _git_commit(root: Path) -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, check=False
+        )
+    except OSError:
+        return None
+    commit = result.stdout.strip().lower()
+    return commit if result.returncode == 0 and COMMIT_PATTERN.fullmatch(commit) else None
+
+
+def _revision_evidence_complete(
+    root: Path,
+    package: dict[str, Any],
+    ledger: dict[str, Any],
+    comparison: dict[str, Any],
+    subject_tool: str,
+    revisioned_paths: list[Path],
+) -> tuple[bool, list[str]]:
+    current = _git_commit(root)
+    evidence = [f"current_git_commit={current or 'unavailable'}"]
+    if current is None:
+        return False, evidence
+    valid = True
+    for label, payload in [("package", package), ("ledger", ledger)]:
+        commit = str(payload.get("git_commit", "")).lower()
+        evidence.append(f"{label}_git_commit={commit or 'missing'}")
+        valid = valid and commit == current
+    for path in revisioned_paths:
+        if not path.resolve().is_relative_to(root):
+            evidence.append(f"invalid_revisioned_path={path}")
+            valid = False
+            continue
+        payload = _read_mapping(path)
+        commit = str(payload.get("git_commit", "")).lower()
+        evidence.append(f"{path.relative_to(root)}_git_commit={commit or 'missing'}")
+        valid = valid and commit == current
+    rows = comparison.get("tasks", [])
+    subject_rows = (
+        [row for row in rows if isinstance(row, dict) and row.get("tool") == subject_tool]
+        if isinstance(rows, list) else []
+    )
+    versions = sorted({str(row.get("tool_version", "")) for row in subject_rows})
+    evidence.append(f"{subject_tool}_tool_versions={versions}")
+    valid = valid and bool(subject_rows) and all(
+        version.endswith(f"+{current[:7]}") for version in versions
+    )
+    return valid, evidence
 
 
 def _metadata_confirmation(
@@ -197,6 +250,7 @@ def build_submission_readiness_report(
         metadata = {}
     review = _read_mapping(review_path, yaml_input=True)
     comparison = _read_mapping(comparison_path)
+    package_manifest = _read_mapping(package_manifest_path)
     required_comparators = {
         str(value) for value in config.get("required_comparators", [])
     }
@@ -205,6 +259,14 @@ def build_submission_readiness_report(
     required_tasks = {
         str(value) for value in config.get("required_comparison_tasks", [])
     }
+    configured_paths = config.get("revisioned_evidence_paths", [])
+    revisioned_paths = (
+        [root / Path(str(value)) for value in configured_paths]
+        if isinstance(configured_paths, list) else []
+    )
+    revision_ok, revision_evidence = _revision_evidence_complete(
+        root, package_manifest, ledger, comparison, subject_tool, revisioned_paths
+    )
     comparison_complete, completed_tools = _comparison_evidence_complete(
         comparison,
         required_tools,
@@ -236,6 +298,12 @@ def build_submission_readiness_report(
             and bool(ledger.get("claims")),
             [str(evidence_ledger_path.relative_to(root))],
             "Regenerate a passing, non-empty claim evidence ledger.",
+        ),
+        _check(
+            "research_evidence_revision_current",
+            revision_ok,
+            revision_evidence,
+            "Regenerate revisioned benchmarks, the comparison baseline, and manuscript package from the current commit.",
         ),
         _check(
             "author_and_disclosure_fields_complete",

@@ -4,9 +4,18 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
 import yaml
 
 from src.operations.submission_readiness import build_submission_readiness_report
+
+
+FIXTURE_COMMIT = "a" * 40
+
+
+@pytest.fixture(autouse=True)
+def _fixed_checkout_revision(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("src.operations.submission_readiness._git_commit", lambda root: FIXTURE_COMMIT)
 
 
 def _sha256(path: Path) -> str:
@@ -29,11 +38,12 @@ def _fixture(root: Path, *, complete: bool) -> Path:
     )
     ledger = manuscript_dir / "evidence_ledger.json"
     ledger.write_text(
-        json.dumps({"status": "passed", "claims": [{"claim_id": "C01"}]}),
+        json.dumps({"status": "passed", "git_commit": FIXTURE_COMMIT, "claims": [{"claim_id": "C01"}]}),
         encoding="utf-8",
     )
     package_manifest = {
         "status": "passed",
+        "git_commit": FIXTURE_COMMIT,
         "file_count": 3,
         "files": [
             {
@@ -113,13 +123,15 @@ def _fixture(root: Path, *, complete: bool) -> Path:
 
     reports = root / "outputs/reports"
     reports.mkdir(parents=True)
+    for name in ("research_benchmark_report.json", "reference_ablation_report.json"):
+        (reports / name).write_text(json.dumps({"git_commit": FIXTURE_COMMIT}), encoding="utf-8")
     if complete:
         tasks = [
             {
                 "tool": tool,
                 "task_id": task_id,
                 "task_status": "passed",
-                "tool_version": "fixture",
+                "tool_version": f"0.1.0+{FIXTURE_COMMIT[:7]}" if tool == "CancerOmicsLake" else "fixture",
                 "evidence": [f"{tool}/{task_id}.json"],
             }
             for tool in [
@@ -153,6 +165,10 @@ def _fixture(root: Path, *, complete: bool) -> Path:
             "manuscript_metadata_path": "manuscript_metadata.yml",
             "biological_review_path": "docs/attestations/biological_review.yml",
             "comparative_evaluation_path": "outputs/reports/comparative_evaluation_report.json",
+            "revisioned_evidence_paths": [
+                "outputs/reports/research_benchmark_report.json",
+                "outputs/reports/reference_ablation_report.json",
+            ],
             "required_comparators": ["TCGAbiolinks", "UCSC Xena", "cBioPortal"],
             "required_comparison_tasks": ["T1", "T2", "T3", "T4", "T5"],
             "required_documents": [
@@ -178,7 +194,7 @@ def test_submission_readiness_passes_complete_fixture(tmp_path: Path) -> None:
 
     assert payload["status"] == "ready"
     assert payload["blocker_count"] == 0
-    assert payload["passed_count"] == payload["check_count"] == 9
+    assert payload["passed_count"] == payload["check_count"] == 10
 
 
 def test_submission_readiness_reports_human_and_comparison_blockers(
@@ -197,14 +213,54 @@ def test_submission_readiness_reports_human_and_comparison_blockers(
         if check["status"] == "failed"
     }
     assert payload["status"] == "not_ready"
-    assert payload["blocker_count"] == 5
+    assert payload["blocker_count"] == 6
     assert failed == {
         "author_and_disclosure_fields_complete",
         "generative_ai_disclosure_present",
         "persistent_identifier_registered",
         "independent_biological_review_approved",
         "comparative_evaluation_passed",
+        "research_evidence_revision_current",
     }
+
+
+@pytest.mark.parametrize("stale_source", ["benchmark", "package", "ledger", "comparison"])
+def test_submission_readiness_rejects_stale_revisioned_evidence(tmp_path: Path, stale_source: str) -> None:
+    config = _fixture(tmp_path, complete=True)
+    paths = {
+        "benchmark": tmp_path / "outputs/reports/research_benchmark_report.json",
+        "package": tmp_path / "manuscript/package_manifest.json",
+        "ledger": tmp_path / "manuscript/evidence_ledger.json",
+        "comparison": tmp_path / "outputs/reports/comparative_evaluation_report.json",
+    }
+    path = paths[stale_source]
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if stale_source == "comparison":
+        for task in payload["tasks"]:
+            if task["tool"] == "CancerOmicsLake":
+                task["tool_version"] = "0.1.0+bbbbbbb"
+    else:
+        payload["git_commit"] = "b" * 40
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    report = build_submission_readiness_report(config.relative_to(tmp_path), tmp_path)
+
+    checks = {check["check_name"]: check for check in report["checks"]}
+    assert checks["research_evidence_revision_current"]["status"] == "failed"
+    assert report["status"] == "not_ready"
+
+
+def test_submission_readiness_requires_verifiable_checkout_revision(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    config = _fixture(tmp_path, complete=True)
+    monkeypatch.setattr("src.operations.submission_readiness._git_commit", lambda root: None)
+
+    report = build_submission_readiness_report(config.relative_to(tmp_path), tmp_path)
+
+    checks = {check["check_name"]: check for check in report["checks"]}
+    assert checks["research_evidence_revision_current"]["status"] == "failed"
+    assert "current_git_commit=unavailable" in checks["research_evidence_revision_current"]["evidence"]
 
 
 def test_submission_readiness_detects_package_hash_tampering(tmp_path: Path) -> None:

@@ -790,3 +790,14 @@ Impact values:
   and reachability without changing weights or retroactively relabeling candidates.
 - Real-data report covers 108,600 cancer-gene rows: zero high, 82,033 moderate, and 26,567 limited;
   the per-cancer upper bounds are BRCA 0.668425, COAD 0.703975, and LUAD 0.696325.
+
+## 2026-09-30 - Submission Evidence Revision Gate
+
+- Found that a `passed` comparison and benchmark could be accepted by submission readiness even when
+  their CancerOmicsLake revision differed from the manuscript package or current checkout.
+- Added a fail-closed revision check for the package, claim ledger, benchmark, ablation, and project-side
+  comparator rows. External comparator versions remain independent and are not forced to match our Git SHA.
+- Existing historical evidence is preserved; refreshing it is required only for a current-submission claim.
+- Live readiness audit now reports five blockers rather than four: the four human/deposit/review
+  blockers plus stale revisioned evidence. Comparative task coverage still passes separately.
+- Verified 233 Python tests. Git-commit agreement does not replace data-snapshot or package-hash review.

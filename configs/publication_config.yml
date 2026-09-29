@@ -9,6 +9,9 @@ publication:
   manuscript_metadata_path: configs/manuscript_metadata.yml
   biological_review_path: docs/attestations/biological_review.yml
   comparative_evaluation_path: outputs/reports/comparative_evaluation_report.json
+  revisioned_evidence_paths:
+    - outputs/reports/research_benchmark_report.json
+    - outputs/reports/reference_ablation_report.json
   required_comparators:
     - TCGAbiolinks
     - UCSC Xena

@@ -19,7 +19,7 @@ Current strengths:
 
 Submission blockers:
 
-- Complete the preregistered comparison against existing community tools.
+- Refresh the completed comparison and revisioned benchmark evidence against the intended release commit.
 - Deposit a frozen code/data release and add its DOI.
 - Obtain independent biological review.
 - Complete author, affiliation, funding, conflict, and AI-assistance disclosures.
