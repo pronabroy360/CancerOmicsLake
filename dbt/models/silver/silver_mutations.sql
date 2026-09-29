@@ -14,6 +14,15 @@ select
   cast(end_position as bigint) as end_position,
   cast(reference_allele as varchar) as reference_allele,
   cast(tumor_seq_allele as varchar) as tumor_seq_allele,
+  cast(transcript_id as varchar) as transcript_id,
+  cast(hgvsc as varchar) as hgvsc,
+  cast(hgvsp as varchar) as hgvsp,
+  cast(hgvsp_short as varchar) as hgvsp_short,
+  cast(exon_number as varchar) as exon_number,
+  cast(vep_impact as varchar) as vep_impact,
+  cast(vep_consequence as varchar) as vep_consequence,
+  cast(vep_one_consequence as varchar) as vep_one_consequence,
+  cast(all_effects as varchar) as all_effects,
   cast(data_origin as varchar) as data_origin,
   cast(ingested_at as varchar) as ingested_at
 from {{ ref('stg_silver_mutations') }}

@@ -740,3 +740,21 @@ Impact values:
   mart retains 18,972 cancer-gene rows and 142 recurrent loci across 133 pairs.
 - Confirmed Python/dbt equality across all 18,972 rows, with 60 quality checks and 97 dbt tests
   passing. This remains a partial downloaded cohort.
+
+## 2026-09-24 - GDC MAF Transcript Annotation Retention
+
+- Extended the silver mutation contract to retain MAF-reported transcript ID, HGVS coding and protein
+  fields, exon, Sequence Ontology consequence, VEP impact, and the original `all_effects` string.
+- Added aggregate transcript annotation evidence by cancer, gene, transcript, consequence, and impact,
+  with sample/event counts and annotation coverage counts.
+- Recorded the GDC limitation that MAF selects the most critically affected transcript; VEP impact is
+  retained as a source label and is not treated as driver/pathogenicity evidence.
+
+## 2026-09-29 - Transcript Evidence Verification
+
+- Rebuilt gold and dbt from the existing partial real cohort: 45,588 mutation records yielded 31,928
+  transcript-evidence groups. Python Parquet and dbt tables matched on every row and metric.
+- Passed 62 silver/gold quality checks, 104 dbt tests, and 222 Python tests; project completion
+  reported 9/9 milestones and the FAIR release bundle contained 20 resources.
+- These are source-reported annotation aggregates, not independent transcript validation or
+  evidence of driver status, pathogenicity, or publication-ready biological findings.

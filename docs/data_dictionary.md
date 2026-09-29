@@ -87,6 +87,9 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `end_position`: variant end coordinate.
 - `reference_allele`: reference allele.
 - `tumor_seq_allele`: tumor allele.
+- `transcript_id`, `hgvsc`, `hgvsp`, `hgvsp_short`, `exon_number`: GDC MAF-reported transcript and HGVS fields.
+- `vep_impact`, `vep_consequence`, `vep_one_consequence`: source VEP impact and consequence labels.
+- `all_effects`: original delimiter-encoded GDC MAF effects field retained for audit.
 - `source`: source system label.
 - `data_origin`: source MAF filepath or demo source.
 - `ingested_at`: processing timestamp.
@@ -207,6 +210,18 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `recurrence_threshold_samples`: fixed reproducibility threshold, currently `2`.
 - `driver_evidence_scope`: fixed to `consequence_and_exact_locus_recurrence`.
 - `driver_classification`: fixed to `not_assessed`; the mart does not call drivers or pathogenic variants.
+
+### `gold_mutation_transcript_evidence.parquet`
+
+- `cancer_type`, `gene_symbol`, `transcript_id`: project, gene, and transcript reported by the GDC MAF.
+- `vep_consequence`, `vep_impact`, `variant_classification`: source-reported consequences and classification.
+- `profiled_sample_count`, `distinct_sample_count`, `event_count`, `sample_fraction`: profile denominator and
+  aggregated sample/event support for this annotation group.
+- `hgvsc_annotation_event_count`, `hgvsp_annotation_event_count`, `all_effects_annotation_event_count`: counts of
+  events carrying each source annotation.
+- `annotation_scope`: fixed to `gdc_maf_reported_transcript`; the MAF’s reported transcript is not a complete
+  transcriptome-wide consequence set.
+- `impact_interpretation`: fixed to `source_vep_category_not_driver_classification`.
 
 ### `gold_candidate_gene_priority.parquet`
 

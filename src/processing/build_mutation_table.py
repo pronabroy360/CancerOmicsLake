@@ -47,6 +47,15 @@ def _empty_mutation_df() -> pl.DataFrame:
             "end_position": pl.Int64,
             "reference_allele": pl.Utf8,
             "tumor_seq_allele": pl.Utf8,
+            "transcript_id": pl.Utf8,
+            "hgvsc": pl.Utf8,
+            "hgvsp": pl.Utf8,
+            "hgvsp_short": pl.Utf8,
+            "exon_number": pl.Utf8,
+            "vep_impact": pl.Utf8,
+            "vep_consequence": pl.Utf8,
+            "vep_one_consequence": pl.Utf8,
+            "all_effects": pl.Utf8,
             "data_origin": pl.Utf8,
             "ingested_at": pl.Utf8,
         }
@@ -113,6 +122,17 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
     ref_col = _resolve_column(raw, ["reference_allele", "ref_allele"])
     alt_col = _resolve_column(raw, ["tumor_seq_allele2", "tumor_seq_allele", "tumor_allele"])
     case_col = _resolve_column(raw, ["case_id"])
+    annotation_columns = {
+        "transcript_id": _resolve_column(raw, ["transcript_id"]),
+        "hgvsc": _resolve_column(raw, ["hgvsc"]),
+        "hgvsp": _resolve_column(raw, ["hgvsp"]),
+        "hgvsp_short": _resolve_column(raw, ["hgvsp_short"]),
+        "exon_number": _resolve_column(raw, ["exon_number"]),
+        "vep_impact": _resolve_column(raw, ["impact"]),
+        "vep_consequence": _resolve_column(raw, ["consequence"]),
+        "vep_one_consequence": _resolve_column(raw, ["one_consequence"]),
+        "all_effects": _resolve_column(raw, ["all_effects"]),
+    }
 
     if sample_col is None or gene_symbol_col is None or start_col is None:
         return _empty_mutation_df().head(0)
@@ -162,6 +182,14 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
                 if alt_col is not None
                 else pl.lit("Unknown", dtype=pl.Utf8)
             ).alias("tumor_seq_allele"),
+            *[
+                (
+                    pl.col(source_col).cast(pl.Utf8).str.strip_chars()
+                    if source_col is not None
+                    else pl.lit(None, dtype=pl.Utf8)
+                ).alias(target_col)
+                for target_col, source_col in annotation_columns.items()
+            ],
             (
                 pl.col(case_col).cast(pl.Utf8)
                 if case_col is not None
@@ -248,6 +276,10 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
             pl.col("end_position").cast(pl.Int64, strict=False),
             pl.col("reference_allele").fill_null("Unknown"),
             pl.col("tumor_seq_allele").fill_null("Unknown"),
+            *[
+                pl.col(column).replace("", None)
+                for column in annotation_columns
+            ],
             pl.lit(str(path)).alias("data_origin"),
         ]
     )

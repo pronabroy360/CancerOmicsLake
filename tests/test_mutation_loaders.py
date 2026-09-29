@@ -17,8 +17,8 @@ def test_load_tcga_mutation_table_prefers_manifest_files(tmp_path: Path) -> None
 
     maf_file = mut_dir / "luad.maf"
     maf_file.write_text(
-        "Hugo_Symbol\tTumor_Sample_Barcode\tVariant_Classification\tVariant_Type\tNCBI_Build\tChromosome\tStart_Position\tEnd_Position\tReference_Allele\tTumor_Seq_Allele2\n"
-        "TP53\tTCGA-LUAD-SAMPLE-0001\tMissense_Mutation\tSNP\tGRCh38\t17\t7673803\t7673803\tC\tT\n",
+        "Hugo_Symbol\tTumor_Sample_Barcode\tVariant_Classification\tVariant_Type\tNCBI_Build\tChromosome\tStart_Position\tEnd_Position\tReference_Allele\tTumor_Seq_Allele2\tTranscript_ID\tHGVSc\tHGVSp\tIMPACT\tConsequence\tall_effects\n"
+        "TP53\tTCGA-LUAD-SAMPLE-0001\tMissense_Mutation\tSNP\tGRCh38\t17\t7673803\t7673803\tC\tT\tENST00000269305\tENST00000269305.9:c.818G>A\tp.Arg273His\tMODERATE\tmissense_variant\t[TP53,missense_variant,p.R273H,ENST00000269305]\n",
         encoding="utf-8",
     )
     non_mut_file = mut_dir / "not_mut.tsv"
@@ -55,6 +55,10 @@ def test_load_tcga_mutation_table_prefers_manifest_files(tmp_path: Path) -> None
     assert row["is_protein_altering"] is True
     assert row["start_position"] == 7673803
     assert row["reference_assembly"] == "GRCh38"
+    assert row["transcript_id"] == "ENST00000269305"
+    assert row["hgvsp"] == "p.Arg273His"
+    assert row["vep_impact"] == "MODERATE"
+    assert row["all_effects"].startswith("[TP53,")
 
 
 def test_load_tcga_mutation_table_reads_gz_maf_with_comments(tmp_path: Path) -> None:

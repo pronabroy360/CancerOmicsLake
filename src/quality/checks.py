@@ -357,6 +357,15 @@ def run_silver_quality_checks(
             "end_position": pl.Int64,
             "reference_allele": pl.Utf8,
             "tumor_seq_allele": pl.Utf8,
+            "transcript_id": pl.Utf8,
+            "hgvsc": pl.Utf8,
+            "hgvsp": pl.Utf8,
+            "hgvsp_short": pl.Utf8,
+            "exon_number": pl.Utf8,
+            "vep_impact": pl.Utf8,
+            "vep_consequence": pl.Utf8,
+            "vep_one_consequence": pl.Utf8,
+            "all_effects": pl.Utf8,
             "data_origin": pl.Utf8,
             "ingested_at": pl.Utf8,
         },
@@ -411,6 +420,26 @@ def run_silver_quality_checks(
             "recurrence_threshold_samples": pl.Int64,
             "driver_evidence_scope": pl.Utf8,
             "driver_classification": pl.Utf8,
+        },
+    )
+    gold_mut_transcript = _read_or_empty(
+        gold_root / "gold_mutation_transcript_evidence.parquet",
+        {
+            "cancer_type": pl.Utf8,
+            "gene_symbol": pl.Utf8,
+            "transcript_id": pl.Utf8,
+            "vep_consequence": pl.Utf8,
+            "vep_impact": pl.Utf8,
+            "variant_classification": pl.Utf8,
+            "profiled_sample_count": pl.Int64,
+            "distinct_sample_count": pl.Int64,
+            "event_count": pl.Int64,
+            "sample_fraction": pl.Float64,
+            "hgvsc_annotation_event_count": pl.Int64,
+            "hgvsp_annotation_event_count": pl.Int64,
+            "all_effects_annotation_event_count": pl.Int64,
+            "annotation_scope": pl.Utf8,
+            "impact_interpretation": pl.Utf8,
         },
     )
     gold_batch_sensitivity = _read_or_empty(
@@ -685,6 +714,12 @@ def run_silver_quality_checks(
             "is_protein_altering",
             "start_position",
             "end_position",
+            "transcript_id",
+            "hgvsc",
+            "hgvsp",
+            "vep_impact",
+            "vep_consequence",
+            "all_effects",
         ],
     )
     missing_mutation_profile_cols = _missing_columns(
@@ -775,6 +810,24 @@ def run_silver_quality_checks(
             )
             | (pl.col("driver_evidence_scope") != "consequence_and_exact_locus_recurrence")
             | (pl.col("driver_classification") != "not_assessed")
+        ).height
+    required_mut_transcript_cols = [
+        "cancer_type", "gene_symbol", "transcript_id", "vep_consequence", "vep_impact",
+        "variant_classification", "profiled_sample_count", "distinct_sample_count", "event_count",
+        "sample_fraction", "hgvsc_annotation_event_count", "hgvsp_annotation_event_count",
+        "all_effects_annotation_event_count", "annotation_scope", "impact_interpretation",
+    ]
+    missing_mut_transcript_cols = _missing_columns(gold_mut_transcript, required_mut_transcript_cols)
+    invalid_mut_transcript_values = 0
+    if not gold_mut_transcript.is_empty() and not missing_mut_transcript_cols:
+        invalid_mut_transcript_values = gold_mut_transcript.filter(
+            ~pl.col("sample_fraction").is_between(0.0, 1.0)
+            | (pl.col("distinct_sample_count") > pl.col("profiled_sample_count"))
+            | (pl.col("hgvsc_annotation_event_count") > pl.col("event_count"))
+            | (pl.col("hgvsp_annotation_event_count") > pl.col("event_count"))
+            | (pl.col("all_effects_annotation_event_count") > pl.col("event_count"))
+            | (pl.col("annotation_scope") != "gdc_maf_reported_transcript")
+            | (pl.col("impact_interpretation") != "source_vep_category_not_driver_classification")
         ).height
     missing_gold_batch_cols = _missing_columns(
         gold_batch_sensitivity,
@@ -1302,6 +1355,16 @@ def run_silver_quality_checks(
             check_name="gold_mutation_functional_evidence_semantics_valid",
             status="passed" if invalid_mut_functional_values == 0 else "failed",
             failed_rows=int(invalid_mut_functional_values),
+        ),
+        CheckResult(
+            check_name="gold_mutation_transcript_evidence_schema_columns_present",
+            status=("passed" if gold_mut_transcript.is_empty() or missing_mut_transcript_cols == 0 else "failed"),
+            failed_rows=int(missing_mut_transcript_cols),
+        ),
+        CheckResult(
+            check_name="gold_mutation_transcript_evidence_semantics_valid",
+            status="passed" if invalid_mut_transcript_values == 0 else "failed",
+            failed_rows=int(invalid_mut_transcript_values),
         ),
         CheckResult(
             check_name="gold_batch_effect_sensitivity_schema_columns_present",

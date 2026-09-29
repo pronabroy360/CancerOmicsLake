@@ -8,6 +8,7 @@ import polars as pl
 
 from src.analytics.reference_triangulation import build_reference_triangulation_table
 from src.analytics.mutation_functional_evidence import build_mutation_functional_evidence
+from src.analytics.mutation_transcript_evidence import build_mutation_transcript_evidence
 from src.processing.mutation_consequences import PROTEIN_ALTERING_CLASSIFICATIONS
 
 
@@ -526,6 +527,15 @@ def build_gold_cohort_summary(
             "end_position": pl.Int64,
             "reference_allele": pl.Utf8,
             "tumor_seq_allele": pl.Utf8,
+            "transcript_id": pl.Utf8,
+            "hgvsc": pl.Utf8,
+            "hgvsp": pl.Utf8,
+            "hgvsp_short": pl.Utf8,
+            "exon_number": pl.Utf8,
+            "vep_impact": pl.Utf8,
+            "vep_consequence": pl.Utf8,
+            "vep_one_consequence": pl.Utf8,
+            "all_effects": pl.Utf8,
             "data_origin": pl.Utf8,
             "ingested_at": pl.Utf8,
         },
@@ -768,6 +778,7 @@ def build_gold_cohort_summary(
     output_mut_by_gene = gold_root / "gold_mutation_frequency_by_gene.parquet"
     output_mut_by_cancer = gold_root / "gold_mutation_frequency_by_cancer.parquet"
     output_mut_functional = gold_root / "gold_mutation_functional_evidence.parquet"
+    output_mut_transcript = gold_root / "gold_mutation_transcript_evidence.parquet"
     output_tumor_vs_normal = gold_root / "gold_tumor_vs_normal_expression.parquet"
     tumor_vs_normal = _build_tumor_vs_normal_table(expr_tcga=expr_tcga, expr_gtex=expr_gtex)
     reference_triangulation = build_reference_triangulation_table(expr_tcga, expr_gtex)
@@ -777,6 +788,7 @@ def build_gold_cohort_summary(
         tumor_vs_normal=tumor_vs_normal,
     )
     mutation_functional = build_mutation_functional_evidence(mutations, mutation_profile)
+    mutation_transcript = build_mutation_transcript_evidence(mutations, mutation_profile)
     output_batch_effect_sensitivity = gold_root / "gold_batch_effect_sensitivity.parquet"
     output_reference_triangulation = gold_root / "gold_reference_triangulation.parquet"
     output_candidate_priority = gold_root / "gold_candidate_gene_priority.parquet"
@@ -784,6 +796,7 @@ def build_gold_cohort_summary(
     mutation_by_gene.write_parquet(output_mut_by_gene)
     mutation_by_cancer.write_parquet(output_mut_by_cancer)
     mutation_functional.write_parquet(output_mut_functional)
+    mutation_transcript.write_parquet(output_mut_transcript)
     tumor_vs_normal.write_parquet(output_tumor_vs_normal)
     batch_effect_sensitivity.write_parquet(output_batch_effect_sensitivity)
     reference_triangulation.write_parquet(output_reference_triangulation)
@@ -794,6 +807,7 @@ def build_gold_cohort_summary(
         "gold_mutation_frequency_by_gene_path": str(output_mut_by_gene),
         "gold_mutation_frequency_by_cancer_path": str(output_mut_by_cancer),
         "gold_mutation_functional_evidence_path": str(output_mut_functional),
+        "gold_mutation_transcript_evidence_path": str(output_mut_transcript),
         "gold_tumor_vs_normal_expression_path": str(output_tumor_vs_normal),
         "gold_batch_effect_sensitivity_path": str(output_batch_effect_sensitivity),
         "gold_reference_triangulation_path": str(output_reference_triangulation),
@@ -810,6 +824,7 @@ def build_gold_cohort_summary(
         "mutation_gene_rows": int(mutation_by_gene.height),
         "mutation_cancer_rows": int(mutation_by_cancer.height),
         "mutation_functional_evidence_rows": int(mutation_functional.height),
+        "mutation_transcript_evidence_rows": int(mutation_transcript.height),
         "tumor_vs_normal_rows": int(tumor_vs_normal.height),
         "batch_effect_sensitivity_rows": int(batch_effect_sensitivity.height),
         "reference_triangulation_rows": int(reference_triangulation.height),

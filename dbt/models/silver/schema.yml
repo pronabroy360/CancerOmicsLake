@@ -93,6 +93,8 @@ models:
       - name: reference_assembly
         tests:
           - not_null
+      - name: vep_impact
+      - name: vep_consequence
 
   - name: silver_mutation_profile
     columns:

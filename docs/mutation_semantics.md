@@ -56,6 +56,14 @@ Exact-locus recurrence is a reproducible prioritization feature, not proof that 
 This mart is deliberately excluded from the existing candidate score until an externally reviewed integration method
 and independent validation source are available.
 
+`gold_mutation_transcript_evidence.parquet` aggregates the MAF-reported transcript ID, HGVS coding/protein
+annotations, Sequence Ontology consequence, VEP impact category, and `all_effects` availability by cancer, gene, and
+annotation. `all_effects` is retained in silver for audit; the aggregate mart does not parse its delimiter-encoded
+transcript entries. GDC MAF reports the most critically affected transcript, so these rows describe the reported
+transcript only, not all possible transcript consequences. GDC also cautions that VEP impact categories do not
+necessarily measure relative biological influence. The source impact label is therefore not used as driver or
+pathogenicity evidence.
+
 ## Important Limitations
 
 - Protein-altering does not mean oncogenic, pathogenic, clonal, or causal.

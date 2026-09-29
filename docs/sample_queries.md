@@ -87,6 +87,29 @@ ORDER BY max_locus_sample_count DESC, recurrent_locus_sample_fraction DESC;
 `driver_classification` is intentionally `not_assessed`: exact-locus recurrence is supporting evidence, not a driver,
 pathogenicity, clonality, or actionability call.
 
+## Reported transcript annotation coverage
+
+```sql
+SELECT
+    cancer_type,
+    gene_symbol,
+    transcript_id,
+    vep_consequence,
+    vep_impact,
+    distinct_sample_count,
+    event_count,
+    hgvsc_annotation_event_count,
+    hgvsp_annotation_event_count,
+    all_effects_annotation_event_count,
+    annotation_scope,
+    impact_interpretation
+FROM read_parquet('data/gold/gold_mutation_transcript_evidence.parquet')
+WHERE gene_symbol = 'TP53'
+ORDER BY cancer_type, event_count DESC;
+```
+
+Rows describe the transcript selected in the GDC MAF. The source impact label is not a driver classification.
+
 ## Cancer-Gene Graph Edges
 
 ```sql

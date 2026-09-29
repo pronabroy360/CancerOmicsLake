@@ -72,6 +72,31 @@ models:
               arguments:
                 values: ['not_assessed']
 
+  - name: gold_mutation_transcript_evidence
+    columns:
+      - name: cancer_type
+        tests:
+          - not_null
+      - name: gene_symbol
+        tests:
+          - not_null
+      - name: transcript_id
+        tests:
+          - not_null
+      - name: sample_fraction
+        tests:
+          - not_null
+      - name: annotation_scope
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['gdc_maf_reported_transcript']
+      - name: impact_interpretation
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['source_vep_category_not_driver_classification']
+
   - name: gold_tumor_vs_normal_expression
     columns:
       - name: gene_symbol
