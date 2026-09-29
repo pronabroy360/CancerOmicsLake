@@ -18,3 +18,4 @@ models:
 
 vars:
   silver_dir: "data/silver"
+  gold_dir: "data/gold"

@@ -45,14 +45,14 @@ jobs:
       - name: Silver Build
         run: make run-silver
 
+      - name: Gold Build
+        run: make run-gold
+
       - name: dbt Run
         run: make run-dbt
 
       - name: dbt Test
         run: make test-dbt
-
-      - name: Gold Build
-        run: make run-gold
 
       - name: Silver Quality
         run: make run-quality

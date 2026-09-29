@@ -758,3 +758,11 @@ Impact values:
   reported 9/9 milestones and the FAIR release bundle contained 20 resources.
 - These are source-reported annotation aggregates, not independent transcript validation or
   evidence of driver status, pathogenicity, or publication-ready biological findings.
+
+## 2026-09-29 - Automated Transcript Mart Parity Gate
+
+- Added a dbt data test that compares all Python and dbt transcript-evidence rows in both directions,
+  including duplicate multiplicity; CI now builds gold before dbt to make this test executable.
+- Verified 105 dbt tests passed on current data. A one-row event-count mutation in a temporary copy
+  produced the expected parity-test failure (two directional difference rows).
+- The gate checks implementation agreement, not biological accuracy or independent validation.

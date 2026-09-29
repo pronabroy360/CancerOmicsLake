@@ -64,6 +64,10 @@ transcript only, not all possible transcript consequences. GDC also cautions tha
 necessarily measure relative biological influence. The source impact label is therefore not used as driver or
 pathogenicity evidence.
 
+The dbt test `mutation_transcript_evidence_python_parity` compares the full multiset of rows in the
+Python gold Parquet and dbt model. Run `make run-gold` before `make run-dbt test-dbt`; a missing or
+stale Python output fails the parity gate instead of silently accepting divergent implementations.
+
 ## Important Limitations
 
 - Protein-altering does not mean oncogenic, pathogenic, clonal, or causal.
