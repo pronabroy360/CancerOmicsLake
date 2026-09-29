@@ -8,13 +8,14 @@ one.
 
 - Archive: `outputs/releases/canceromicslake-derived-data-v0.1.0.tar.gz`
 - Deposit manifest: `outputs/releases/canceromicslake-derived-data-v0.1.0.deposit.json`
-- Archive bytes: `42,348,808`
-- Archive SHA-256: `3d418eaaa0aa9b19bce22bff661257484e4d764d7eb9a46c644f6353b85ae039`
-- Evidence-producing commit: `011de8b54019f7836893d1d2228b25f8eba041af`
+- Archive bytes and SHA-256: read `archive_bytes` and `archive_sha256` from the deposit manifest.
+- Evidence-producing commit: read `git_commit` from the deposit manifest and verify it matches
+  `git rev-parse HEAD` before upload.
 
-Re-run `make package-fair-release RELEASE_VERSION=0.1.0` immediately before upload and confirm the
-archive hash still matches this packet. If it differs, investigate and update this document rather
-than uploading silently changed evidence.
+Re-run `make package-fair-release RELEASE_VERSION=0.1.0` immediately before upload, then compare
+`shasum -a 256 outputs/releases/canceromicslake-derived-data-v0.1.0.tar.gz` and the archive byte
+count with the freshly generated deposit manifest. Do not upload if they differ or the manifest
+commit does not match the intended release commit.
 
 ## Repository Fields
 
@@ -29,8 +30,9 @@ than uploading silently changed evidence.
 **Description:**
 
 > CancerOmicsLake v0.1.0 is an aggregate, open-access-derived cancer-omics research bundle produced
-> from a provenance-aware TCGA-GTEx lakehouse. It contains 18 analysis-ready Parquet resources for
-> expression, consequence-stratified mutation summaries, multi-reference sensitivity, candidate
+> from a provenance-aware TCGA-GTEx lakehouse. It contains the aggregate Parquet resources enumerated
+> in the versioned release manifest for expression, consequence-stratified mutation summaries,
+> multi-reference sensitivity, candidate
 > stability, validation, pathways, and a public-safe cancer-gene knowledge graph. Raw biomedical
 > source files and individual-level patient, case, donor, and sample identifiers are excluded.
 > Results support reproducible data-engineering evaluation and biological hypothesis generation;

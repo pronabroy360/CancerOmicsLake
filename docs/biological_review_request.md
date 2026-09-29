@@ -12,7 +12,8 @@
 ## Review Target
 
 - Repository: `https://github.com/pronabroy360/CancerOmicsLake`
-- Evidence-producing commit: `011de8b54019f7836893d1d2228b25f8eba041af`
+- Evidence-producing commit: use `git_commit` from
+  `outputs/releases/v0.1.0/manifest.json` and confirm it matches the intended Git checkout.
 - Manuscript package: `manuscript/`
 - Claim ledger: `manuscript/evidence_ledger.json`
 - Review checklist: `docs/biological_review_checklist.md`

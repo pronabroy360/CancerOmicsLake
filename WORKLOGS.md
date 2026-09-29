@@ -812,3 +812,10 @@ Impact values:
   this is an integrity check, not a biological validation claim.
 - On current local evidence, readiness reports six blockers: the four human/deposit/review items,
   stale code revision, and changed ledger source resources. All 235 Python tests pass.
+
+## 2026-09-30 - Release Handoff Metadata Correction
+
+- Found stale, hard-coded archive size, SHA-256, resource count, and Git commit in the deposit and
+  biological-review handoff documents after the current release bundle was rebuilt.
+- Replaced those values with instructions to read and verify the freshly generated deposit and FAIR
+  manifests. No DOI or independent review status has been asserted.
