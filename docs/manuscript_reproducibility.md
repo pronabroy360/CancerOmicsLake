@@ -30,7 +30,10 @@ The submission-readiness audit also compares the package, evidence ledger, revis
 ablation reports, and CancerOmicsLake comparator versions with the checked-out commit. Historical
 passing results remain useful for exploration, but cannot certify the current manuscript build.
 Commit agreement is a code-revision check, not proof that uncommitted source data stayed fixed;
-the package hashes and recorded input-resource checksums must also be reviewed.
+the readiness audit also rehashes every claim-ledger source report and gold table against its
+recorded SHA-256 and byte count. Changed or missing inputs invalidate the package even if the Git
+commit and the manuscript files are unchanged. This verifies local evidence integrity, not
+independent biological validity.
 
 Generated package:
 

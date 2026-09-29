@@ -17,6 +17,7 @@ PLACEHOLDER_MARKERS = (
     "[AI DISCLOSURE TO COMPLETE]",
 )
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
+SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 
 
 def _sha256(path: Path) -> str:
@@ -75,6 +76,43 @@ def _package_integrity(root: Path, manifest_path: Path) -> tuple[bool, str]:
     if expected_count != actual_count:
         return False, f"package file count mismatch: expected={expected_count} actual={actual_count}"
     return True, f"verified {len(files)} hashes across {actual_count} package files"
+
+
+def _ledger_resource_integrity(root: Path, ledger: dict[str, Any]) -> tuple[bool, list[str]]:
+    resources = ledger.get("resources")
+    claims = ledger.get("claims")
+    if not isinstance(resources, list) or not resources:
+        return False, ["missing ledger resources"]
+    if not isinstance(claims, list) or not claims:
+        return False, ["missing ledger claims"]
+    errors: list[str] = []
+    names: set[str] = set()
+    for index, resource in enumerate(resources):
+        if not isinstance(resource, dict):
+            errors.append(f"resource[{index}] is not a mapping")
+            continue
+        name = str(resource.get("name", ""))
+        path = str(resource.get("path", ""))
+        digest = str(resource.get("sha256", "")).lower()
+        expected_bytes = resource.get("bytes")
+        if not name or name in names:
+            errors.append(f"resource[{index}] has a missing or duplicate name")
+            continue
+        names.add(name)
+        if not path or not SHA256_PATTERN.fullmatch(digest) or type(expected_bytes) is not int or expected_bytes < 0:
+            errors.append(f"{name}: invalid path, hash, or byte count")
+            continue
+        target = (root / path).resolve()
+        if not target.is_relative_to(root):
+            errors.append(f"{name}: path escapes repository")
+        elif not target.is_file():
+            errors.append(f"{name}: source file missing")
+        elif target.stat().st_size != expected_bytes or _sha256(target) != digest:
+            errors.append(f"{name}: source bytes or SHA-256 changed")
+    for claim in claims:
+        if not isinstance(claim, dict) or str(claim.get("source", "")) not in names:
+            errors.append("claim source missing from ledger resources")
+    return not errors, ([f"verified {len(resources)} source resources"] if not errors else errors[:8])
 
 
 def _citation_has_doi(citation: dict[str, Any]) -> bool:
@@ -244,6 +282,7 @@ def build_submission_readiness_report(
     )
     package_ok, package_detail = _package_integrity(root, package_manifest_path)
     ledger = _read_mapping(evidence_ledger_path)
+    ledger_ok, ledger_details = _ledger_resource_integrity(root, ledger)
     citation = _read_mapping(citation_path, yaml_input=True)
     metadata = _read_mapping(metadata_path, yaml_input=True).get("manuscript", {})
     if not isinstance(metadata, dict):
@@ -298,6 +337,12 @@ def build_submission_readiness_report(
             and bool(ledger.get("claims")),
             [str(evidence_ledger_path.relative_to(root))],
             "Regenerate a passing, non-empty claim evidence ledger.",
+        ),
+        _check(
+            "evidence_ledger_resources_current",
+            ledger_ok,
+            [str(evidence_ledger_path.relative_to(root)), *ledger_details],
+            "Regenerate the manuscript package after rebuilding changed source reports or gold tables.",
         ),
         _check(
             "research_evidence_revision_current",

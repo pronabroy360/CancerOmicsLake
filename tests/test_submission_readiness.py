@@ -37,8 +37,23 @@ def _fixture(root: Path, *, complete: bool) -> Path:
         encoding="utf-8",
     )
     ledger = manuscript_dir / "evidence_ledger.json"
+    fixture_evidence = root / "outputs/reports/source.json"
+    fixture_evidence.parent.mkdir(parents=True, exist_ok=True)
+    fixture_evidence.write_text('{"count": 1}', encoding="utf-8")
     ledger.write_text(
-        json.dumps({"status": "passed", "git_commit": FIXTURE_COMMIT, "claims": [{"claim_id": "C01"}]}),
+        json.dumps(
+            {
+                "status": "passed",
+                "git_commit": FIXTURE_COMMIT,
+                "resources": [{
+                    "name": "report:fixture",
+                    "path": "outputs/reports/source.json",
+                    "bytes": fixture_evidence.stat().st_size,
+                    "sha256": _sha256(fixture_evidence),
+                }],
+                "claims": [{"claim_id": "C01", "source": "report:fixture"}],
+            }
+        ),
         encoding="utf-8",
     )
     package_manifest = {
@@ -122,7 +137,7 @@ def _fixture(root: Path, *, complete: bool) -> Path:
         )
 
     reports = root / "outputs/reports"
-    reports.mkdir(parents=True)
+    reports.mkdir(parents=True, exist_ok=True)
     for name in ("research_benchmark_report.json", "reference_ablation_report.json"):
         (reports / name).write_text(json.dumps({"git_commit": FIXTURE_COMMIT}), encoding="utf-8")
     if complete:
@@ -194,7 +209,7 @@ def test_submission_readiness_passes_complete_fixture(tmp_path: Path) -> None:
 
     assert payload["status"] == "ready"
     assert payload["blocker_count"] == 0
-    assert payload["passed_count"] == payload["check_count"] == 10
+    assert payload["passed_count"] == payload["check_count"] == 11
 
 
 def test_submission_readiness_reports_human_and_comparison_blockers(
@@ -278,6 +293,31 @@ def test_submission_readiness_detects_package_hash_tampering(tmp_path: Path) -> 
         if check["check_name"] == "manuscript_package_integrity"
     )
     assert package_check["status"] == "failed"
+
+
+def test_submission_readiness_detects_changed_source_evidence(tmp_path: Path) -> None:
+    config = _fixture(tmp_path, complete=True)
+    (tmp_path / "outputs/reports/source.json").write_text('{"count": 2}', encoding="utf-8")
+
+    payload = build_submission_readiness_report(config.relative_to(tmp_path), tmp_path)
+
+    checks = {check["check_name"]: check for check in payload["checks"]}
+    assert checks["research_evidence_revision_current"]["status"] == "passed"
+    assert checks["evidence_ledger_resources_current"]["status"] == "failed"
+    assert payload["status"] == "not_ready"
+
+
+def test_submission_readiness_rejects_ledger_path_escape(tmp_path: Path) -> None:
+    config = _fixture(tmp_path, complete=True)
+    ledger_path = tmp_path / "manuscript/evidence_ledger.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["resources"][0]["path"] = "../../outside.json"
+    ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+
+    payload = build_submission_readiness_report(config.relative_to(tmp_path), tmp_path)
+
+    checks = {check["check_name"]: check for check in payload["checks"]}
+    assert checks["evidence_ledger_resources_current"]["status"] == "failed"
 
 
 def test_submission_readiness_requires_metadata_confirmation_even_without_markers(

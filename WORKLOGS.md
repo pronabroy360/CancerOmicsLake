@@ -801,3 +801,14 @@ Impact values:
 - Live readiness audit now reports five blockers rather than four: the four human/deposit/review
   blockers plus stale revisioned evidence. Comparative task coverage still passes separately.
 - Verified 233 Python tests. Git-commit agreement does not replace data-snapshot or package-hash review.
+
+## 2026-09-30 - Manuscript Source-Evidence Integrity Gate
+
+- Found that readiness checked hashes of generated manuscript files but did not rehash the reports
+  and gold tables listed as sources in the claim evidence ledger.
+- Added a fail-closed ledger-resource check for file existence, repository-contained paths, exact
+  byte counts and SHA-256, unique resource names, and claim-to-resource references.
+- A modified source report now blocks submission even when its Git revision still matches;
+  this is an integrity check, not a biological validation claim.
+- On current local evidence, readiness reports six blockers: the four human/deposit/review items,
+  stale code revision, and changed ledger source resources. All 235 Python tests pass.
