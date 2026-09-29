@@ -93,6 +93,9 @@ models:
       - name: reference_assembly
         tests:
           - not_null
+      - name: source_sample_id
+        tests:
+          - not_null
       - name: vep_impact
       - name: vep_consequence
 

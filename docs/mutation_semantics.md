@@ -21,6 +21,11 @@ protein-altering evidence.
 sample, source file, checksum metadata, and processing timestamp. This table defines the denominator used by mutation
 frequency marts. It prevents expression-only or clinical-only samples from being counted as mutation-profiled samples.
 
+MAF `Tumor_Sample_Barcode` and GDC file-metadata `sample_id` may be different identifiers for the same sample.
+Silver mutation rows retain the barcode as `source_sample_id` and map `sample_id` to the GDC UUID only when the
+same source file and case resolve to exactly one metadata sample and one MAF tumor barcode. Ambiguous mappings
+remain unresolved and fail the mutation-to-profile linkage checks; no case-level guess is accepted.
+
 The GDC MAF contract defines `NCBI_Build` as the alignment reference and notes that MAF annotation reports the most
 critically affected transcript, while annotated VCF can report multiple affected transcripts. The current recurrence
 mart uses the supplied assembly and does not reconstruct transcript-level consequences. See the

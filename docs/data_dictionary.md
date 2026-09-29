@@ -73,7 +73,9 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 
 - `project_id`: TCGA project ID.
 - `case_id`: GDC case UUID when available.
-- `sample_id`: tumor sample identifier.
+- `sample_id`: canonical GDC tumor sample UUID when the file/case mapping is unique; otherwise the
+  source MAF identifier remains and the profile-linkage quality gate fails if it cannot be reconciled.
+- `source_sample_id`: original MAF tumor barcode or sample identifier, retained for audit.
 - `gene_id`: normalized Ensembl gene ID when available.
 - `gene_symbol`: Hugo/gene symbol.
 - `variant_classification`: MAF variant classification.

@@ -345,6 +345,7 @@ def run_silver_quality_checks(
             "project_id": pl.Utf8,
             "case_id": pl.Utf8,
             "sample_id": pl.Utf8,
+            "source_sample_id": pl.Utf8,
             "gene_id": pl.Utf8,
             "gene_symbol": pl.Utf8,
             "variant_classification": pl.Utf8,
@@ -707,6 +708,7 @@ def run_silver_quality_checks(
             "project_id",
             "case_id",
             "sample_id",
+            "source_sample_id",
             "gene_symbol",
             "reference_assembly",
             "variant_classification",
@@ -742,6 +744,17 @@ def run_silver_quality_checks(
             | pl.col("file_id").cast(pl.Utf8).str.strip_chars().eq("")
             | (pl.col("profile_status") != "downloaded")
         ).height
+    orphan_mutation_samples = 0
+    linkage_keys = {"project_id", "case_id", "sample_id"}
+    if not mutations.is_empty() and linkage_keys.issubset(mutations.columns):
+        mutation_samples = mutations.select(sorted(linkage_keys)).unique()
+        if linkage_keys.issubset(mutation_profile.columns):
+            profiled_samples = mutation_profile.select(sorted(linkage_keys)).unique()
+            orphan_mutation_samples = mutation_samples.join(
+                profiled_samples, on=sorted(linkage_keys), how="anti"
+            ).height
+        else:
+            orphan_mutation_samples = mutation_samples.height
     missing_gold_mut_cols = _missing_columns(
         gold_mut_gene,
         [
@@ -1258,6 +1271,11 @@ def run_silver_quality_checks(
             check_name="silver_mutation_profile_rows_valid",
             status="passed" if invalid_mutation_profile_rows == 0 else "failed",
             failed_rows=int(invalid_mutation_profile_rows),
+        ),
+        CheckResult(
+            check_name="silver_mutation_samples_in_profile",
+            status="passed" if orphan_mutation_samples == 0 else "failed",
+            failed_rows=int(orphan_mutation_samples),
         ),
         CheckResult(
             check_name="silver_expression_gtex_null_gene_id",

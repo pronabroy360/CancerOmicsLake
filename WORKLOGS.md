@@ -766,3 +766,17 @@ Impact values:
 - Verified 105 dbt tests passed on current data. A one-row event-count mutation in a temporary copy
   produced the expected parity-test failure (two directional difference rows).
 - The gate checks implementation agreement, not biological accuracy or independent validation.
+
+## 2026-09-29 - Mutation Sample Identity Reconciliation
+
+- Audited the 45,588 real mutation rows against the downloaded MAF profile: 126 distinct mutation
+  samples and 126 profile samples shared case IDs but initially had zero matching sample IDs because
+  MAF tumor barcodes and GDC sample UUIDs occupied different namespaces.
+- Preserved each MAF barcode in `source_sample_id`; mapped the canonical `sample_id` only when the
+  same file/case has one metadata sample and one MAF tumor barcode. Ambiguous cases stay unresolved.
+- Added Python and dbt quality gates for mutation-to-profile sample linkage, plus fixtures for a
+  unique mapping, an ambiguous mapping, and an orphaned mutation sample.
+- Rebuilt the partial real cohort: all 126 mutation samples now link to a profile, with zero orphans.
+  Passed 226 Python tests, 63 runtime quality checks, 28 dbt models, and 107 dbt tests.
+- Prior equality of case counts did not establish sample identity; this correction does not make
+  capped-cohort mutation frequencies representative of full TCGA cohorts.

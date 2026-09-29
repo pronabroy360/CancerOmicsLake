@@ -2,6 +2,7 @@ select
   cast(project_id as varchar) as project_id,
   cast(case_id as varchar) as case_id,
   cast(sample_id as varchar) as sample_id,
+  cast(source_sample_id as varchar) as source_sample_id,
   cast(gene_id as varchar) as gene_id,
   cast(gene_symbol as varchar) as gene_symbol,
   cast(variant_classification as varchar) as variant_classification,

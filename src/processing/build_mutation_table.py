@@ -35,6 +35,7 @@ def _empty_mutation_df() -> pl.DataFrame:
             "project_id": pl.Utf8,
             "case_id": pl.Utf8,
             "sample_id": pl.Utf8,
+            "source_sample_id": pl.Utf8,
             "gene_id": pl.Utf8,
             "gene_symbol": pl.Utf8,
             "variant_classification": pl.Utf8,
@@ -240,6 +241,41 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
             ]
         )
 
+    # GDC MAF barcodes and file metadata UUIDs use different namespaces. Only
+    # canonicalize when this file and case identify exactly one source sample.
+    base = base.with_columns(pl.col("sample_id").alias("source_sample_id"))
+    if {"file_name", "case_id", "sample_id"}.issubset(metadata_df.columns):
+        file_metadata = metadata_df.filter(pl.col("file_name") == path.name)
+        if "project_id" in file_metadata.columns and project_id_from_path != "Unknown":
+            file_metadata = file_metadata.filter(pl.col("project_id") == project_id_from_path)
+        if {"data_category", "data_type"}.issubset(file_metadata.columns):
+            file_metadata = file_metadata.filter(
+                pl.col("data_category").cast(pl.Utf8).str.to_lowercase().str.contains("simple nucleotide variation")
+                & pl.col("data_type").cast(pl.Utf8).str.to_lowercase().str.contains("somatic mutation")
+            )
+        if "access" in file_metadata.columns:
+            file_metadata = file_metadata.filter(pl.col("access").cast(pl.Utf8).str.to_lowercase() == "open")
+        if not file_metadata.is_empty():
+            file_samples = (
+                file_metadata.group_by("case_id")
+                .agg(
+                    pl.col("sample_id").n_unique().alias("metadata_sample_count"),
+                    pl.col("sample_id").first().alias("canonical_sample_id"),
+                )
+                .filter(pl.col("metadata_sample_count") == 1)
+                .select(pl.col("case_id").alias("case_id_file"), "canonical_sample_id")
+            )
+            maf_samples = (
+                base.group_by("case_id_file")
+                .agg(pl.col("source_sample_id").n_unique().alias("maf_sample_count"))
+                .filter(pl.col("maf_sample_count") == 1)
+                .select("case_id_file")
+            )
+            base = (
+                base.join(file_samples.join(maf_samples, on="case_id_file", how="inner"), on="case_id_file", how="left")
+                .with_columns(pl.coalesce("canonical_sample_id", "sample_id").alias("sample_id"))
+            )
+
     normalized_gene = [
         normalize_gene_id(str(v))["gene_id_normalized"] if v is not None else ""
         for v in base.get_column("gene_id_raw").to_list()
@@ -264,6 +300,7 @@ def _parse_mutation_file(path: Path, metadata_df: pl.DataFrame) -> pl.DataFrame:
             pl.col("project_id").fill_null("Unknown"),
             pl.col("case_id").fill_null("Unknown"),
             pl.col("sample_id").fill_null("Unknown"),
+            pl.col("source_sample_id").fill_null("Unknown"),
             pl.col("gene_id").fill_null(""),
             pl.col("gene_symbol").fill_null("Unknown"),
             pl.col("variant_classification").fill_null("Unknown"),

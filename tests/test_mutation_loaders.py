@@ -5,6 +5,7 @@ import polars as pl
 
 from src.common.config import load_config
 from src.processing.build_mutation_table import build_mutation_profile_table, load_tcga_mutation_table
+from src.quality.checks import run_silver_quality_checks
 
 
 def test_load_tcga_mutation_table_prefers_manifest_files(tmp_path: Path) -> None:
@@ -101,6 +102,76 @@ def test_load_tcga_mutation_table_reads_gz_maf_with_comments(tmp_path: Path) -> 
     assert row["gene_symbol"] == "PIK3CA"
     assert row["start_position"] == 179218294
     assert row["reference_assembly"] == "GRCh38"
+
+
+def test_mutation_barcode_maps_to_unique_profile_uuid_and_retains_source(tmp_path: Path) -> None:
+    root = tmp_path / "tcga"
+    directory = root / "TCGA-LUAD" / "mutations"
+    directory.mkdir(parents=True)
+    (directory / "one.maf").write_text(
+        "Hugo_Symbol\tTumor_Sample_Barcode\tCase_ID\tStart_Position\n"
+        "TP53\tTCGA-CASE-01A\tcase-uuid\t100\n",
+        encoding="utf-8",
+    )
+    metadata = pl.DataFrame(
+        {
+            "project_id": ["TCGA-LUAD"],
+            "case_id": ["case-uuid"],
+            "sample_id": ["sample-uuid"],
+            "file_name": ["one.maf"],
+            "data_category": ["Simple Nucleotide Variation"],
+            "data_type": ["Masked Somatic Mutation"],
+            "access": ["open"],
+        }
+    )
+
+    row = load_tcga_mutation_table(load_config("configs/project_config.yml"), "now", metadata, root).row(0, named=True)
+
+    assert row["sample_id"] == "sample-uuid"
+    assert row["source_sample_id"] == "TCGA-CASE-01A"
+
+
+def test_ambiguous_mutation_file_sample_mapping_remains_unresolved(tmp_path: Path) -> None:
+    root = tmp_path / "tcga"
+    directory = root / "TCGA-LUAD" / "mutations"
+    directory.mkdir(parents=True)
+    (directory / "one.maf").write_text(
+        "Hugo_Symbol\tTumor_Sample_Barcode\tCase_ID\tStart_Position\n"
+        "TP53\tTCGA-CASE-01A\tcase-uuid\t100\n",
+        encoding="utf-8",
+    )
+    metadata = pl.DataFrame(
+        {
+            "project_id": ["TCGA-LUAD", "TCGA-LUAD"],
+            "case_id": ["case-uuid", "case-uuid"],
+            "sample_id": ["sample-uuid-1", "sample-uuid-2"],
+            "file_name": ["one.maf", "one.maf"],
+            "data_category": ["Simple Nucleotide Variation"] * 2,
+            "data_type": ["Masked Somatic Mutation"] * 2,
+            "access": ["open"] * 2,
+        }
+    )
+
+    row = load_tcga_mutation_table(load_config("configs/project_config.yml"), "now", metadata, root).row(0, named=True)
+
+    assert row["sample_id"] == "TCGA-CASE-01A"
+    assert row["source_sample_id"] == "TCGA-CASE-01A"
+
+
+def test_quality_rejects_mutation_samples_without_profile_link(tmp_path: Path) -> None:
+    silver = tmp_path / "silver"
+    silver.mkdir()
+    pl.DataFrame({"project_id": ["TCGA-LUAD"], "case_id": ["case-1"], "sample_id": ["barcode"]}).write_parquet(
+        silver / "silver_mutations.parquet"
+    )
+    pl.DataFrame({"project_id": ["TCGA-LUAD"], "case_id": ["case-1"], "sample_id": ["uuid"]}).write_parquet(
+        silver / "silver_mutation_profile.parquet"
+    )
+
+    checks = {check.check_name: check for check in run_silver_quality_checks(silver, gold_dir=tmp_path / "gold")}
+
+    assert checks["silver_mutation_samples_in_profile"].status == "failed"
+    assert checks["silver_mutation_samples_in_profile"].failed_rows == 1
 
 
 def test_build_mutation_profile_uses_only_downloaded_open_maf_files(tmp_path: Path) -> None:

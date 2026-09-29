@@ -515,6 +515,7 @@ def build_gold_cohort_summary(
             "project_id": pl.Utf8,
             "case_id": pl.Utf8,
             "sample_id": pl.Utf8,
+            "source_sample_id": pl.Utf8,
             "gene_id": pl.Utf8,
             "gene_symbol": pl.Utf8,
             "variant_classification": pl.Utf8,
