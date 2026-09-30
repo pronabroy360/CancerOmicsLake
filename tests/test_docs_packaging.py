@@ -89,7 +89,10 @@ def test_publication_strategy_and_human_review_packet_are_packaged() -> None:
     assert "all 20" in comparison
     assert "Independent" in biological
     assert "independent biological/methodological review" in review_request
-    assert "3d418eaaa0aa9b19bce22bff661257484e4d764d7eb9a46c644f6353b85ae039" in deposit
+    assert "archive_sha256" in deposit
+    assert "archive_bytes" in deposit
+    assert "git rev-parse HEAD" in deposit
+    assert "Do not upload if they differ" in deposit
     assert (ROOT / "configs" / "publication_config.yml").exists()
     assert (
         ROOT / "docs" / "attestations" / "biological_review.example.yml"
