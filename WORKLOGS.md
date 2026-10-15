@@ -819,3 +819,239 @@ Impact values:
   biological-review handoff documents after the current release bundle was rebuilt.
 - Replaced those values with instructions to read and verify the freshly generated deposit and FAIR
   manifests. No DOI or independent review status has been asserted.
+
+## 2026-10-04 - Controlled Research Evaluation and Input Integrity Repair
+
+- Started the research-strengthening goal without asserting RECOMB suitability or novel methods.
+- Added a frozen native-TPM study: patient/donor-separated development and holdout partitions,
+  identical tumor sets across references, balanced reference sizes, training-only gene filters,
+  repeated development subsampling, scale/pseudocount experiments, baseline rankings, and
+  conditional paired-bootstrap holdout intervals. Full and pilot configurations are separate.
+- The first real-data pilot stopped on duplicate sample/gene measurements. Whole-table diagnostics
+  found 571,592 duplicate groups in the old native TCGA TPM snapshot, including 26,444 groups
+  with within-file duplication. Raw STAR identifiers confirmed the `_PAR_Y` normalization collision.
+- Fixed numeric version stripping to preserve pseudoautosomal locus identifiers. TCGA ingestion
+  now chooses a whole same-workflow file by sorted provenance path without inspecting expression
+  values; conflicting workflows or within-file duplicates fail. Rebuilding silver is in progress;
+  downstream reports and manuscript evidence must be regenerated, not treated as current.
+- Preserved the failed pilot protocol; the corrected pilot uses a new study identifier (v2).
+- Added seven offline synthetic fault experiments against production guards. All passed:
+  corrupted downloads, retry after interruption, schema drift, duplicate measurements, negative
+  expression, same-size stale evidence, and changed frozen protocol. These are not external
+  workflow benchmarks, real-network recovery measurements, or independent human reproduction.
+- Corrected the manuscript generator's TCGA file quantity to describe metadata catalogue entries,
+  and added substantive primary-literature positioning. The existing manuscript is not silently
+  regenerated or represented as submission-ready.
+- Validation: full suite 252 passed (one upstream FastAPI/Starlette deprecation warning);
+  28 focused tests passed after the final protocol/dependency fingerprint changes.
+- Remaining: corrected live-study execution, paired-only and verified matched-processing arms,
+  external/known-truth evaluation, actual workflow comparisons, independent reproduction, and
+  evidence-based novelty assessment. Public release/DOI publication remains disabled.
+
+## 2026-10-04 - Paired Reference Pilots and Known-Truth Counterexample
+
+- Verified the silver rebuild completed: 36,456,660 native TCGA expression rows,
+  11,240,000 GTEx expression rows, and 45,588 mutation records. No new acquisition was required.
+- Added a separate paired-only arm that partitions complete patients and selects the same cases
+  for tumor and adjacent-normal groups, with donor-balanced GTEx reference sizes.
+- Both corrected real-data pilots completed all three cohorts with 20 units per group/partition.
+  At top-50, lower-quantile and simple maximin ranking both achieved reference replication 1.0
+  in all cancers in both pilots. This does not establish incremental novelty of the bootstrap score.
+- Executed a frozen five-scenario truth simulation with 20 independent datasets per scenario.
+  The shared-normal-bias counterexample had lower-quantile top-25 truth precision 0.018 despite
+  reference replication 1.0. Reference concordance must not be interpreted as biological validation.
+- Added a hash-verified review bundle retaining all methods/cancers/top-k results and explicit
+  research-incomplete/publication-disabled status. Pilot and full studies remain separate.
+- Strengthened fault experiments with measured retry-disabled and size-only controls; all seven
+  scenarios still pass. These are isolated synthetic comparisons, not external workflow benchmarks.
+- Full native and paired preset studies (200 training/holdout draws, 50 development repeats)
+  are running without performance-driven parameter retuning. Pilot holdout inspection is disclosed.
+- Docker reproduction inspection confirmed that the daemon is unavailable. No independent
+  reproduction or biological review is claimed.
+- Validation: final full suite 256 passed (one upstream deprecation warning). Five focused
+  simulation, fault and review-integrity tests also passed. Public release/DOI remains disabled.
+
+## 2026-10-04 - Full Native Study, Container Reproduction and Pairing Audit
+
+- Corrected silver quality passed all 63 checks. The full native study completed all three
+  cohorts with 200 training/holdout bootstrap draws and 50 development repeats. At top-50,
+  lower-quantile minus maximin replication differences and conditional interval endpoints were
+  zero in all three cohorts. This does not demonstrate an incremental new-method advantage.
+- Started Docker Desktop, ran 20 research tests in the existing image, and reproduced the
+  primary pilot in separate output/private roots. All 72 heldout rows and 2,400 candidate rows
+  matched exactly. Three sensitivity Spearman cells differed by 6.14e-9 and failed the fixed
+  numeric tolerance; the failure was retained with diagnostics, not relaxed posthoc.
+- Added an environment-comparison report that checks input and implementation fingerprints,
+  exact identifiers/schemas, and predefined float tolerances. This is same-author reproduction,
+  not independent investigator confirmation. Host/container Polars versions differed; this does
+  not identify a single cause of the tiny discrepancy.
+- Produced a new evidence-derived exploratory manuscript draft inside the review bundle with
+  verified measurement counts, substantive related work, all baseline results and explicit
+  limitations. Labeled the legacy manuscript historical and corrected its manifest-count wording;
+  its older package hashes are intentionally not resealed or represented as current.
+- Found the first paired protocol's development subsampling drew the two TCGA groups independently.
+  Corrected it to draw shared case identities; tests cover reordered columns and invalid identity
+  sets. Preserved the original source and artifacts and assigned new immutable study IDs.
+- Original full paired execution continues unchanged. Corrected full paired v2 is running separately;
+  only v2 can support pair-preserving development-subsampling claims. No ranking parameters were
+  retuned and no public release or DOI publication was performed.
+
+## 2026-10-04 - Expression-Key Quality Contract and Evidence Audit
+
+- Added unique sample/gene/unit measurement checks for TCGA and GTEx silver expression tables.
+  Direct Parquet inputs cannot now pass quality merely because values are non-negative while
+  containing duplicate measurements. Missing key schemas fail even for empty inputs.
+- Eleven focused silver-quality and measurement-key tests passed. The live corrected quality
+  rerun now includes 65 checks and is in progress; no pass is inferred from the earlier 63-check run.
+- Added a requirement-by-requirement research-goal audit distinguishing completed evidence from
+  unverified claims, and generated a full-native review/draft separately from historical pilots.
+- Final verification after the latest quality changes is running. Corrected full paired v2 is
+  also still active; no paired-subsampling or combined-full-review completion is claimed yet.
+
+## 2026-10-04 - Corrected Full Evidence Review Completed
+
+- Corrected full paired v2 completed all three cancers with zero patient/donor partition leakage.
+  The same-case development-subsampling repair is now covered by executed full-study evidence.
+- Both full studies have zero top-50 lower-quantile-minus-maximin replication differences in all
+  three cancers. Kept the null advantage rather than claiming a novel-method improvement.
+- Generated the combined full evidence review and current exploratory manuscript draft from
+  completed native v1 and corrected paired v2, retaining every method/cancer/top-k result.
+- Final suite passed 262 tests; live silver quality passed all 65 checks, including the two new
+  unique-measurement contracts. A further two review-generation tests passed after wording fixes.
+- Prepared an independent-reproduction handoff and requested whether an independent investigator
+  is available. No independent confirmation, biological validation, release or DOI is asserted.
+- Native/recount3 exact identifier probing found no TCGA overlap in the current 90 recount3 samples
+  against native file/sample/case/submitter IDs. This does not rule out a metadata-based specimen
+  crosswalk, which requires further provenance verification.
+
+## 2026-10-04 - Global Donor Partition Audit and Correction
+
+- User confirmed no independent reviewer is available; prepared the handoff and retain independent
+  reproduction as unverified. Public release and DOI deposition remain disabled.
+- Final manifest audit found 26 GTEx donors crossing folds across cancers in both native v1 and
+  paired v2. Earlier zero-leakage statements applied within cancer only; withdraw global claims.
+- Protocol 1.1 assigns each source/case or source/donor globally, stratified by project/group
+  availability, before per-cancer balancing. Added global manifest guard and report fields.
+- Added shared-donor, deterministic-order, deliberate leakage and multicancer integration tests;
+  focused research/review suite passed 20 tests. Retained prior immutable plans and source archives.
+- New full/pilot IDs explicitly include `global`; new real-input executions are required before
+  replacing the historical review. Shared donors remain a source of dependence across cancers.
+- Full suite passed 264 tests, followed by two review tests that check historical warnings and
+  reject a nonzero global leakage count. Seven offline fault scenarios still passed; graph updated.
+- Archived protocol-1.1 source by SHA-256. Started a detached sequential full native/paired runner
+  at `outputs/research/run_global_studies.sh`, with log and machine-readable status in the same
+  directory. It checks both private manifests before generating `global_evidence_review` and
+  stops if the frozen source changes. No completion is claimed while status is running.
+- Regenerated the historical full review with explicit global-partition limitations. No public
+  release, DOI deposit or independent-review claim was made.
+
+## 2026-10-13 - Corrected Study Rerun and recount3 Provenance Check
+
+- The prior detached study process stopped without a recorded exception; the status file remained
+  `running` and neither full report existed. Restarted the unchanged frozen run in an attached
+  session; the three-cancer global pilot had already completed with zero cross-cancer fold leakage.
+- Recount3 metadata provides GDC sample UUID and GTEx SAMPID mapping, but all 90 selected TCGA
+  recount3 records have `gdc_access=controlled`. The open-access-only public pipeline cannot use
+  these as matched-processing evidence without an explicit provenance/access resolution.
+- Added an aggregate-only specimen crosswalk audit that rejects controlled selected TCGA records,
+  ambiguous specimen IDs, and case/donor mismatches. Three focused tests passed. The live audit
+  raised `PermissionError` and wrote no crosswalk output.
+- Full test suite passed 267 tests with one existing Starlette/httpx deprecation warning.
+- Primary recount3 docs and the AWS Open Data registry identify its processed expression release
+  as publicly available/public domain. Revised the audit to distinguish upstream controlled GDC
+  files from the processed release: strict default plus explicit `--allow-public-derived` mode.
+  That mode downloads no controlled GDC files and emits aggregate counts/hashes only. It found
+  19/90 unambiguous exact TCGA matches and 87/90 GTEx matches; two COAD recount3 files sharing
+  one specimen were excluded. No processing-equivalence or biological claim follows from this.
+- The attached sequential runner completed both protocol-1.1 full studies and generated
+  `outputs/research/global_evidence_review/`. Each study evaluated three cancers, wrote 72
+  heldout rows, selected 423 specimen rows and passed the private global fold audit.
+- In both corrected full studies, top-50 lower-quantile versus maximin replication difference is
+  exactly zero for BRCA, COAD and LUAD. The new review remains `research_incomplete` with
+  `publication_enabled=false`. Independent human reproduction remains unverified.
+
+## 2026-10-13 - Frozen Exact-Specimen Processing Sensitivity
+
+- Locked `matched_processing_v1` before metric computation (seed 20261013; input, dependency,
+  code and source-revision fingerprints). Selected all 617 exact unambiguous matches from cached
+  public recount3 processed data: 417 TCGA and 200 GTEx. Private specimen manifest/metrics are
+  under `data/research/`; the strict access default remains, with explicit public-derived opt-in.
+- Preserved `_PAR_Y` during recount3 Ensembl normalization. New versioned silver table has
+  39,399,152 measurements and zero duplicate `(source, sample_id, gene_id)` keys. The older
+  30-per-cohort recount3 extract and original global review were not modified.
+- Per-specimen median Spearman on shared genes is about 0.866-0.868 for TCGA and 0.925-0.926
+  for GTEx; top-100 expressed-gene Jaccard medians are only 0.38-0.42. Top-50 tumor-versus-GTEx
+  absolute-effect Jaccard is 0.0204 (BRCA), 0 (COAD), 0.0204 (LUAD). Native cutoff tie counts
+  are 488, 412 and 515. These unfavorable, tie-sensitive findings are retained in the manuscript
+  draft; no cross-unit numeric expression, biological validation or novelty claim is made.
+- Built new `global_evidence_review_v2` with a verified processing plan/resources and
+  `publication_enabled=false`. Verified 32 source/artifact hashes and scanned nine aggregate
+  report/figure files against 1,748 private identifier strings; no matches found. Archived the
+  four hashed implementation files locally under `outputs/research/protocol_sources/`.
+- Full suite: 274 passed, one existing Starlette/httpx deprecation warning. Existing silver
+  quality stage: 65 checks passed; the new table's uniqueness was checked separately. Independent
+  human reproduction, full published-method comparison and biological validation remain open.
+
+## 2026-10-13 - Post-v1 Matched Processing Diagnostic
+- Froze `matched_processing_v2` against the 617-specimen v1 manifest and corrected silver inputs,
+  with code/dependency/input hashes and row counts. Reused all inputs offline; preserved v1 and
+  both older review bundles. Archived v2 implementation under `protocol_sources/`.
+- Completed all three cancers and 200 paired case/donor resamples per cancer, with 1000 seeded
+  point tie draws and 100 tie draws per bootstrap replicate. Fixed 20%-detection filtering kept
+  31,875-33,684 genes of 55,660 complete shared genes; no post-hoc threshold adjustment.
+- Signed effect Kendall tau-b was 0.556-0.571 across all genes, and thresholded direction
+  agreement was 89.8%-90.5%. Top-50 tie-aware mean overlap was only 0.0026-0.0058, versus
+  deterministic v1 0-0.0204. The informative subset remained weak (0.0042-0.0086). Broad
+  agreement and unstable top candidate lists are both reported without claiming biology.
+- Aggregate annotation audit found 20,347 shared TCGA/recount3 symbol-string differences, none
+  for GTEx/recount3, plus gene-universe and `_PAR_Y` counts. These data do not isolate a causal
+  mechanism. Built a separate v3 review with publication disabled; independent reproduction
+  and external/biological validation remain unverified.
+- Idempotent v2 rerun verified 26 source/aggregate/private resource hashes. Scanned 12 public
+  aggregate files against 1,748 private identifier strings with zero matches. Full suite passed
+  282 tests with one existing Starlette/httpx deprecation warning; baseline silver quality
+  passed 65 checks. The new v2 metrics are validated separately; the baseline 65-check stage
+  does not replace the study-specific hash, privacy and bootstrap checks.
+
+## 2026-10-14 - Published RRA Comparator Protocol
+
+- Added a separate official-R-package comparator runner, pinned-version Docker build path,
+  frozen resource plan, global-split/candidate reconstruction checks, paired holdout bootstrap
+  comparison, aggregate-only review builder and tests. Prior studies/reviews are untouched.
+- All six frozen cohort/study combinations reproduced their existing candidates and heldout
+  metrics. Full test suite passed 287 tests; read-only silver quality passed 65 checks.
+- An unsandboxed Docker Desktop start restored the daemon. Built the R image from a pinned
+  base digest, smoke-tested official RobustRankAggreg 1.2.1, froze image/code/input hashes,
+  then completed all 18 top-k cells in six cancer/study combinations. The v4 aggregate review
+  is separate; earlier reviews remain untouched.
+- At top-50, proposed-minus-RRA heldout replication was 0.02-0.10, with one paired interval
+  including zero. Official RRA versus the old heuristic had top-50 Jaccard 0.515-0.887.
+  This does not overcome the prior no-advantage result against maximin. Publication stays disabled.
+- Verified 17 frozen resources and scanned four aggregate files against 1,261 private ID strings:
+  no matches. A full official R/Python rerun preserved both aggregate file hashes exactly.
+  Independent human reproduction remains unverified.
+
+## 2026-10-15 - Engineering Completion Execution
+
+- Completed the four-runtime numerical diagnosis and corrected-global replays using archived
+  source and fixed tolerances. Cross-OS log2 effects first differ by at most 4.44e-16; tested
+  Polars-only changes do not explain the discrepancy. Candidate lists and heldout metrics
+  reproduce, while 63 native and 60 paired sensitivity cells retain strict-tolerance failures.
+- Added the pinned cached-input external-workflow benchmark, aggregate v5 package builder,
+  figures, source snapshot, submission gates and separate future-method protocol. The earlier
+  full suite passed 297 tests and read-only silver quality passed 65 checks; final verification
+  after the last edits is queued, not yet claimed complete.
+- First benchmark pass completed for both implementations. The remaining reversed-order pass,
+  fault probes and native-script integrations continue without model polling. A follow-on
+  `scripts/finalize_engineering_evidence.sh` job waits for the existing benchmark process, then
+  verifies resources, tests, quality, package idempotence and code graph. Its current stage is
+  recorded in `outputs/research/engineering_acceptance_v1/finalization.json`; private diagnostics
+  are in `data/research/engineering_acceptance_v1/finalization.log`.
+- No new biomedical downloads, public release or DOI deposit. Frozen earlier evidence stays
+  unchanged. Final package execution, independent human reproduction and author confirmations
+  must not be inferred merely from this implementation entry.
+
+
+## Executed engineering evidence (2026-10-15)
+
+Cached preparation completed 21 workload equivalence cells and 84 tool/pass/workload summaries in two passes. Module comparability: True. Native-script comparable outputs: 7/7. Full tests: 297 passed; read-only silver quality: passed (65 checks). Strict numerical sensitivity failures remain retained. Shared TMM normalization and emulated hardware prohibit an end-to-end superiority claim. Independent human reproduction is unverified; author declarations and publication approval remain pending. Publication and DOI deposit are disabled. See the separate v5 review.

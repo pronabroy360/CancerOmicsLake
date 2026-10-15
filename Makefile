@@ -3,6 +3,33 @@ PYTHON ?= $(VENV)/bin/python
 PIP ?= $(VENV)/bin/pip
 UV ?= uv
 
+.PHONY: setup-engineering-macos fetch-engineering-workflow-source build-engineering-runtimes run-engineering-numerical run-engineering-workflow build-engineering-package
+
+fetch-engineering-workflow-source:
+	$(PYTHON) -m src.operations.engineering_source_setup
+
+setup-engineering-macos:
+	test -x data/research/engineering_runtimes/macos_144_fixed/bin/python || $(UV) venv --python $(PYTHON) data/research/engineering_runtimes/macos_144_fixed
+	$(UV) pip install --python data/research/engineering_runtimes/macos_144_fixed/bin/python numpy==2.4.6 polars==1.44.2 scipy==1.17.1 PyYAML==6.0.3
+
+build-engineering-runtimes:
+	docker build -t canceromicslake-replay:polars142 -f research/Dockerfile.reproduction .
+	docker build --platform linux/amd64 -t canceromicslake-workflow:20261015 -f research/Dockerfile.workflow .
+
+.PHONY: build-engineering-portable-runtimes
+build-engineering-portable-runtimes:
+	docker build -t canceromicslake-replay-portable:142 --build-arg POLARS_VERSION=1.42.1 -f research/Dockerfile.replay-portable .
+	docker build -t canceromicslake-replay-portable:144 --build-arg POLARS_VERSION=1.44.2 -f research/Dockerfile.replay-portable .
+
+run-engineering-numerical:
+	POLARS_MAX_THREADS=4 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 $(PYTHON) -m src.operations.engineering_evidence
+
+run-engineering-workflow: fetch-engineering-workflow-source
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.operations.workflow_benchmark
+
+build-engineering-package:
+	$(PYTHON) -m src.operations.engineering_package
+
 # When SKIP_GMT_FETCH=1 the pathway-enrichment target will not pull the
 # Reactome GMT (useful in CI / sandboxes without egress). The downstream
 # analytics layer will then return its normal `skipped_missing_inputs` status.
@@ -100,6 +127,47 @@ run-consensus-candidates:
 run-reference-ablation:
 	$(PYTHON) -m src.main run-reference-ablation --config configs/project_config.yml --top-k-values 25,50,100,250
 
+run-controlled-reference-study:
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.main run-controlled-reference-study --study-config configs/controlled_reference_study.yml
+
+.PHONY: build-published-rra prepare-published-rra run-published-rra
+
+build-published-rra:
+	docker compose build rra
+
+prepare-published-rra: build-published-rra
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.analytics.published_rra_baseline --prepare-only
+
+run-published-rra: prepare-published-rra
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.analytics.published_rra_baseline
+
+.PHONY: build-published-rra-review
+build-published-rra-review:
+	$(PYTHON) -m src.operations.published_rra_review
+
+.PHONY: run-controlled-reference-study run-failure-experiments run-reference-truth-simulation run-matched-processing run-matched-processing-prepare run-matched-processing-v2 run-matched-processing-v2-prepare build-matched-processing-v2-review
+
+run-matched-processing-prepare:
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.analytics.matched_processing --config configs/matched_processing_v1.yml --prepare-only
+
+run-matched-processing:
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.analytics.matched_processing --config configs/matched_processing_v1.yml
+
+run-matched-processing-v2-prepare:
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.analytics.matched_processing_v2 --config configs/matched_processing_v2.yml --prepare-only
+
+run-matched-processing-v2:
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.analytics.matched_processing_v2 --config configs/matched_processing_v2.yml
+
+build-matched-processing-v2-review:
+	$(PYTHON) -m src.operations.matched_processing_v2_review --studies outputs/research/native_reference_global_v1 outputs/research/native_reference_paired_global_v1
+
+run-failure-experiments:
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.main run-failure-experiments
+
+run-reference-truth-simulation:
+	POLARS_MAX_THREADS=4 $(PYTHON) -m src.main run-reference-truth-simulation
+
 fetch-reactome-gmt:
 	@bash scripts/fetch_reactome_gmt.sh
 
@@ -185,3 +253,7 @@ run-api:
 
 run-dashboard:
 	$(PYTHON) -m streamlit run dashboard/app.py --server.port 8501
+
+.PHONY: finalize-engineering-evidence
+finalize-engineering-evidence:
+	PYTHON=$(PYTHON) sh scripts/finalize_engineering_evidence.sh

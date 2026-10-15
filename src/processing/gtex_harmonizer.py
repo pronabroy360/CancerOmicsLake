@@ -91,7 +91,7 @@ def _long_batch(
     wide = pl.DataFrame(rows, schema=columns, orient="row", strict=False)
     long = (
         wide.with_columns(
-            pl.col("gene_id_raw").cast(pl.Utf8).str.replace(r"\.\d+$", "").alias("gene_id")
+            pl.col("gene_id_raw").cast(pl.Utf8).str.replace(r"\.\d+(_PAR_Y)?$", "${1}").alias("gene_id")
         )
         .drop("gene_id_raw")
         .unpivot(index=["gene_id", "gene_symbol"], variable_name="gtex_sample_id", value_name="expression_value")

@@ -90,3 +90,19 @@ def test_sample_selection_is_filtered_sorted_and_capped(tmp_path: Path) -> None:
 
     assert result.get_column("external_id").to_list() == ["sample-a"]
     assert result.get_column("project_id").to_list() == ["TCGA-BRCA"]
+
+
+def test_recount3_preserves_par_y_locus_as_distinct_gene(tmp_path: Path) -> None:
+    annotation_path = tmp_path / "annotation.gtf.gz"
+    _write_gzip(annotation_path,
+                'chrX\tHAVANA\tgene\t1\t10\t.\t+\t.\tgene_id "ENSG1.2"; gene_name "GENE";\n'
+                'chrY\tHAVANA\tgene\t1\t10\t.\t+\t.\tgene_id "ENSG1.2_PAR_Y"; gene_name "GENE";\n')
+    counts_path = tmp_path / "counts.gz"
+    _write_gzip(counts_path,
+                "##annotation=G026\n##date.generated=test\ngene_id\tsample-1\n"
+                "ENSG1.2\t20\nENSG1.2_PAR_Y\t40\n")
+    selected = pl.DataFrame({"external_id": ["sample-1"], "sample_type": ["Primary Tumor"],
+                             "tissue_site": [""], "project_id": ["TCGA-BRCA"],
+                             "auc": [80_000_000.0]})
+    result = _harmonize_cohort(COHORTS[0], counts_path, selected, _parse_gene_annotation(annotation_path))
+    assert set(result["gene_id"]) == {"ENSG1", "ENSG1_PAR_Y"}

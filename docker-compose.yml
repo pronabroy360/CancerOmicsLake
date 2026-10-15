@@ -1,4 +1,13 @@
 services:
+  rra:
+    image: canceromicslake-rra:1.2.1
+    build:
+      context: .
+      dockerfile: research/Dockerfile.rra
+    working_dir: /app
+    volumes:
+      - .:/app
+
   dbt:
     build:
       context: .

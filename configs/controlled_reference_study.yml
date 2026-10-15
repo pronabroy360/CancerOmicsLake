@@ -1,0 +1,22 @@
+study_id: native_reference_global_v1
+seed: 20261004
+projects:
+  TCGA-BRCA: Breast - Mammary Tissue
+  TCGA-LUAD: Lung
+  TCGA-COAD: Colon - Transverse
+holdout_fraction: 0.5
+min_units_per_group: 8
+max_units_per_group: 40
+development_repeats: 50
+training_bootstraps: 200
+holdout_bootstraps: 200
+lower_quantile: 0.1
+replication_effect_threshold: 0.3
+top_k: [25, 50, 100]
+expression_thresholds: [0.0, 1.0]
+minimum_prevalence: 0.2
+pseudocounts: [0.1, 1.0, 10.0]
+scale_factors: [0.1, 1.0, 10.0]
+primary_expression_threshold: 1.0
+primary_pseudocount: 1.0
+pilot: false

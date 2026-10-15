@@ -1,5 +1,10 @@
 # Manuscript Reproducibility
 
+For the current engineering evidence package, use `docs/engineering_completion.md` and
+`make build-engineering-package` after both frozen engineering studies finish. Its v5 draft
+retains numerical failures and author gates. The commands below describe the earlier package;
+do not overwrite frozen studies/reviews to refresh them. Independent reproduction is unverified.
+
 Build the journal-neutral manuscript evidence package only after regenerating research reports and
 the FAIR bundle from the intended Git commit:
 

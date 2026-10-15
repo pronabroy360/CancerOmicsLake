@@ -11,6 +11,7 @@ env/
 data/
 outputs/raw/
 outputs/releases/
+outputs/research/*/source/
 
 .env
 *.token

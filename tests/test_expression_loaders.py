@@ -6,6 +6,26 @@ from src.common.config import load_config
 from src.processing.expression_loaders import load_gtex_expression_table, load_tcga_expression_table
 
 
+def test_tcga_selects_one_whole_file_without_using_expression_values(tmp_path):
+    config = load_config("configs/project_config.yml")
+    directory = tmp_path / "TCGA-BRCA" / "expression"
+    directory.mkdir(parents=True)
+    for name, value in (("b.tsv", 999), ("a.tsv", 1)):
+        (directory / name).write_text(
+            "sample_id\tgene_id\tgene_symbol\texpression_value\n"
+            f"s\tENSG00000002586.20\tGENE\t{value}\n"
+            f"s\tENSG00000002586.20_PAR_Y\tGENEY\t{value + 1}\n"
+        )
+    metadata = pl.DataFrame({"project_id": ["TCGA-BRCA"], "case_id": ["case"],
+                             "sample_id": ["s"], "sample_type": ["Primary Tumor"],
+                             "workflow_type": ["STAR - Counts"]})
+    result = load_tcga_expression_table(config, "fixture", metadata, tmp_path)
+    assert result.height == 2
+    assert result["expression_value"].to_list() == [1., 2.]
+    assert set(result["gene_id"]) == {"ENSG00000002586", "ENSG00000002586_PAR_Y"}
+    assert result["data_origin"].n_unique() == 1
+
+
 def test_load_tcga_expression_table_from_file(tmp_path: Path) -> None:
     config = load_config("configs/project_config.yml")
     ingest_time = "2026-05-28T00:00:00Z"

@@ -1,0 +1,6 @@
+ARG BASE_IMAGE=canceromicslake-dbt:latest
+FROM ${BASE_IMAGE}
+
+RUN python -m pip install --no-cache-dir numpy==2.4.6 scipy==1.17.1 polars==1.42.1 PyYAML==6.0.3
+
+WORKDIR /app

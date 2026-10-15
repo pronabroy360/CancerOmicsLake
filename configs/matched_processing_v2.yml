@@ -1,0 +1,12 @@
+study_id: matched_processing_v2
+expected_matched_specimens: 617
+seed: 20261014
+top_k: [25, 50, 100]
+detection_prevalence: 0.20
+minimum_informative_genes: 100
+direction_effect_threshold: 0.20
+tie_draws: 1000
+bootstrap_repeats: 200
+bootstrap_tie_draws: 100
+gene_chunk_size: 512
+primary_colon_tissue: Colon - Transverse

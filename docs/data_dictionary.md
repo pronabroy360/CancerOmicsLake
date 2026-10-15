@@ -309,6 +309,28 @@ This dictionary documents the currently implemented lakehouse tables. Target fut
 - `expression_unit`: normalization unit description.
 - `external_annotation`: recount3/Monorail and annotation provenance label.
 
+### Matched Processing v2 Aggregate Outputs
+
+These are research outputs in `outputs/research/matched_processing_v2/`, not warehouse marts.
+Individual specimen IDs and per-gene effects remain private under `data/research/`.
+
+- `effect_concordance.csv`: `cancer_type` (string), `universe` (`all_shared` or `informative`),
+  `gene_count` (integer), `status` (string), `kendall_tau_b` (float, nullable),
+  `direction_denominator` (integer), `direction_agreement` (float, nullable), native/recount3
+  zero/saturated effect counts (integer), absolute-effect quantiles (float), and paired-unit
+  bootstrap interval bounds/replicate counts. The informative universe uses fixed 20%
+  positive-expression prevalence in each group and pipeline.
+- `topk_tie_sensitivity.csv`: `cancer_type`, `universe`, `top_k` (integer), deterministic
+  and v1 top-list Jaccard (float, v1 comparator nullable), seeded tie-resolution mean/
+  quantiles (float), boundary tie/slot counts (integer), and separately labeled paired-
+  unit bootstrap interval/replicate count. Tie-draw quantiles are not confidence intervals.
+- `annotation_workflow_audit.json`: per-source/cohort counts of native/recount/shared Ensembl
+  IDs, `_PAR_Y` loci, symbol-string conflicts, and observed workflow/version labels.
+- `cohort_audit.json`: per-cancer matched tumor/normal and biological-unit counts, complete
+  and informative gene counts, and paired zero-versus-positive detection discordance cells.
+- `study_plan.json` and `report.json`: immutable input/code/config hashes and aggregate
+  results. Publication remains disabled in the separate v3 review bundle.
+
 ### `gold_external_expression_validation.parquet`
 
 - `cancer_type`, `gene_symbol`: cancer-gene pair assessed for reprocessing concordance.

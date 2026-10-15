@@ -292,6 +292,64 @@ make run-ingestion-traceability
 
 This writes `outputs/reports/ingestion_traceability_report.json` with per-project/per-modality candidate/selected/downloaded/skipped/failed counts and silver parsed row/file coverage.
 
+## Controlled Research Evaluation
+
+The engineering completion phase adds a four-environment numerical diagnosis and a cached-input
+comparison with the published tcga-data-nf preparation methods. Commands and measurement limits are
+in [engineering completion](docs/engineering_completion.md). The new manuscript package is generated
+under `outputs/research/global_evidence_review_v5/` after both studies finish; earlier reviews remain
+available. Strict numerical failures and partial tasks remain visible, and publication is disabled.
+
+The [controlled reference protocol](docs/controlled_reference_study.md) separates development
+patients/donors from held-out evaluation, fixes the tumor set across normal references, and tests
+filtering, scale, pseudocount and subsampling sensitivity. See the
+[related-work assessment](docs/research_related_work.md) for contribution boundaries.
+The [evaluation findings](docs/research_evaluation_findings.md) retain negative comparisons
+and distinguish reference agreement from biological truth.
+The corrected native and matched full studies are complete. Their private manifests show zero
+cross-cancer case/donor fold crossings; the current aggregate review is
+`outputs/research/global_evidence_review_v3/`. At top 50, the experimental score did not outperform
+the maximin baseline on the measured replication endpoint in BRCA, COAD or LUAD. Independent
+reproduction and biological validation are still open. This review also contains
+post-v1 processing diagnostics; older review bundles remain available for auditing.
+
+```bash
+make run-failure-experiments
+make run-controlled-reference-study
+```
+
+For the published recount3 processed release, run the aggregate-only specimen crosswalk audit with
+`.venv/bin/python -m src.analytics.recount3_crosswalk --allow-public-derived`. It distinguishes
+public recount3 expression from upstream controlled GDC files and excludes ambiguous specimen IDs.
+
+The [frozen exact-specimen processing study](docs/matched_processing_study.md) uses the cached
+public recount3 processed files without downloading controlled GDC inputs. Run
+`make run-matched-processing-prepare` to lock inputs/code and the private match manifest, then
+`make run-matched-processing` to build a **new** corrected silver table and aggregate results.
+The completed run matched 617 specimens (417 TCGA, 200 GTEx); top-50 cancer effect-rank overlap
+was only 0-0.020, with many tied native effects. The historical 30-per-cohort extract and earlier
+review remain unchanged. `outputs/research/global_evidence_review_v2/` incorporates the study,
+retains the unfavorable results, and keeps publication disabled. Never publish private manifests,
+per-specimen metrics or silver Parquet data.
+
+The [post-v1 tie and annotation diagnostic](docs/matched_processing_v2.md) reuses those exact
+617 specimens without re-extraction. Run `make run-matched-processing-v2-prepare`, then
+`make run-matched-processing-v2`; once verified, `make build-matched-processing-v2-review`
+creates a separate v3 review. The v2 study reports tie-break uncertainty separately from
+paired case/donor bootstrap intervals. It does not validate biological findings.
+
+The [published RRA comparator](docs/published_rra_baseline.md) is a separate post-v2 study.
+Run `make build-published-rra`, `make prepare-published-rra`, then
+`make run-published-rra` and `make build-published-rra-review`. Docker and the official R
+package are required. The run completed on 2026-10-14 with 18 aggregate top-k cells in
+`global_evidence_review_v4`; its ranking scores are not calibrated significance in this
+dependent-list setting. Existing studies and reviews remain unchanged.
+
+These experiments support an evidence-based publication assessment, not a claim of established
+novelty, clinical validity, or RECOMB acceptance. Corrected gene normalization requires rebuilding
+silver and downstream evidence; previously generated manuscript quantities are not automatically
+refreshed by changing the manuscript generator.
+
 ## Compliance Notice
 
 - Public mode is `open-access-only` by default.

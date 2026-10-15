@@ -332,6 +332,18 @@ def load_tcga_expression_table(
         return empty
 
     combined = pl.concat(frames, how="vertical")
+    # Select a whole quantification file, never individual genes or expression values.
+    # Multiple aliquots are not independent biological samples.
+    keys = ["project_id", "sample_id", "expression_unit"]
+    workflows = combined.select(keys + ["pipeline_workflow"]).unique()
+    if workflows.group_by(keys).len().filter(pl.col("len") > 1).height:
+        raise ValueError("Multiple expression workflows for one sample/unit; configure a single workflow")
+    selected = combined.select(keys + ["data_origin"]).unique().sort("data_origin").unique(
+        subset=keys, keep="first", maintain_order=True
+    )
+    combined = combined.join(selected, on=keys + ["data_origin"], how="semi")
+    if combined.group_by(keys + ["gene_id"]).len().filter(pl.col("len") > 1).height:
+        raise ValueError("Duplicate gene/sample measurements within selected expression file")
     return combined.with_columns(pl.lit(ingest_time).alias("ingested_at"))
 
 

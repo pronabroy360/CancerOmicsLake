@@ -460,9 +460,15 @@ metadata heterogeneity, gene-identifier mismatch, distinct processing pipelines,
 and cohort composition. Uniform resources such as recount3 reduce processing differences [3], but
 do not remove biological or collection confounding.
 
-Many exploratory analyses begin with notebooks that conceal acquisition decisions, incomplete
-denominators, and changing candidate thresholds. CancerOmicsLake instead treats ingestion,
-harmonization, validation, analytical modeling, and public release as first-class research objects.
+Existing platforms already support integrated tumor-normal exploration: GEPIA2 provides
+expression analysis [5], and published harmonization studies address TCGA-GTEx processing
+differences [6,7]. Workflow infrastructure such as tcga-data-nf also makes reproducible TCGA
+acquisition an established contribution [8]. CancerOmicsLake must therefore be evaluated against
+these capabilities rather than against an informal notebook baseline. Its intended distinction
+is traceable cross-layer evidence, explicit reference sensitivity, and tested fail-closed behavior;
+the current comparative evidence does not establish universal superiority over these systems.
+CancerOmicsLake treats ingestion, harmonization, validation, analytical modeling, and public
+release as first-class research objects.
 The principal contribution is not a novel clinical biomarker model. It is an auditable
 data-engineering method for assembling known analytical techniques into a reproducible,
 multi-reference cancer-omics platform and quantifying how reference choice affects candidate lists.
@@ -541,7 +547,8 @@ with this draft.
 
 ### 3.1 Data processing and analytical products
 
-CancerOmicsLake processed {_format_int(cohort['tcga_file_count'])} TCGA files into
+CancerOmicsLake catalogued {_format_int(cohort['tcga_file_count'])} TCGA files in its metadata manifest.
+The expression tables contain
 {_format_int(cohort['tcga_expression_row_count'])} TCGA and
 {_format_int(cohort['gtex_expression_row_count'])} GTEx expression rows. The mutation layer retained
 {_format_int(cohort['mutation_record_count'])} somatic records, including
@@ -667,6 +674,16 @@ visualization, and writing.
    doi:10.1186/s13059-021-02533-6.
 4. Milacic M, Beavers D, Conley P, et al. The Reactome Pathway Knowledgebase 2024.
    *Nucleic Acids Research*. 2024;52:D672-D678. doi:10.1093/nar/gkad1025.
+5. Tang Z, Kang B, Li C, Chen T, Zhang Z. GEPIA2: an enhanced web server for large-scale
+   expression profiling and interactive analysis. *Nucleic Acids Research*. 2019.
+   doi:10.1093/nar/gkz430.
+6. Wang Q, et al. Unifying cancer and normal RNA sequencing data from different sources.
+   *Scientific Data*. 2018;5:180061. doi:10.1038/sdata.2018.61.
+7. Arora S, et al. Variability in estimated gene expression among commonly used RNA-seq
+   pipelines. *Scientific Reports*. 2020;10:2734.
+   doi:10.1038/s41598-020-59516-z.
+8. Reproducible processing of TCGA regulatory networks (tcga-data-nf).
+   *GigaScience*. 2025. doi:10.1093/gigascience/giaf126.
 """
 
 

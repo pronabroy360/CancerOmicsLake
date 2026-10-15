@@ -1,0 +1,7 @@
+study_id: matched_processing_v1
+seed: 20261013
+allow_public_derived: true
+minimum_common_genes: 1000
+bootstrap_repeats: 1000
+top_k: [25, 50, 100]
+primary_colon_tissue: Colon - Transverse

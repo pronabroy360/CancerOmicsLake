@@ -30,6 +30,14 @@ def check_non_negative_expression(rows: list[dict[str, str]]) -> CheckResult:
     )
 
 
+def check_unique_measurement_keys(frame: pl.DataFrame, keys: list[str], name: str) -> CheckResult:
+    missing = set(keys) - set(frame.columns)
+    if missing:
+        return CheckResult(name, "failed", metric_name="missing_key_columns", metric_value=float(len(missing)))
+    duplicates = frame.height - frame.select(keys).unique().height
+    return CheckResult(name, "passed" if duplicates == 0 else "failed", failed_rows=duplicates)
+
+
 def check_gene_mapping_rate(mapped_rows: list[dict[str, str]], threshold: float = 0.98) -> CheckResult:
     if not mapped_rows:
         rate = 0.0
@@ -1193,6 +1201,10 @@ def run_silver_quality_checks(
             expected_non_zero_failure += 1
 
     return [
+        check_unique_measurement_keys(expr_tcga, ["project_id", "sample_id", "gene_id", "expression_unit"],
+                                      "silver_expression_tcga_duplicate_measurement_keys"),
+        check_unique_measurement_keys(expr_gtex, ["gtex_sample_id", "gene_id", "expression_unit"],
+                                      "silver_expression_gtex_duplicate_measurement_keys"),
         CheckResult(
             check_name="silver_projects_null_project_id",
             status="passed" if null_project_ids == 0 else "failed",

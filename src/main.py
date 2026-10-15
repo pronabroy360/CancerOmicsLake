@@ -23,6 +23,9 @@ from src.analytics.expression_statistics import build_expression_statistical_sup
 from src.analytics.paired_expression import build_paired_expression_support
 from src.analytics.pathway_enrichment import build_pathway_enrichment
 from src.analytics.reference_ablation import build_reference_ablation_evaluation
+from src.analytics.controlled_reference_study import run_controlled_reference_study
+from src.analytics.reference_truth_simulation import run_truth_simulation
+from src.operations.failure_experiments import run_failure_experiments
 from src.graph.build_edges import build_graph_edges_table
 from src.graph.build_nodes import build_graph_nodes_table
 from src.graph.export_graphify import export_graphify_from_gold_graph_tables
@@ -172,6 +175,18 @@ def main() -> None:
 
     parser_silver = subparsers.add_parser("run-silver")
     parser_silver.add_argument("--config", required=True)
+
+    parser_controlled = subparsers.add_parser("run-controlled-reference-study")
+    parser_controlled.add_argument("--study-config", default="configs/controlled_reference_study.yml")
+    parser_controlled.add_argument("--silver-dir", default="data/silver")
+    parser_controlled.add_argument("--output-root", default="outputs/research")
+    parser_controlled.add_argument("--private-root", default="data/research")
+
+    parser_faults = subparsers.add_parser("run-failure-experiments")
+    parser_faults.add_argument("--output", default="outputs/research/failure_experiments.json")
+
+    parser_truth = subparsers.add_parser("run-reference-truth-simulation")
+    parser_truth.add_argument("--output-root", default="outputs/research")
 
     parser_gtex = subparsers.add_parser("run-gtex")
     parser_gtex.add_argument("--config", required=True)
@@ -742,6 +757,19 @@ def main() -> None:
             payload["total_milestones"],
         )
         print("Project completion report generated.")
+        return
+    if args.command == "run-failure-experiments":
+        report = run_failure_experiments(args.output)
+        print(f"Offline failure experiments: {report['status']}")
+        return
+    if args.command == "run-reference-truth-simulation":
+        report = run_truth_simulation(args.output_root)
+        print(f"Reference truth simulation: {report['status']}")
+        return
+    if args.command == "run-controlled-reference-study":
+        payload = run_controlled_reference_study(args.study_config, args.silver_dir,
+                                                 args.output_root, args.private_root)
+        print(f"Controlled reference study: {payload['status']} ({payload['study_id']})")
         return
     if args.command == "run-research-benchmark":
         load_config(args.config)

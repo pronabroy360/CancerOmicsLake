@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import re
+
 
 def strip_ensembl_version(gene_id: str) -> str:
-    return gene_id.split(".", maxsplit=1)[0]
+    # PAR_Y denotes a distinct pseudoautosomal locus, not an annotation version.
+    return re.sub(r"\.\d+(?=_PAR_Y$|$)", "", gene_id)
 
 
 def normalize_gene_id(gene_id: str) -> dict[str, str]:

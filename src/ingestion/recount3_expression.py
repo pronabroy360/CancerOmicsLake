@@ -208,7 +208,7 @@ def _harmonize_cohort(
         .with_columns(
             [
                 pl.lit(str(cohort["source"])).alias("source"),
-                pl.col("raw_gene_id").str.replace(r"\..*$", "").alias("gene_id"),
+                pl.col("raw_gene_id").str.replace(r"\.\d+(_PAR_Y)?$", "${1}").alias("gene_id"),
                 (
                     pl.col("raw_coverage_count").cast(pl.Float64, strict=False)
                     * pl.col("scale_factor")

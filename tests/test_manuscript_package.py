@@ -241,6 +241,10 @@ def test_build_manuscript_package_writes_evidence_linked_outputs(
     assert (output / "figures/figure_2_reference_jaccard.svg").exists()
     assert (output / "tables/table_2_reference_comparison_k100.csv").exists()
     assert "100 TCGA" in (output / "manuscript.md").read_text(encoding="utf-8")
+    text = (output / "manuscript.md").read_text(encoding="utf-8")
+    assert "catalogued" in text and "metadata manifest" in text
+    assert "10.1093/gigascience/giaf126" in text
+    assert "universal superiority" in text
     ledger = json.loads((output / "evidence_ledger.json").read_text(encoding="utf-8"))
     assert ledger["status"] == "passed"
     assert all(len(resource["sha256"]) == 64 for resource in ledger["resources"])
