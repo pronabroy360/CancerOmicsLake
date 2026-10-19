@@ -1,5 +1,12 @@
 # Manuscript Reproducibility
 
+The four-page PhD interview summary updated 19 October 2026 is under
+`manuscript/interview_brief_v2/`. Its PDF, LaTeX source, standalone source
+archive and evidence ledger are included. The original build used local frozen
+research inputs that are not distributed in this public-facing package; the
+source archive compiles independently. The dated research update records the
+scope and limits of the summary.
+
 For the current engineering evidence package, use `docs/engineering_completion.md` and
 `make build-engineering-package` after both frozen engineering studies finish. Its v5 draft
 retains numerical failures and author gates. The commands below describe the earlier package;

@@ -1,0 +1,374 @@
+{
+  "as_of": "2026-10-19",
+  "builder_sha256": "6ba7753d0192a8ea347a6faf7d0332fefeebc6d6a7be445df94fc391f39ab178",
+  "claims": {
+    "AbstentionDatasets": {
+      "boundary": "Synthetic datasets only",
+      "locator": "total_independent_datasets",
+      "source": "outputs/research/rank_abstention_v1/report.json",
+      "source_sha256": "605bd39fe145109678e5341f4fc1024b43785567a01b00509b0f7996d98f4498",
+      "value": 3600
+    },
+    "BioBootstraps": {
+      "boundary": "Post-v1 exploratory v2 settings",
+      "locator": "bootstrap_repeats",
+      "source": "outputs/research/global_evidence_review_v5/source/configs/matched_processing_v2.yml",
+      "source_sha256": "12d16e959ab2a9646e57bd557b8b70f48dc85601530c5f8ae62e0b1ca3259e2a",
+      "value": 200
+    },
+    "BootstrapTieDraws": {
+      "boundary": "Post-v1 exploratory v2 settings",
+      "locator": "bootstrap_tie_draws",
+      "source": "outputs/research/global_evidence_review_v5/source/configs/matched_processing_v2.yml",
+      "source_sha256": "12d16e959ab2a9646e57bd557b8b70f48dc85601530c5f8ae62e0b1ca3259e2a",
+      "value": 100
+    },
+    "CertifiedEvents": {
+      "boundary": "Synthetic bounded patches; includes setup in lifecycle result",
+      "locator": "sum(rows.certified)",
+      "source": "outputs/research/decision_recomputation_v1/report.json",
+      "source_sha256": "c6e83ce8c123bad19c7e96c9bb8503fa8ebbc9e05fccd5e277d97a5918b1123a",
+      "value": 233
+    },
+    "ContractCases": {
+      "boundary": "Constructed cases reused across tools/passes",
+      "locator": "input_case_count",
+      "source": "outputs/research/evidence_contract_external_v1/report.json",
+      "source_sha256": "381975221c36781d2e8ebddb190fc1280868215a576c591b8d5739f1e2304093",
+      "value": 32
+    },
+    "ContractDecisions": {
+      "boundary": "Repeated tool/case/pass decisions",
+      "locator": "actual_tool_decisions",
+      "source": "outputs/research/evidence_contract_external_v1/report.json",
+      "source_sha256": "381975221c36781d2e8ebddb190fc1280868215a576c591b8d5739f1e2304093",
+      "value": 192
+    },
+    "ContractOutcomes": {
+      "boundary": "False attestations admitted by every validator",
+      "locator": "summary",
+      "source": "outputs/research/evidence_contract_external_v1/report.json",
+      "source_sha256": "381975221c36781d2e8ebddb190fc1280868215a576c591b8d5739f1e2304093",
+      "value": {
+        "datacontract": {
+          "cases": 32,
+          "differences_from_contract": 0,
+          "unsafe_accepts": 2,
+          "valid_rejections": 0
+        },
+        "shacl": {
+          "cases": 32,
+          "differences_from_contract": 0,
+          "unsafe_accepts": 2,
+          "valid_rejections": 0
+        },
+        "snakemake_datacontract": {
+          "cases": 32,
+          "differences_from_contract": 0,
+          "unsafe_accepts": 2,
+          "valid_rejections": 0
+        }
+      }
+    },
+    "DetectionPercent": {
+      "boundary": "Both groups in both pipelines",
+      "locator": "100 * detection_prevalence",
+      "source": "outputs/research/global_evidence_review_v5/source/configs/matched_processing_v2.yml",
+      "source_sha256": "12d16e959ab2a9646e57bd557b8b70f48dc85601530c5f8ae62e0b1ca3259e2a",
+      "value": 20
+    },
+    "DirectionThreshold": {
+      "boundary": "Both pipelines must meet the absolute-effect threshold",
+      "locator": "direction_effect_threshold",
+      "source": "outputs/research/global_evidence_review_v5/source/configs/matched_processing_v2.yml",
+      "source_sha256": "12d16e959ab2a9646e57bd557b8b70f48dc85601530c5f8ae62e0b1ca3259e2a",
+      "value": 0.2
+    },
+    "ExactAttempts": {
+      "boundary": "Repeated process attempts",
+      "locator": "sum(execution_counts)",
+      "source": "outputs/research/exact_ranking_baselines_v1/report.json",
+      "source_sha256": "f9d08d8234736f05dda83fd6878cc67ef2000cb99fdba83dd37c1000cf2b0c04",
+      "value": 6624
+    },
+    "ExactComparisons": {
+      "boundary": "Workload/specification comparisons",
+      "locator": "len(correctness)",
+      "source": "outputs/research/exact_ranking_baselines_v1/report.json",
+      "source_sha256": "f9d08d8234736f05dda83fd6878cc67ef2000cb99fdba83dd37c1000cf2b0c04",
+      "value": 46
+    },
+    "ExactFailed": {
+      "boundary": "Recorded binary64 failures, not exact-method failures",
+      "locator": "execution_counts.failed",
+      "source": "outputs/research/exact_ranking_baselines_v1/report.json",
+      "source_sha256": "f9d08d8234736f05dda83fd6878cc67ef2000cb99fdba83dd37c1000cf2b0c04",
+      "value": 36
+    },
+    "FragilityCases": {
+      "boundary": "Synthetic scenarios",
+      "locator": "len(results)",
+      "source": "outputs/research/claim_fragility_v1/report.json",
+      "source_sha256": "396bff944786853d60b592391124b2766ab67ddc95b4bc1ffdc00acfedb1b353",
+      "value": 7
+    },
+    "FragilityWorlds": {
+      "boundary": "Constructed alternatives, not independent datasets",
+      "locator": "worlds_checked",
+      "source": "outputs/research/claim_fragility_v1/report.json",
+      "source_sha256": "396bff944786853d60b592391124b2766ab67ddc95b4bc1ffdc00acfedb1b353",
+      "value": 112
+    },
+    "GTExRows": {
+      "boundary": "Frozen measurement rows, not people or current acquisition totals",
+      "locator": "measurement_counts.gtex",
+      "source": "outputs/research/global_evidence_review_v5/review.json",
+      "source_sha256": "806592dc48a1392037356b52ca681525036416805f5cf24725168723751ca7f7",
+      "value": 11240000
+    },
+    "HolmWrong": {
+      "boundary": "Datasets with any invalid pairwise direction; denominator 200",
+      "locator": "results[moderate,30,holm_pairwise].invalid_pair_events",
+      "source": "outputs/research/rank_abstention_v1/report.json",
+      "source_sha256": "605bd39fe145109678e5341f4fc1024b43785567a01b00509b0f7996d98f4498",
+      "value": 5
+    },
+    "JointWrong": {
+      "boundary": "Datasets with any invalid pairwise direction; denominator 200",
+      "locator": "results[moderate,30,joint_multiplier].invalid_pair_events",
+      "source": "outputs/research/rank_abstention_v1/report.json",
+      "source_sha256": "605bd39fe145109678e5341f4fc1024b43785567a01b00509b0f7996d98f4498",
+      "value": 47
+    },
+    "LifecycleWins": {
+      "boundary": "Synthetic bounded patches; includes setup in lifecycle result",
+      "locator": "lifecycle_faster_than_incremental",
+      "source": "outputs/research/decision_recomputation_v1/report.json",
+      "source_sha256": "c6e83ce8c123bad19c7e96c9bb8503fa8ebbc9e05fccd5e277d97a5918b1123a",
+      "value": 0
+    },
+    "MatchedGTEx": {
+      "additional_source": {
+        "boundary": "Available matched specimens, including separate sigmoid tissue",
+        "locator": "matched_specimens",
+        "source": "outputs/research/global_evidence_review_v5/evidence/processing_v2.json",
+        "source_sha256": "862cd1f5fa25377fe2d2488ba7eccca8f6a7d3a13f47e66ba7179e7fdaca18c6",
+        "value": 617
+      },
+      "boundary": "Derived with MatchedTotal; all normal tissues including sigmoid",
+      "locator": "matched_specimens minus sum(tumors)",
+      "source": "outputs/research/focused_engineering_review_v1/tables/matched_summary.csv",
+      "source_sha256": "fc0cfd21b6ae5666b37fdd6505e21a8a07867d6ba93c6dfe78480b116f8922a8",
+      "value": 200
+    },
+    "MatchedMetrics": {
+      "boundary": "Point summaries; direction has a thresholded gene denominator",
+      "locator": "all three cancer rows",
+      "source": "outputs/research/focused_engineering_review_v1/tables/matched_summary.csv",
+      "source_sha256": "fc0cfd21b6ae5666b37fdd6505e21a8a07867d6ba93c6dfe78480b116f8922a8",
+      "value": [
+        {
+          "cancer_type": "TCGA-BRCA",
+          "direction_agreement": "0.8984815244977846",
+          "direction_denominator": "23247",
+          "kendall_tau_b": "0.5592381152548113",
+          "native_boundary_ties": "488",
+          "normals": "50",
+          "shared_genes": "55660",
+          "top50_deterministic_jaccard": "0.02040816326530612",
+          "top50_tie_mean_jaccard": "0.004578044276129695",
+          "tumors": "162"
+        },
+        {
+          "cancer_type": "TCGA-COAD",
+          "direction_agreement": "0.9053482982687326",
+          "direction_denominator": "22007",
+          "kendall_tau_b": "0.5563911500880406",
+          "native_boundary_ties": "412",
+          "normals": "50",
+          "shared_genes": "55660",
+          "top50_deterministic_jaccard": "0.0",
+          "top50_tie_mean_jaccard": "0.002578849721706865",
+          "tumors": "119"
+        },
+        {
+          "cancer_type": "TCGA-LUAD",
+          "direction_agreement": "0.9021152873756952",
+          "direction_denominator": "23732",
+          "kendall_tau_b": "0.5705599704169492",
+          "native_boundary_ties": "515",
+          "normals": "50",
+          "shared_genes": "55660",
+          "top50_deterministic_jaccard": "0.02040816326530612",
+          "top50_tie_mean_jaccard": "0.005834311981587386",
+          "tumors": "136"
+        }
+      ]
+    },
+    "MatchedTCGA": {
+      "boundary": "Primary matched tumors",
+      "locator": "sum(tumors)",
+      "source": "outputs/research/focused_engineering_review_v1/tables/matched_summary.csv",
+      "source_sha256": "fc0cfd21b6ae5666b37fdd6505e21a8a07867d6ba93c6dfe78480b116f8922a8",
+      "value": 417
+    },
+    "MatchedTotal": {
+      "boundary": "Available matched specimens, including separate sigmoid tissue",
+      "locator": "matched_specimens",
+      "source": "outputs/research/global_evidence_review_v5/evidence/processing_v2.json",
+      "source_sha256": "862cd1f5fa25377fe2d2488ba7eccca8f6a7d3a13f47e66ba7179e7fdaca18c6",
+      "value": 617
+    },
+    "NativeFailed": {
+      "boundary": "Failed sensitivity cells; fixed original tolerance",
+      "locator": "corrected_global_replays[native_reference_global_v1].checks.numeric_diagnostics",
+      "source": "outputs/research/global_evidence_review_v5/evidence/numerical.json",
+      "source_sha256": "0024d27d1b0f025c3eb34425bd4e38bf1f1b0cc892157d27b4d8eee0402c8df0",
+      "value": 63
+    },
+    "NativeScripts": {
+      "boundary": "Limited preparation/native-script comparison, not end-to-end superiority",
+      "locator": "native_script_integration_comparable",
+      "source": "outputs/research/global_evidence_review_v5/review.json",
+      "source_sha256": "806592dc48a1392037356b52ca681525036416805f5cf24725168723751ca7f7",
+      "value": 7
+    },
+    "PairedFailed": {
+      "boundary": "Failed sensitivity cells; fixed original tolerance",
+      "locator": "corrected_global_replays[native_reference_paired_global_v1].checks.numeric_diagnostics",
+      "source": "outputs/research/global_evidence_review_v5/evidence/numerical.json",
+      "source_sha256": "0024d27d1b0f025c3eb34425bd4e38bf1f1b0cc892157d27b4d8eee0402c8df0",
+      "value": 60
+    },
+    "PrimaryNormals": {
+      "boundary": "Primary tissues; excludes sigmoid",
+      "locator": "sum(normals)",
+      "source": "outputs/research/focused_engineering_review_v1/tables/matched_summary.csv",
+      "source_sha256": "fc0cfd21b6ae5666b37fdd6505e21a8a07867d6ba93c6dfe78480b116f8922a8",
+      "value": 150
+    },
+    "RecomputeEvents": {
+      "boundary": "Synthetic bounded patches; includes setup in lifecycle result",
+      "locator": "sum(rows.queries)",
+      "source": "outputs/research/decision_recomputation_v1/report.json",
+      "source_sha256": "c6e83ce8c123bad19c7e96c9bb8503fa8ebbc9e05fccd5e277d97a5918b1123a",
+      "value": 400
+    },
+    "RecomputeWorkloads": {
+      "boundary": "Synthetic bounded patches; includes setup in lifecycle result",
+      "locator": "len(rows)",
+      "source": "outputs/research/decision_recomputation_v1/report.json",
+      "source_sha256": "c6e83ce8c123bad19c7e96c9bb8503fa8ebbc9e05fccd5e277d97a5918b1123a",
+      "value": 40
+    },
+    "SharedGenes": {
+      "boundary": "All shared genes, not informative subset",
+      "locator": "shared_genes, each row",
+      "source": "outputs/research/focused_engineering_review_v1/tables/matched_summary.csv",
+      "source_sha256": "fc0cfd21b6ae5666b37fdd6505e21a8a07867d6ba93c6dfe78480b116f8922a8",
+      "value": 55660
+    },
+    "SigmoidNormals": {
+      "boundary": "Separate sigmoid reference specimens",
+      "locator": "all matched normals minus primary normals",
+      "source": "outputs/research/focused_engineering_review_v1/tables/matched_summary.csv",
+      "source_sha256": "fc0cfd21b6ae5666b37fdd6505e21a8a07867d6ba93c6dfe78480b116f8922a8",
+      "value": 50
+    },
+    "TCGARows": {
+      "boundary": "Frozen measurement rows, not people or current acquisition totals",
+      "locator": "measurement_counts.tcga",
+      "source": "outputs/research/global_evidence_review_v5/review.json",
+      "source_sha256": "806592dc48a1392037356b52ca681525036416805f5cf24725168723751ca7f7",
+      "value": 36456660
+    },
+    "TieDraws": {
+      "boundary": "Post-v1 exploratory v2 settings",
+      "locator": "tie_draws",
+      "source": "outputs/research/global_evidence_review_v5/source/configs/matched_processing_v2.yml",
+      "source_sha256": "12d16e959ab2a9646e57bd557b8b70f48dc85601530c5f8ae62e0b1ca3259e2a",
+      "value": 1000
+    },
+    "TieMax": {
+      "boundary": "Native absolute-effect cutoff ties",
+      "locator": "max(native_boundary_ties)",
+      "source": "outputs/research/focused_engineering_review_v1/tables/matched_summary.csv",
+      "source_sha256": "fc0cfd21b6ae5666b37fdd6505e21a8a07867d6ba93c6dfe78480b116f8922a8",
+      "value": 515
+    },
+    "TieMin": {
+      "boundary": "Native absolute-effect cutoff ties",
+      "locator": "min(native_boundary_ties)",
+      "source": "outputs/research/focused_engineering_review_v1/tables/matched_summary.csv",
+      "source_sha256": "fc0cfd21b6ae5666b37fdd6505e21a8a07867d6ba93c6dfe78480b116f8922a8",
+      "value": 412
+    },
+    "WorkflowCells": {
+      "boundary": "Common preparation workloads, not end-to-end workflow executions",
+      "locator": "len(comparisons)",
+      "source": "outputs/research/global_evidence_review_v5/evidence/workflow.json",
+      "source_sha256": "03b7ff0c9a34e8c7a57c414810ac337120a60da7144c509c5f56536d75a7ed2a",
+      "value": 21
+    },
+    "all_existing_methods.csv": {
+      "boundary": "Scope/interpretation evidence, not new independent validation",
+      "locator": "document",
+      "source": "outputs/research/focused_engineering_review_v1/tables/all_existing_methods.csv",
+      "source_sha256": "33b11bea0405e615512f072e6916f66781a42871db8afdd057b1e9684492cb4d",
+      "value": "supporting evidence"
+    },
+    "arora_external_comparator_feasibility.md": {
+      "boundary": "Scope/interpretation evidence, not new independent validation",
+      "locator": "document",
+      "source": "docs/arora_external_comparator_feasibility.md",
+      "source_sha256": "5903c6eb24ba66a9fc010ed4f789532f769edd4d6177f7f24a88b580c9f1c700",
+      "value": "supporting evidence"
+    },
+    "exact_ranking_baselines_results.md": {
+      "boundary": "Scope/interpretation evidence, not new independent validation",
+      "locator": "document",
+      "source": "docs/exact_ranking_baselines_results.md",
+      "source_sha256": "e7b0e103480eb5bb5c3286b59f3e93368242f51e00d6beb733fa0cd2fc778415",
+      "value": "supporting evidence"
+    },
+    "failure_experiments.csv": {
+      "boundary": "Scope/interpretation evidence, not new independent validation",
+      "locator": "document",
+      "source": "outputs/research/focused_engineering_review_v1/tables/failure_experiments.csv",
+      "source_sha256": "37153d32d622cd1a92721ea45b5ba9edbe3c423aa56e68990e217a07e9e2fc04",
+      "value": "supporting evidence"
+    },
+    "matched_processing_v2.yml": {
+      "boundary": "Scope/interpretation evidence, not new independent validation",
+      "locator": "document",
+      "source": "outputs/research/global_evidence_review_v5/source/configs/matched_processing_v2.yml",
+      "source_sha256": "12d16e959ab2a9646e57bd557b8b70f48dc85601530c5f8ae62e0b1ca3259e2a",
+      "value": "supporting evidence"
+    },
+    "published_rra.csv": {
+      "boundary": "Scope/interpretation evidence, not new independent validation",
+      "locator": "document",
+      "source": "outputs/research/focused_engineering_review_v1/tables/published_rra.csv",
+      "source_sha256": "79fef70bd06934a9870dab52837b990118719755bd035a35c1921f950d53ebbd",
+      "value": "supporting evidence"
+    },
+    "rank_abstention_results.md": {
+      "boundary": "Scope/interpretation evidence, not new independent validation",
+      "locator": "document",
+      "source": "docs/rank_abstention_results.md",
+      "source_sha256": "6eebde7a1927fb15a7b9e9f185a60a206517a99aa10bb4981cb3b8928f1bbc95",
+      "value": "supporting evidence"
+    }
+  },
+  "files": {
+    "brief.pdf": "3ba96f1a963f33232fee7b0ba221cdbc418cb86be3764a1233659257305c8460",
+    "brief.tex": "7aad4a3f13abd4d86bf3c9fd7a81f549ce7b541199d283d42ad254f6c1eee751",
+    "evidence_values.tex": "46e80921c8b440dcac8b20be46b36ad744ba254b70ae375be83df9e7d31d215b",
+    "matched_metrics.dat": "54b0131c1847006a490af3abe1908f86a75985b2a27f6d92fa80133658132da8"
+  },
+  "independent_human_reproduction": false,
+  "pages": 4,
+  "private_identifiers_checked": 1938,
+  "publication_enabled": false,
+  "purpose": "PhD interview research summary"
+}

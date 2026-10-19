@@ -1055,3 +1055,19 @@ Impact values:
 ## Executed engineering evidence (2026-10-15)
 
 Cached preparation completed 21 workload equivalence cells and 84 tool/pass/workload summaries in two passes. Module comparability: True. Native-script comparable outputs: 7/7. Full tests: 297 passed; read-only silver quality: passed (65 checks). Strict numerical sensitivity failures remain retained. Shared TMM normalization and emulated hardware prohibit an end-to-end superiority claim. Independent human reproduction is unverified; author declarations and publication approval remain pending. Publication and DOI deposit are disabled. See the separate v5 review.
+## 2026-10-19 - Interview synopsis reviewed and revised
+
+- Reviewed revision 1 for contribution focus, study design, uncertainty,
+  denominators and interpretation. Recorded findings and unresolved scientific
+  requirements in `manuscript/interview_brief_v2/reviewer_notes.md`.
+- Created a separate four-page revision 2 with a directed system workflow,
+  matched-processing design diagram and paired-bootstrap interval plots. Added
+  617-available/567-primary specimen distinction, separate reference-study group
+  sizes, and sensitivity-column failure denominators (63/8,100 and 60/8,100).
+- Preserved the first brief and all frozen studies. Verified 49 evidence
+  bindings, every plotted interval endpoint, prior-brief hashes, layout and
+  identifier checks; visually inspected the revised PDF. The source archive
+  compiled independently to four pages in a clean temporary directory.
+- Presentation changes do not resolve independent reproduction, novelty,
+  biological/causal validation or the documented numerical failures. No new
+  scientific experiments, publication or independent peer review are claimed.

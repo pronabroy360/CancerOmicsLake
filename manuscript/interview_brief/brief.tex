@@ -1,0 +1,288 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.68in,headheight=14pt,headsep=12pt,footskip=24pt]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,booktabs,tabularx,graphicx,xcolor,fancyhdr,enumitem}
+\usepackage{pgfplots}
+\usepackage[colorlinks=true,urlcolor=teal!65!black,linkcolor=teal!65!black,citecolor=teal!65!black]{hyperref}
+\pgfplotsset{compat=1.18}
+\definecolor{ink}{HTML}{183244}
+\definecolor{accent}{HTML}{087F8C}
+\definecolor{pale}{HTML}{EFF6F7}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.12}
+\setlist[itemize]{leftmargin=13pt,itemsep=1pt,topsep=2pt}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\sffamily\color{ink}CancerOmicsLake}
+\fancyhead[R]{\small\sffamily Research brief \textbar\ 19 October 2026}
+\fancyfoot[L]{\small Pronab Chandra Roy}
+\fancyfoot[R]{\small\thepage\ / 4}
+\renewcommand{\headrulewidth}{0.3pt}
+\newcommand{\topic}[1]{\par\vspace{5pt}{\large\sffamily\bfseries\color{ink}#1}\par\vspace{1pt}}
+\newcommand{\subtopic}[1]{\par\vspace{2pt}{\bfseries\color{ink}#1}\par}
+\newcommand{\takeaway}[1]{\par\smallskip\noindent\colorbox{pale}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{\textbf{Finding.} #1}}\par}
+\input{evidence_values.tex}
+\hypersetup{pdftitle={CancerOmicsLake: engineering and sensitivity of cancer-gene rankings},pdfauthor={Pronab Chandra Roy}}
+\begin{document}
+
+{\sffamily\color{accent}\small BIOINFORMATICS DATA ENGINEERING \ / \ PHD INTERVIEW SUMMARY}\par
+{\sffamily\bfseries\color{ink}\LARGE CancerOmicsLake}\par
+{\sffamily\color{ink}\Large An auditable platform for studying the sensitivity\newline of cancer-gene rankings}\par
+\textbf{Pronab Chandra Roy}\hfill\href{https://github.com/pronabroy360/CancerOmicsLake}{Code and project repository}\par
+
+\topic{1. Research question and engineering contribution}
+\textbf{How much can a cancer-gene ranking change when its reference population,
+expression processing, tie handling, or numerical environment changes, even when
+the workflow executes reproducibly?} CancerOmicsLake addresses this question by
+connecting public data acquisition, harmonization, analytical tables and recorded
+experiments. Its strongest contribution is the implementation and evaluation of
+an inspectable research workflow, including evidence of its limitations.
+
+\subtopic{Data and scope}
+The project integrates open-access GDC/TCGA metadata, gene expression, clinical
+and biospecimen fields, somatic mutation summaries, GTEx normal-tissue expression,
+and publicly released recount3 processed expression~\cite{recount}. The cancer
+cohorts are breast invasive carcinoma (BRCA), lung adenocarcinoma (LUAD) and colon
+adenocarcinoma (COAD). Normal references are breast, lung, transverse colon and
+sigmoid colon. The frozen primary expression inventory contains
+\textbf{\TCGARows\ TCGA} and \textbf{\GTExRows\ GTEx} measurement rows;
+these are gene--specimen measurements, not counts of patients or sequencing files.
+
+\begin{center}
+\fcolorbox{accent}{pale}{\parbox{0.94\linewidth}{\centering\small
+\textbf{GDC / GTEx / recount3 / annotations}\\[3pt]
+$\downarrow$\quad configured acquisition, retries, checksums and source metadata\\[3pt]
+\textbf{Bronze: immutable inputs}\ $\longrightarrow$\
+\textbf{Silver: typed, harmonized Parquet}\ $\longrightarrow$\
+\textbf{Gold: analytical marts}\\[3pt]
+$\downarrow$\quad DuckDB / dbt tests / quality gates / frozen experiment manifests\\[3pt]
+\textbf{SQL, API, dashboard, graph exports and claim-to-source evidence}
+}}\end{center}
+
+\subtopic{Implemented capabilities}
+Python/Polars ingestion and transformation support configurable cohorts and
+bounded downloads; DuckDB and dbt provide queryable dimensions and facts.
+Orchestration, Docker and CI support repeatable runs. Streamlit, FastAPI and
+Neo4j/Graphify exports expose the results. Validation checks cover access,
+checksums, types, duplicate keys, gene/sample joins and relationships.
+
+The analytics include expression and reference comparisons, consequence-stratified
+mutation frequencies, candidate prioritization, pathway overrepresentation with
+Benjamini--Hochberg correction within cancer/candidate set, and graph degree
+summaries. These provide exploratory context; pathway membership, mutation
+frequency and graph connectivity do not by themselves validate a candidate.
+
+\subtopic{Research process and contribution}
+Work progressed from infrastructure to reference sensitivity, exact specimen
+matching, tie diagnostics, published baselines and numerical replay. Repairs
+addressed duplicate measurements, Ensembl version normalization while preserving
+\texttt{\_PAR\_Y} loci, and donor/case leakage across partitions. Plans and input
+hashes preserve earlier evidence when a later study changes the design.
+Individual manifests and per-gene intermediates stay outside the aggregate brief.
+
+\takeaway{A functioning data platform makes the assumptions and failure modes of
+candidate rankings inspectable. The studies below assess what that infrastructure
+can establish scientifically.}
+
+\newpage
+\topic{2. Matched specimens: broad agreement, unstable leading lists}
+\subtopic{Study design}
+Matched-processing v1 validated \textbf{\MatchedTotal\ exact specimens}:
+\MatchedTCGA\ TCGA tumors and \MatchedGTEx\ GTEx normals. Matching checked GDC
+sample identity or GTEx SAMPID, case/donor, tissue, QC and count-column mapping.
+Ambiguities were excluded and corrected measurement keys were required to be
+unique. The three primary comparisons use \PrimaryNormals\ normals; the remaining
+\SigmoidNormals\ sigmoid-colon specimens are retained separately. COAD uses transverse colon
+for the primary comparison. Both processing pipelines use identical specimens.
+
+Native TPM and recount3 AUC-scaled coverage are kept in their respective units.
+V1 compared within-specimen gene ranks, detection and top-expressed genes, then
+compared tumor--normal effects. V2, designed after inspecting v1, examined ties,
+detection, annotation and workflow provenance. It is an exploratory follow-up.
+
+For each gene and pipeline, the signed rank-biserial effect is
+\[
+ r_g=\frac{1}{n_Tn_N}\sum_{i=1}^{n_T}\sum_{j=1}^{n_N}
+ \operatorname{sign}(x_{gi}^{T}-x_{gj}^{N}).
+\]
+This measures relative ordering within a pipeline. It does not make expression
+units comparable or provide a differential-expression significance test.
+
+\begin{center}\small
+\textbf{Matched v2: complete shared-gene universe (\SharedGenes\ genes per cancer)}\\[4pt]
+\begin{tabular}{lrrrcrr}
+\toprule
+Cancer & Tumors & GTEx & $\tau_b$ & Direction agreement & Eligible genes & Mean $J_{50}$\\
+\midrule
+\MatchedRows
+\bottomrule
+\end{tabular}\end{center}
+{\footnotesize $\tau_b$: signed-effect Kendall correlation. Direction agreement
+uses genes with $|r_g|\geq\DirectionThreshold$ in both pipelines; its denominator is shown.
+$J_{50}$: Jaccard overlap of absolute-effect top-50 lists after seeded boundary-tie
+resolution. Specimens are not the denominator for these gene-level metrics.}\par
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=0.46\linewidth,height=1.50in,ybar,bar width=14pt,
+ ymin=0,ymax=1,ytick={0,0.5,1},symbolic x coords={BRCA,COAD,LUAD},xtick=data,
+ title={\small Broad signed-effect agreement},ylabel={\small Kendall $\tau_b$},
+ tick label style={font=\footnotesize},title style={font=\small},
+ axis lines*=left,grid=major,grid style={gray!15}]
+\addplot[fill=accent,draw=accent] table[x=cancer,y=tau]{matched_metrics.dat};
+\end{axis}
+\end{tikzpicture}\hfill
+\begin{tikzpicture}
+\begin{axis}[width=0.46\linewidth,height=1.50in,ybar,bar width=14pt,
+ ymin=0,ymax=0.01,ytick={0,0.005,0.01},scaled y ticks=false,
+ yticklabel style={/pgf/number format/fixed,/pgf/number format/precision=3},
+ symbolic x coords={BRCA,COAD,LUAD},xtick=data,
+ title={\small Leading-list overlap},ylabel={\small Mean top-50 Jaccard},
+ tick label style={font=\footnotesize},axis lines*=left,grid=major,grid style={gray!15}]
+\addplot[fill=ink,draw=ink] table[x=cancer,y=jaccard]{matched_metrics.dat};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+{\footnotesize Figure: the panels use different vertical scales and different
+statistics; their bar heights should not be compared directly. Values come from
+the same matched comparisons in the table.}\par
+
+V2 evaluated all shared genes and a fixed informative subset detected ($>0$) in
+at least \DetectionPercent\% of both groups in both pipelines. It used \TieDraws\ seeded tie resolutions
+and \BioBootstraps\ paired case/donor bootstrap replicates, with \BootstrapTieDraws\ tie resolutions within
+each replicate. Tie-break uncertainty and descriptive sampling intervals were
+reported separately. Filtering improved broad concordance but left leading-list
+overlap weak. Native boundary scores tied across \TieMin--\TieMax\ genes.
+
+\takeaway{Genome-wide agreement does not establish stable short candidate lists.
+The comparison measures processing sensitivity conditional on available matched
+specimens; it does not isolate a causal source of the discrepancy.}
+
+\newpage
+\topic{3. Reference choice, numerical execution and external baselines}
+\subtopic{Ranking candidates against two normal references}
+Globally separated case/donor partitions compared adjacent-normal and GTEx
+references in corrected native and paired study designs. A bootstrap
+lower-quantile score was evaluated against single-reference effects, mean ranks,
+reference maximin and the official R \texttt{RobustRankAggreg} implementation~\cite{rra}.
+Top-25/50/100 lists were evaluated with heldout effect/direction summaries and
+paired resampling. Bootstrap rank stability, reference ablations and reference
+discordance were retained as exploratory diagnostics.
+
+The proposed score showed \textbf{no top-50 advantage over simple maximin} in
+the corrected studies. RRA supplies an established ranking baseline; because
+both input lists share tumor specimens, its independent-list null cannot justify
+calibrated significance here. A constructed shared-normal-bias example further
+showed that agreement between references can coexist with incorrect biological
+selection. These results restrict the interpretation of consensus scores.
+
+\subtopic{Execution can reproduce candidates while failing numerical acceptance}
+Archived replay compared macOS/Linux with pinned dependencies and Polars
+1.42.1/1.44.2. It recorded ordering, tie counts and intermediate arrays, while
+retaining the original tolerances: $\mathrm{rtol}=10^{-8}$,
+$\mathrm{atol}=10^{-10}$. The three historical failed rows repeated one Spearman
+statistic at three top-k values. The earliest observed platform divergence was
+in log2 effect arrays, followed by tie-sensitive ranks; the underlying platform
+cause was not established by the dependency comparison.
+
+Corrected global studies reproduced candidate lists and heldout metrics, but
+\textbf{\NativeFailed\ native and \PairedFailed\ paired sensitivity cells failed}
+the fixed tolerance. A later exact-arithmetic study compared existing eager
+rational, specialized rational and CGAL lazy exact implementations: all
+\ExactComparisons\ workload/specification comparisons agreed, including native
+macOS checks. Of \ExactAttempts\ process attempts, \ExactFailed\ binary64 attempts
+failed on a constructed extreme-value fixture; exact-method attempts succeeded.
+This separate study did not repair the archived numerical failures or establish
+a new arithmetic algorithm.
+
+\subtopic{Fair external workflow and failure experiments}
+The pinned \texttt{tcga-data-nf} preparation implementation~\cite{workflow} was
+compared on cached recount3 inputs with matching specimen/gene membership and
+normalization/filtering semantics. There were \WorkflowCells\ comparable
+preparation workloads and \NativeScripts\ successful native-script integrations.
+Output equivalence was established before timing. A common R normalization
+backend, adapter costs and emulated hardware limit performance interpretation;
+no end-to-end Nextflow or engine-speed advantage was established.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.25\linewidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Tested safeguard & Observed behavior & Interpretation\\
+\midrule
+Corrupt input, missing metadata, conflicting duplicates & Benchmark adapter/parser rejected each & Guards worked at the recorded validation layer.\\
+Interrupted execution & No incorrect output committed; fresh retry recovered & Recovery tested with an explicit pause hook.\\
+Stale cached evidence & Evidence hash guard rejected reuse & External native stale-cache handling was unmeasured.\\
+Frozen sources and reports & Hashes, manifests and earlier failures retained & Traceability supports audit; it does not prove biological truth.\\
+\bottomrule
+\end{tabularx}\end{center}
+
+\takeaway{The supported contribution is a measured engineering case study:
+source-to-claim traceability, controlled comparisons and preservation of failed
+scientific checks. Passing software tests does not override those failures.}
+
+\newpage
+\topic{4. Additional method experiments and research status}
+The project also tested whether its failure cases motivated a sharper method or
+systems contribution. These exploratory studies used frozen evidence and strong
+baselines. Their bounded negative results are part of the research record.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{0.23\linewidth}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Study & Executed evidence & Outcome and boundary\\
+\midrule
+Executable evidence contracts & \ContractCases\ synthetic cases; \ContractDecisions\ tool/case/pass decisions using SQL, SHACL and Snakemake & All matched the prototype. Each admitted two false attestations; metadata consistency cannot establish original truth.\\
+Decision-aware recomputation & \RecomputeEvents\ distinct patch events across \RecomputeWorkloads\ workloads; \CertifiedEvents\ unchanged sets certified & No decision mismatches; total cost beat exact incremental updating in \LifecycleWins/\RecomputeWorkloads\ workloads.\\
+Exact ranking arithmetic & \ExactComparisons\ comparisons using established exact methods & Exact results agreed; no unique capability or uniformly fastest implementation.\\
+Rank selection with abstention & \AbstentionDatasets\ synthetic datasets; Holm, Bonferroni and joint bootstrap & Narrow label screen passed; invalid pair directions occurred in \JointWrong/200 versus \HolmWrong/200 datasets in one moderate-signal cell.\\
+Minimum claim-flipping changes & \FragilityWorlds\ synthetic workflow alternatives in \FragilityCases\ scenarios & SQL and Python agreed on all decisions and witnesses; no unique capability demonstrated.\\
+\bottomrule
+\end{tabularx}\end{center}
+{\footnotesize Repeated timings/tool passes are not independent datasets.
+The abstention diagnostic is the 30-donor moderate-signal cell. Its pairwise
+error undermines a calibrated-confidence claim despite correct observed top-k
+labels. The official confident-feature-ranking implementation~\cite{confident}
+was not benchmarked. The claim-flipping test replayed prepared synthetic
+alternatives rather than generating real quantification workflows.}\par
+
+\subtopic{Position relative to prior work}
+Arora et al.~\cite{arora} already established that processing differences affect
+expression and downstream results. CancerOmicsLake adds an auditable combination
+of matched candidate-effect comparisons, tie diagnostics and explicit numerical
+failure records; it does not claim to discover processing sensitivity first.
+Direct Arora replication remains unexecuted: the checked expression-archive
+locations returned access errors on 16 October 2026. This does not establish
+that the matrices were never published. Their endpoints and ours differ.
+
+\subtopic{What this research supports, and the next step}
+The deliverable is a working cancer-omics data platform and a documented
+engineering/sensitivity case study. It has not established a superior new
+ranking method, independent biological validation or clinical utility. Batch
+effects, available-sample selection and annotation differences remain limitations.
+Existing inspected holdouts cannot provide fresh confirmation.
+
+The next concrete steps are independent investigator reproduction of the
+prepared handoff, external comparison on identical endpoints, and an untouched
+evaluation cohort selected before method development. Any future algorithm
+needs a clear estimand and benefit over maximin or competent systems baselines.
+For a PhD, my interest is developing and evaluating reliable data infrastructure
+for biomedical research, with this platform as an implemented starting point.
+
+{\footnotesize\textbf{Document status.} Working research summary for interview
+discussion, updated from the frozen v5 evidence and subsequent feasibility
+studies. Code and drafting used AI assistance. Author review, affiliation,
+correspondence and formal declarations remain to be finalized; independent
+human reproduction is pending. The evidence ledger and reproducible LaTeX
+build accompany this brief.}\par
+
+\vspace{-3pt}
+\begin{thebibliography}{5}\footnotesize\raggedright\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}
+\bibitem{recount} Wilks et al. \emph{recount3: summaries and queries for large-scale RNA-seq expression and splicing}. Genome Biology, 2021. \href{https://doi.org/10.1186/s13059-021-02533-6}{doi:10.1186/s13059-021-02533-6}.
+\bibitem{rra} Kolde et al. \emph{Robust rank aggregation for gene list integration and meta-analysis}. Bioinformatics, 2012. \href{https://doi.org/10.1093/bioinformatics/btr709}{doi:10.1093/bioinformatics/btr709}.
+\bibitem{workflow} Quackenbush Lab. \emph{tcga-data-nf}. \href{https://github.com/QuackenbushLab/tcga-data-nf/tree/1069eb9c01b97640fd532ffac8551096d2a2790a}{Pinned workflow source}; benchmark scope described on p.~3.
+\bibitem{confident} Neuhof and Benjamini. \emph{Confident Feature Ranking}. AISTATS, 2024. \href{https://proceedings.mlr.press/v238/neuhof24a.html}{PMLR 238:1468--1476}.
+\bibitem{arora} Arora et al. \emph{Variability in estimated gene expression among commonly used RNA-seq pipelines}. Scientific Reports, 2020. \href{https://doi.org/10.1038/s41598-020-59516-z}{doi:10.1038/s41598-020-59516-z}.
+\end{thebibliography}
+\end{document}
